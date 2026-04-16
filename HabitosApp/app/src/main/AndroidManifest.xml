@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Permiso de internet obligatorio para HttpURLConnection -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:name=".HabitosApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="HabitosApp"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.HabitosApp"
+        android:networkSecurityConfig="@xml/network_security_config">
+
+        <!-- ── Auth ── -->
+
+        <!-- Punto de entrada: LoginActivity -->
+        <activity
+            android:name=".ui.auth.LoginActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.auth.RegisterActivity"
+            android:exported="false" />
+
+        <!-- ── Main (dashboard) ── -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
+
+        <!-- ── Hábitos ── -->
+        <activity
+            android:name=".ui.habitos.HabitosActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.habitos.HabitoFormActivity"
+            android:exported="false" />
+
+    </application>
+
+</manifest>

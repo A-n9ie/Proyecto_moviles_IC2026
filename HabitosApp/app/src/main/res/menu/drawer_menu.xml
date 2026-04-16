@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_inicio"
+            android:icon="@android:drawable/ic_menu_info_details"
+            android:title="Inicio" />
+        <item
+            android:id="@+id/nav_habitos"
+            android:icon="@android:drawable/ic_menu_agenda"
+            android:title="Mis Hábitos" />
+    </group>
+
+    <item android:title="Cuenta">
+        <menu>
+            <item
+                android:id="@+id/nav_cerrar_sesion"
+                android:icon="@android:drawable/ic_menu_close_clear_cancel"
+                android:title="Cerrar sesión" />
+        </menu>
+    </item>
+
+</menu>

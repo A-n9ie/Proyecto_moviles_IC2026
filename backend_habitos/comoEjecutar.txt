@@ -1,0 +1,7 @@
+Desde la carpeta raíz -> backend_habitos
+ejecutar:
+python main.py
+
+ir a android studio:
+- LogCat -> se ven los ciclos por los que pasa al abrir y cerrar la aplicación
+- Run
