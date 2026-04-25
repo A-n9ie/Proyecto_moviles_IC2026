@@ -22,3 +22,12 @@ class IRepartidorRepository(ABC):
     def obtener_primero_disponible(self) -> Optional[Repartidor]:
         """Retorna el primer repartidor disponible con < 4 amonestaciones."""
         pass
+    
+    @abstractmethod
+    def actualizar_estado(self, id_repartidor: int, estado: int) -> bool:
+        """
+        Cambia el estado del repartidor.
+        1 = disponible (al entregar pedido)
+        0 = ocupado    (al asignarle un pedido)
+        """
+        pass

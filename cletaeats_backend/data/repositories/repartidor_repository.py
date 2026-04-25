@@ -76,3 +76,15 @@ class RepartidorRepository(IRepartidorRepository):
             costo_km_feriado=row["COSTO_KM_FERIADO"],
             amonestaciones=row["AMONESTACIONES"]
         )
+    
+    def actualizar_estado(self, id_repartidor: int, estado: int) -> bool:
+        conn = get_connection()
+        try:
+            cursor = conn.execute(
+                "UPDATE REPARTIDOR SET ESTADO = ? WHERE ID = ?",
+                (estado, id_repartidor)
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+        finally:
+            conn.close()
