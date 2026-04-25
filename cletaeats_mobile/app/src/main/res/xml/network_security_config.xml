@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <!--
+            EMULADOR (activo): 10.0.2.2 apunta al localhost del PC
+        -->
+        <domain includeSubdomains="false">10.0.2.2</domain>
+
+        <!--
+            DISPOSITIVO FÍSICO: descomentar y reemplazar con IP del PC
+            <domain includeSubdomains="false">192.168.1.105</domain>
+        -->
+    </domain-config>
+</network-security-config>

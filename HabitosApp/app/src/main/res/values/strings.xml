@@ -1,6 +1,0 @@
-<resources>
-    <string name="app_name">HabitosApp</string>
-
-    <string name="drawer_open">Abrir menú de navegación</string>
-    <string name="drawer_close">Cerrar menú de navegación</string>
-</resources>

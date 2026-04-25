@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.CletaEats" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Sin ActionBar porque Compose usa su propio TopAppBar -->
+    </style>
+</resources>

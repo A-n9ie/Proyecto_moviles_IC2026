@@ -1,0 +1,7 @@
+En carpeta cletaeats_backend
+
+# 1. Crear BD (solo la primera vez):
+python db_init.py
+
+# 2. Iniciar servidor:
+python main.py
