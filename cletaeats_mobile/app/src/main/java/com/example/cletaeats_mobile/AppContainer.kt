@@ -3,21 +3,27 @@ package com.example.cletaeats_mobile
 import android.content.Context
 import com.example.cletaeats_mobile.data.local.SessionManager
 import com.example.cletaeats_mobile.data.remote.AuthApiService
+import com.example.cletaeats_mobile.data.remote.ComboApiService
+import com.example.cletaeats_mobile.data.remote.PedidoApiService
 import com.example.cletaeats_mobile.data.remote.RestauranteApiService
 import com.example.cletaeats_mobile.data.repository.AuthRepositoryImpl
+import com.example.cletaeats_mobile.data.repository.ComboRepositoryImpl
+import com.example.cletaeats_mobile.data.repository.PedidoRepositoryImpl
 import com.example.cletaeats_mobile.data.repository.RestauranteRepositoryImpl
 import com.example.cletaeats_mobile.viewmodel.AuthViewModel
+import com.example.cletaeats_mobile.viewmodel.CarritoViewModel
+import com.example.cletaeats_mobile.viewmodel.ComboViewModel
+import com.example.cletaeats_mobile.viewmodel.PedidosRepartidorViewModel
 import com.example.cletaeats_mobile.viewmodel.RestauranteViewModel
 
 /**
- * Contenedor de dependencias manual (MVC sin framework DI).
+ * DI manual. PATRÓN MVC:
+ *   Model      = data classes + repositorios
+ *   View       = Composables (ui/)
+ *   Controller = ViewModels (viewmodel/)
  *
- * PATRÓN MVC aplicado:
- *   Model       = data classes + repos (data/repository/, domain/model/)
- *   View        = Composables (ui/)
- *   Controller  = ViewModels (viewmodel/)
- *
- * FUTURO: Reemplazable 1:1 con Hilt sin modificar ningún ViewModel ni Screen.
+ * carritoViewModel es singleton (val, no fun) porque debe
+ * persistir el estado del carrito entre CombosScreen y CarritoScreen.
  */
 object AppContainer {
 
@@ -27,19 +33,32 @@ object AppContainer {
         sessionManager = SessionManager(context.applicationContext)
     }
 
-    // ── Repositorios (lazy: se crean al primer uso) ────────────────
+    // ── Repositorios (lazy) ──────────────────────────────────────
     private val authRepository by lazy {
         AuthRepositoryImpl(AuthApiService(), sessionManager)
     }
-
     private val restauranteRepository by lazy {
         RestauranteRepositoryImpl(RestauranteApiService(), sessionManager)
     }
+    private val comboRepository by lazy {
+        ComboRepositoryImpl(ComboApiService(), sessionManager)
+    }
+    private val pedidoRepository by lazy {
+        PedidoRepositoryImpl(PedidoApiService(), sessionManager)
+    }
 
-    // ── Factories de ViewModel ─────────────────────────────────────
-    // Factory (no singleton) porque cada ViewModel tiene su propio ciclo
-    fun authViewModel()        = AuthViewModel(authRepository)
-    fun restauranteViewModel() = RestauranteViewModel(restauranteRepository)
+    // ── ViewModels factories (nueva instancia cada vez) ──────────
+    fun authViewModel()            = AuthViewModel(authRepository)
+    fun restauranteViewModel()     = RestauranteViewModel(restauranteRepository)
+    fun comboViewModel()           = ComboViewModel(comboRepository)
+    fun pedidosRepartidorViewModel() = PedidosRepartidorViewModel(pedidoRepository)
 
-    fun getSessionManager()    = sessionManager
+    // ── CarritoViewModel SINGLETON ───────────────────────────────
+    // Singleton porque CarritoScreen y CombosScreen comparten
+    // el mismo estado del carrito durante la misma sesión.
+    val carritoViewModel: CarritoViewModel by lazy {
+        CarritoViewModel(pedidoRepository)
+    }
+
+    fun getSessionManager() = sessionManager
 }

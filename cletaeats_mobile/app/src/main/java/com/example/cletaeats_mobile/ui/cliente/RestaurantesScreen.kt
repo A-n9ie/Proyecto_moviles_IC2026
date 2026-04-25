@@ -28,9 +28,10 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RestaurantesScreen(
-    viewModel: RestauranteViewModel,
-    onLogout:  () -> Unit
-) {
+    viewModel:          RestauranteViewModel,
+    onRestauranteClick: (Int) -> Unit,
+    onLogout:           () -> Unit
+){
     val uiState  by viewModel.uiState.collectAsState()
     val session  = AppContainer.getSessionManager()
     val authVM   = remember { AppContainer.authViewModel() }
@@ -136,7 +137,10 @@ fun RestaurantesScreen(
                             }
 
                             items(uiState.restaurantes) { restaurante ->
-                                RestauranteCard(restaurante = restaurante)
+                                RestauranteCard(
+                                    restaurante  = restaurante,
+                                    onClickCard  = { onRestauranteClick(restaurante.id) }
+                                )
                             }
                         }
                     }
@@ -148,11 +152,11 @@ fun RestaurantesScreen(
 
 // ── Card individual de restaurante ────────────────────────────────
 @Composable
-private fun RestauranteCard(restaurante: Restaurante) {
+private fun RestauranteCard(restaurante: Restaurante,  onClickCard:  () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* TODO: navegar a combos del restaurante */ },
+            .clickable { onClickCard() },
         shape  = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = CletaGrisMedio),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -225,7 +229,7 @@ private fun RestauranteCard(restaurante: Restaurante) {
 
             // ── Botón de acción (ImageButton con ícono) ───────────
             IconButton(
-                onClick = { /* TODO: ir a combos */ },
+                onClick = onClickCard,
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .background(CletaNaranja)
@@ -321,7 +325,7 @@ private fun tipoComidaIcono(tipo: String): androidx.compose.ui.graphics.vector.I
     return when (tipo.lowercase()) {
         "rápida", "rapida" -> Icons.Default.Fastfood
         "china"            -> Icons.Default.RiceBowl
-        "saludable"        -> Icons.Outlined.Spa
+        "saludable"        -> Icons.Default.FitnessCenter
         "italiana"         -> Icons.Default.LocalPizza
         "mexicana"         -> Icons.Default.TakeoutDining
         "mariscos"         -> Icons.Default.SetMeal

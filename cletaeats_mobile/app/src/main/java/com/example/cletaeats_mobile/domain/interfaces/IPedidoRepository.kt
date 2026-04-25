@@ -1,0 +1,19 @@
+package com.example.cletaeats_mobile.domain.interfaces
+
+import com.example.cletaeats_mobile.domain.Result
+import com.example.cletaeats_mobile.domain.model.FacturaData
+import com.example.cletaeats_mobile.domain.model.ItemCarrito
+import com.example.cletaeats_mobile.domain.model.Pedido
+
+interface IPedidoRepository {
+    suspend fun crearPedido(
+        restauranteId: Int,
+        items:         List<ItemCarrito>,
+        distanciaKm:   Double
+    ): Result<FacturaData>
+
+    suspend fun obtenerPedidosCliente(): Result<List<Pedido>>
+    suspend fun obtenerPedidosRepartidor(): Result<List<Pedido>>
+    suspend fun marcarEntregado(pedidoId: Int): Result<Unit>
+    suspend fun obtenerFactura(pedidoId: Int): Result<FacturaData>
+}
