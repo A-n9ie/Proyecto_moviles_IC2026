@@ -167,6 +167,7 @@ def seed():
         "INSERT INTO USUARIO (EMAIL, PASSWORD_HASH, ROL) VALUES (?,?,?)",
         ("repartidor@test.com", hash_password("123456"), "REPARTIDOR")
     )
+    
     u_id = cursor.lastrowid
     conn.execute(
         """INSERT INTO REPARTIDOR (USUARIO_ID, CEDULA, NOMBRE, CORREO, DIRECCION, TELEFONO, TARJETA)
@@ -175,12 +176,18 @@ def seed():
          "Heredia, La Aurora", "88882222", "4000222233334444")
     )
 
+    # Admin para el panel web
+    cursor = conn.execute(
+        "INSERT INTO USUARIO (EMAIL, PASSWORD_HASH, ROL) VALUES (?, ?, ?)",
+        ("admin@cletaeats.com", hash_password("admin123"), "ADMIN")
+    )
+
     conn.commit()
     conn.close()
     print("✅ BD inicializada con 7 restaurantes, 63 combos y 2 usuarios de prueba.")
     print("   CLIENTE:     cliente@test.com    / 123456")
     print("   REPARTIDOR:  repartidor@test.com / 123456")
-
+    print("   ADMIN:  admin@cletaeats.com / admin123")
 
 if __name__ == "__main__":
     seed()

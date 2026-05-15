@@ -38,7 +38,7 @@ data class FacturaResponse(
     @SerializedName("costo_transporte")   val costoTransporte: Double,
     val iva: Double,
     val total: Double,
-    @SerializedName("fecha_creacion")     val fechaCreacion: String
+    @SerializedName("fecha_creacion")     val fechaCreacion: String?
 )
 
 data class PedidoListResponse(
@@ -50,7 +50,7 @@ data class PedidoListResponse(
     @SerializedName("cliente_nombre")     val clienteNombre: String = "",
     @SerializedName("distancia_km")       val distanciaKm: Double,
     @SerializedName("fecha_creacion")     val fechaCreacion: String,
-    @SerializedName("fecha_entrega")      val fechaEntrega: String = "",
+    @SerializedName("fecha_entrega")      val fechaEntrega: String? = null,
     @SerializedName("items_count")        val itemsCount: Int
 )
 

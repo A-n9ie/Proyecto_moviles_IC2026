@@ -179,7 +179,7 @@ private fun RestauranteCard(restaurante: Restaurante,  onClickCard:  () -> Unit)
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.Restaurant,
+                    imageVector        = tipoComidaIcono(restaurante.tipoComida),
                     contentDescription = restaurante.tipoComida,
                     tint               = CletaNaranja,
                     modifier           = Modifier.size(36.dp)

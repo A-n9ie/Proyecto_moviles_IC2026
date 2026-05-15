@@ -59,6 +59,43 @@ class RepartidorRepository(IRepartidorRepository):
         finally:
             conn.close()
 
+    def actualizar_estado(self, id_repartidor: int, estado: int) -> bool:
+        conn = get_connection()
+        try:
+            cursor = conn.execute(
+                "UPDATE REPARTIDOR SET ESTADO = ? WHERE ID = ?",
+                (estado, id_repartidor)
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+        finally:
+            conn.close()
+
+    def listar_todos(self) -> list:
+        conn = get_connection()
+        try:
+            rows = conn.execute("SELECT * FROM REPARTIDOR ORDER BY ID").fetchall()
+            return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
+    def actualizar_campos(self, id_rep: int, data: dict) -> bool:
+        campos = []
+        vals   = []
+        for k, col in [("nombre","NOMBRE"),("estado","ESTADO"),("amonestaciones","AMONESTACIONES")]:
+            if k in data:
+                campos.append(f"{col} = ?")
+                vals.append(data[k])
+        if not campos: return False
+        vals.append(id_rep)
+        conn = get_connection()
+        try:
+            cur = conn.execute(f"UPDATE REPARTIDOR SET {', '.join(campos)} WHERE ID = ?", vals)
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
     @staticmethod
     def _fila_a_repartidor(row) -> Repartidor:
         return Repartidor(
@@ -76,15 +113,3 @@ class RepartidorRepository(IRepartidorRepository):
             costo_km_feriado=row["COSTO_KM_FERIADO"],
             amonestaciones=row["AMONESTACIONES"]
         )
-    
-    def actualizar_estado(self, id_repartidor: int, estado: int) -> bool:
-        conn = get_connection()
-        try:
-            cursor = conn.execute(
-                "UPDATE REPARTIDOR SET ESTADO = ? WHERE ID = ?",
-                (estado, id_repartidor)
-            )
-            conn.commit()
-            return cursor.rowcount > 0
-        finally:
-            conn.close()

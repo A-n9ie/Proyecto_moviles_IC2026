@@ -3,6 +3,17 @@ from core.use_cases.auth_use_cases import AuthUseCases
 from services.session_service import SessionService
 from interface.controllers._base_response import send_json, get_token
 
+ROLES_POR_PLATAFORMA = {
+    "WEB": {
+        "ADMIN",
+        "EMPLEADO"
+    },
+
+    "MOBILE": {
+        "CLIENTE",
+        "REPARTIDOR"
+    }
+}
 
 class AuthController:
     """Traduce HTTP ↔ AuthUseCases. Sin lógica de negocio."""
@@ -21,10 +32,20 @@ class AuthController:
             send_json(handler, 401, {"error": error})
             return
 
+        platform = body.get("platform", "MOBILE")
+
+        roles_permitidos = ROLES_POR_PLATAFORMA.get(
+            platform,
+            set()
+        )
+        
         # Verificar que el rol es permitido en el móvil
-        if datos["rol"] not in ("CLIENTE", "REPARTIDOR"):
+        if datos["rol"] not in roles_permitidos:
             send_json(handler, 403, {
-                "error": "Este rol solo puede acceder desde la aplicación web"
+                "error": (
+                    f"El rol {datos['rol']} "
+                    f"no puede acceder desde {platform}"
+                )
             })
             return
 

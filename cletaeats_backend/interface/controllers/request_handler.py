@@ -61,6 +61,22 @@ class RequestHandler(BaseHTTPRequestHandler):
         if m:
             self.pedido_controller.handle_factura(self, int(m.group(1)))
             return
+        
+        # ── Admin GET ────────────────────────────────────────────────────
+        if path == "/admin/clientes":
+            self.admin_controller.handle_listar_clientes(self); return
+        
+        if path == "/admin/repartidores":
+            self.admin_controller.handle_listar_repartidores(self); return
+        
+        if path == "/admin/restaurantes":
+            self.admin_controller.handle_listar_restaurantes(self); return
+        
+        if path == "/admin/combos":
+            self.admin_controller.handle_listar_combos(self); return
+        
+        if path == "/admin/pedidos":
+            self.admin_controller.handle_listar_pedidos(self); return
 
         send_json(self, 404, {"error": f"Ruta GET '{path}' no existe"})
 
@@ -75,6 +91,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             "/auth/registro/repartidor": lambda: self.auth_controller.handle_registro_repartidor(self, body),
             "/auth/logout":              lambda: self.auth_controller.handle_logout(self),
             "/pedidos":                  lambda: self.pedido_controller.handle_crear(self, body),
+            "/admin/restaurantes":       lambda: self.admin_controller.handle_crear_restaurante(self, body),
+            "/admin/combos":             lambda: self.admin_controller.handle_crear_combo(self, body),
         }
 
         if path in rutas:
@@ -92,6 +110,21 @@ class RequestHandler(BaseHTTPRequestHandler):
         if m:
             self.pedido_controller.handle_entregar(self, int(m.group(1)))
             return
+        
+        m = re.match(r"^/admin/repartidores/(\d+)$", path)
+        if m:
+            body = self._leer_body()
+            self.admin_controller.handle_actualizar_repartidor(self, int(m.group(1)), body); return
+
+        m = re.match(r"^/admin/restaurantes/(\d+)$", path)
+        if m:
+            body = self._leer_body()
+            self.admin_controller.handle_actualizar_restaurante(self, int(m.group(1)), body); return
+
+        m = re.match(r"^/admin/combos/(\d+)$", path)
+        if m:
+            body = self._leer_body()
+            self.admin_controller.handle_actualizar_combo(self, int(m.group(1)), body); return
 
         send_json(self, 404, {"error": f"Ruta PUT '{path}' no existe"})
 

@@ -208,6 +208,24 @@ class PedidoRepository(IPedidoRepository):
         finally:
             conn.close()
 
+    def listar_todos(self) -> list:
+        conn = get_connection()
+        try:
+            rows = conn.execute("""
+                SELECT P.ID, P.ESTADO, P.DISTANCIA_KM, P.FECHA_CREACION,
+                    C.NOMBRE AS CLIENTE_NOMBRE,
+                    R.NOMBRE AS RESTAURANTE_NOMBRE,
+                    R.TIPO_COMIDA,
+                    (SELECT COUNT(*) FROM DETALLE_PEDIDO DP WHERE DP.PEDIDO_ID = P.ID) AS ITEMS_COUNT
+                FROM PEDIDO P
+                JOIN CLIENTE C ON P.CLIENTE_ID = C.ID
+                JOIN RESTAURANTE R ON P.RESTAURANTE_ID = R.ID
+                ORDER BY P.FECHA_CREACION DESC
+            """).fetchall()
+            return [self._pedido_row_a_dict(r) for r in rows]
+        finally:
+            conn.close()
+
     # ─── Helpers ──────────────────────────────────────────────────
     @staticmethod
     def _fila_a_pedido(row) -> Pedido:
@@ -236,3 +254,4 @@ class PedidoRepository(IPedidoRepository):
             "fecha_entrega":      row["FECHA_ENTREGA"] if "FECHA_ENTREGA" in row.keys() else None,
             "items_count":        row["ITEMS_COUNT"]
         }
+    

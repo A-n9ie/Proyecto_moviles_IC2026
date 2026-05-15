@@ -20,6 +20,7 @@ from interface.controllers.restaurante_controller import RestauranteController
 from interface.controllers.combo_controller       import ComboController
 from interface.controllers.pedido_controller      import PedidoController
 from interface.controllers.request_handler        import RequestHandler
+from interface.controllers.admin_controller       import AdminController
 
 # ================================================================
 # EMULADOR (activo):  HOST = "localhost"
@@ -56,12 +57,20 @@ def crear_app() -> type:
     restaurante_ctrl = RestauranteController(restaurante_uc, session_svc)
     combo_ctrl       = ComboController(combo_uc, session_svc)
     pedido_ctrl      = PedidoController(pedido_uc, session_svc)
+    admin_ctrl = AdminController({
+        "cliente":     cliente_repo,
+        "repartidor":  repartidor_repo,
+        "restaurante": restaurante_repo,
+        "combo":       combo_repo,
+        "pedido":      pedido_repo
+    }, session_svc)
 
     # ── Inyección en el handler ───────────────────────────────────
     RequestHandler.auth_controller        = auth_ctrl
     RequestHandler.restaurante_controller = restaurante_ctrl
     RequestHandler.combo_controller       = combo_ctrl
     RequestHandler.pedido_controller      = pedido_ctrl
+    RequestHandler.admin_controller       = admin_ctrl
 
     return RequestHandler
 

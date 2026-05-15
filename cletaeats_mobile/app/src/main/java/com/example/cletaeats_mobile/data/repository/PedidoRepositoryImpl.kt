@@ -32,7 +32,15 @@ class PedidoRepositoryImpl(
             val resp = api.crearPedido(token, body)
             when (resp.code()) {
                 201 -> Result.Success(resp.body()!!.toFacturaData())
-                400 -> Result.Error("Error en el pedido. Revisá los datos.")
+                400 -> {
+                    val errorBody = resp.errorBody()?.string()
+                    val msg = try {
+                        org.json.JSONObject(errorBody ?: "").getString("error")
+                    } catch (_: Exception) {
+                        "Error en el pedido. Revisá los datos."
+                    }
+                    Result.Error(msg)
+                }
                 401 -> Result.Error("Sesión expirada.")
                 else -> Result.Error("Error al crear el pedido (${resp.code()})")
             }
@@ -112,6 +120,6 @@ private fun com.example.cletaeats_mobile.data.remote.PedidoListResponse.toPedido
         clienteNombre     = clienteNombre,
         distanciaKm       = distanciaKm,
         fechaCreacion     = fechaCreacion,
-        fechaEntrega      = fechaEntrega,
+        fechaEntrega      = fechaEntrega ?: "",
         itemsCount        = itemsCount
     )
