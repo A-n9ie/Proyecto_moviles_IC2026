@@ -22,7 +22,7 @@ import com.example.cletaeats_mobile.ui.components.ErrorBanner
 import com.example.cletaeats.ui.theme.*
 import com.example.cletaeats_mobile.ui.utils.toCRC
 import com.example.cletaeats_mobile.viewmodel.CarritoViewModel
-
+import androidx.compose.material3.HorizontalDivider
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CarritoScreen(
@@ -266,7 +266,7 @@ private fun ResumenCostos(subtotal: Double, distanciaKm: Double) {
             FilaCosto("Subtotal combos", subtotal)
             FilaCosto("Transporte (${String.format("%.1f", distanciaKm)} km × ₡1.000)", costoTransporte)
             FilaCosto("IVA (13%)", iva)
-            Divider(modifier = Modifier.padding(vertical = 8.dp), color = CletaGrisClaro)
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = CletaGrisClaro)
             Row(
                 modifier              = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween

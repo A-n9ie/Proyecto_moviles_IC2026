@@ -11,7 +11,7 @@ import kotlinx.parcelize.Parcelize
 data class Restaurante(
     val id:          Int    = 0,
     val nombre:      String = "",
-    val tipComida:   String = "",
+    val tipoComida:   String = "",
     val direccion:   String = "",
     val imagenUrl:   String = "",
     val estado:      Int    = 1

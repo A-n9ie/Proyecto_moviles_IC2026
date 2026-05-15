@@ -7,14 +7,17 @@ espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.13.0"
 kotlin = "2.3.21"
-composeBom = "2024.09.00"
+composeBom = "2026.05.00"
 
-navigationCompose = "2.8.0"
+navigationCompose = "2.9.8"
 lifecycleViewmodelCompose = "2.8.4"
 coroutinesAndroid = "1.8.1"
 
 material = "1.13.0"
 
+retrofit = "2.11.0"
+okhttp   = "4.12.0"
+gson     = "2.10.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -38,6 +41,11 @@ kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+
+retrofit-core      = { group = "com.squareup.retrofit2", name = "retrofit",           version.ref = "retrofit" }
+retrofit-gson      = { group = "com.squareup.retrofit2", name = "converter-gson",      version.ref = "retrofit" }
+okhttp-logging     = { group = "com.squareup.okhttp3",   name = "logging-interceptor", version.ref = "okhttp"   }
+gson               = { group = "com.google.code.gson",   name = "gson",               version.ref = "gson"      }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

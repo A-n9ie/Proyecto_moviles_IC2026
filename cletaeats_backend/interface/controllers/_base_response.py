@@ -8,6 +8,7 @@ def send_json(handler, status: int, data) -> None:
     handler.send_response(status)
     handler.send_header("Content-Type", "application/json; charset=utf-8")
     handler.send_header("Content-Length", str(len(body)))
+    # ── CORS (necesario para el frontend web) ──
     handler.send_header("Access-Control-Allow-Origin",  "*")
     handler.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
     handler.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")

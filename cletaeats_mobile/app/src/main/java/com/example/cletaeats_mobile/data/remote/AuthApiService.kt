@@ -1,71 +1,60 @@
 package com.example.cletaeats_mobile.data.remote
 
-import org.json.JSONObject
+import com.google.gson.annotations.SerializedName
+import retrofit2.Response
+import retrofit2.http.Body
+import retrofit2.http.POST
+import retrofit2.http.Header
 
-class AuthApiService {
+// ── Modelos de request/response ──────────────────────────────────
+data class LoginRequest(
+    val email: String,
+    val password: String
+)
 
-    data class AuthResponse(
-        val token:     String,
-        val idUsuario: Int,
-        val email:     String,
-        val rol:       String,
-        val nombre:    String,
-        val idPerfil:  Int
-    )
+data class RegistroClienteRequest(
+    val email: String,
+    val password: String,
+    @SerializedName("confirmar_password") val confirmarPassword: String,
+    val cedula: String,
+    val nombre: String,
+    val direccion: String,
+    val telefono: String,
+    val tarjeta: String
+)
 
-    suspend fun login(email: String, password: String): Pair<Int, AuthResponse?> {
-        val body = JSONObject().put("email", email).put("password", password).toString()
-        val (status, json) = ApiClient.request("POST", "/auth/login", body)
-        return Pair(status, if (status == 200) parseAuth(json) else null)
-    }
+data class RegistroRepartidorRequest(
+    val email: String,
+    val password: String,
+    @SerializedName("confirmar_password") val confirmarPassword: String,
+    val cedula: String,
+    val nombre: String,
+    @SerializedName("correo_contacto") val correoContacto: String,
+    val direccion: String,
+    val telefono: String,
+    val tarjeta: String
+)
 
-    suspend fun registroCliente(
-        email: String, password: String, confirmarPassword: String,
-        cedula: String, nombre: String, direccion: String,
-        telefono: String, tarjeta: String
-    ): Pair<Int, AuthResponse?> {
-        val body = JSONObject()
-            .put("email", email).put("password", password)
-            .put("confirmar_password", confirmarPassword)
-            .put("cedula", cedula).put("nombre", nombre)
-            .put("direccion", direccion).put("telefono", telefono)
-            .put("tarjeta", tarjeta).toString()
-        val (status, json) = ApiClient.request("POST", "/auth/registro/cliente", body)
-        return Pair(status, if (status == 201) parseAuth(json) else null)
-    }
+data class AuthResponse(
+    val token: String,
+    @SerializedName("id_usuario") val idUsuario: Int,
+    val email: String,
+    val rol: String,
+    val nombre: String,
+    @SerializedName("id_perfil") val idPerfil: Int
+)
 
-    suspend fun registroRepartidor(
-        email: String, password: String, confirmarPassword: String,
-        cedula: String, nombre: String, correoContacto: String,
-        direccion: String, telefono: String, tarjeta: String
-    ): Pair<Int, AuthResponse?> {
-        val body = JSONObject()
-            .put("email", email).put("password", password)
-            .put("confirmar_password", confirmarPassword)
-            .put("cedula", cedula).put("nombre", nombre)
-            .put("correo_contacto", correoContacto)
-            .put("direccion", direccion).put("telefono", telefono)
-            .put("tarjeta", tarjeta).toString()
-        val (status, json) = ApiClient.request("POST", "/auth/registro/repartidor", body)
-        return Pair(status, if (status == 201) parseAuth(json) else null)
-    }
+// ── Interface Retrofit ────────────────────────────────────────────
+interface IAuthApi {
+    @POST("auth/login")
+    suspend fun login(@Body body: LoginRequest): Response<AuthResponse>
 
-    suspend fun logout(token: String): Int =
-        ApiClient.request("POST", "/auth/logout", token = token).first
+    @POST("auth/registro/cliente")
+    suspend fun registroCliente(@Body body: RegistroClienteRequest): Response<AuthResponse>
 
-    fun parseError(json: String): String = try {
-        JSONObject(json).getString("error")
-    } catch (_: Exception) { "Error desconocido" }
+    @POST("auth/registro/repartidor")
+    suspend fun registroRepartidor(@Body body: RegistroRepartidorRequest): Response<AuthResponse>
 
-    private fun parseAuth(json: String): AuthResponse? = try {
-        val o = JSONObject(json)
-        AuthResponse(
-            token     = o.getString("token"),
-            idUsuario = o.getInt("id_usuario"),
-            email     = o.getString("email"),
-            rol       = o.getString("rol"),
-            nombre    = o.getString("nombre"),
-            idPerfil  = o.getInt("id_perfil")
-        )
-    } catch (_: Exception) { null }
+    @POST("auth/logout")
+    suspend fun logout(@Header("Authorization") token: String): Response<Unit>
 }

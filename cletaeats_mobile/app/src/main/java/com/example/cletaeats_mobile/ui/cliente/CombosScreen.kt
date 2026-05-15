@@ -105,7 +105,7 @@ fun CombosScreen(
                         item {
                             comboState.restaurante?.let { r ->
                                 Text(
-                                    text     = "${r.tipComida.replaceFirstChar { it.uppercase() }} · ${r.direccion}",
+                                    text     = "${r.tipoComida.replaceFirstChar { it.uppercase() }} · ${r.direccion}",
                                     color    = CletaTextoSecundario,
                                     fontSize = 13.sp
                                 )

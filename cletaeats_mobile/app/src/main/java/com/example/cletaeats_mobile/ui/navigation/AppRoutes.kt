@@ -7,6 +7,8 @@ object AppRoutes {
     const val COMBOS             = "combos/{restauranteId}"     // GET /combos?restaurante=ID
     const val CARRITO            = "carrito"
     const val FACTURA            = "factura"
+
+    const val MIS_PEDIDOS        = "mis_pedidos"
     const val PEDIDOS_REPARTIDOR = "pedidos_repartidor"
 
     // Helper para construir la ruta con el ID

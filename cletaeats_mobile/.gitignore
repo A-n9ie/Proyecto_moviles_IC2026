@@ -1,15 +1,49 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Archivos de Gradle
+.gradle/
+build/
+**/build/
+
+# Configuración local del desarrollador (NO subir)
 local.properties
+
+# IntelliJ / Android Studio
+*.iml
+.idea/
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/assetWizardSettings.xml
+.idea/dictionaries
+.idea/libraries
+.idea/caches
+.idea/modules.xml
+
+# Módulos de Android
+**/captures/
+**/out/
+**/intermediates/
+**/logs/
+**/tmp/
+
+# Keystore de firmas (NO subir claves privadas)
+*.jks
+*.keystore
+!debug.keystore
+
+# Archivos de caché de Kotlin
+*.kotlin_module
+
+# Sistema operativo
+.DS_Store
+*.DS_Store
+Thumbs.db
+
+# APKs y AABs generados (opcionales, pueden ser grandes)
+*.apk
+*.aab
+
+# ProGuard (si no lo usás activamente)
+proguard-rules.pro
+
+# Archivos de tests generados
+**/test-results/

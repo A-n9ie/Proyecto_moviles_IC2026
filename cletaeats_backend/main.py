@@ -29,7 +29,7 @@ from interface.controllers.request_handler        import RequestHandler
 #   1. Cambiar HOST = "0.0.0.0"
 #   2. Android usa: http://<IP_LOCAL_PC>:8000
 # ================================================================
-HOST = "localhost"
+HOST = "0.0.0.0"
 PORT = 8000
 
 

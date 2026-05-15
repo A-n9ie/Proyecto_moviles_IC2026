@@ -21,6 +21,9 @@ import androidx.compose.ui.text.input.VisualTransformation
 import com.example.cletaeats.ui.theme.CletaNaranja
 import com.example.cletaeats.ui.theme.CletaTextoSecundario
 import com.example.cletaeats.ui.theme.CletaBlanco
+import androidx.compose.ui.graphics.Color
+import com.example.cletaeats.ui.theme.CletaError
+import com.example.cletaeats.ui.theme.CletaGrisClaro
 
 /**
  * Campo de texto estándar de CletaEats.
@@ -78,14 +81,26 @@ fun CletaTextField(
                 }
             }
         } else null,
-        singleLine = !isPassword,
-        colors     = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor   = CletaNaranja,
-            focusedLabelColor    = CletaNaranja,
-            unfocusedLabelColor  = CletaTextoSecundario,
-            cursorColor          = CletaNaranja,
-            focusedTextColor     = CletaBlanco,
-            unfocusedTextColor   = CletaBlanco
+        singleLine = true,
+        colors = OutlinedTextFieldDefaults.colors(
+            // ── Estado normal ─────────────────────────────────────────
+            focusedTextColor         = CletaBlanco,
+            unfocusedTextColor       = CletaBlanco,
+            focusedBorderColor       = CletaNaranja,
+            unfocusedBorderColor     = CletaGrisClaro,
+            focusedLabelColor        = CletaNaranja,
+            unfocusedLabelColor      = CletaTextoSecundario,
+            cursorColor              = CletaNaranja,
+            focusedContainerColor    = Color.Transparent,
+            unfocusedContainerColor  = Color.Transparent,
+
+            // ── Estado de error (el texto sigue blanco, el borde/label se vuelven rojos) ──
+            errorTextColor           = CletaBlanco,       // texto que escribe el usuario
+            errorBorderColor         = CletaError,        // borde del campo
+            errorLabelColor          = CletaError,        // la etiqueta "Contraseña"
+            errorCursorColor         = CletaError,        // cursor de escritura
+            errorContainerColor      = Color.Transparent, // fondo del campo (sin cambio)
+            errorSupportingTextColor = CletaError         // mensaje de error debajo
         )
     )
 }

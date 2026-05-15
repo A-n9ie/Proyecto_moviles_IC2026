@@ -1,6 +1,7 @@
 package com.example.cletaeats_mobile.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -12,6 +13,7 @@ import com.example.cletaeats_mobile.ui.auth.RegisterScreen
 import com.example.cletaeats_mobile.ui.cliente.CarritoScreen
 import com.example.cletaeats_mobile.ui.cliente.CombosScreen
 import com.example.cletaeats_mobile.ui.cliente.FacturaScreen
+import com.example.cletaeats_mobile.ui.cliente.MisPedidosScreen
 import com.example.cletaeats_mobile.ui.cliente.RestaurantesScreen
 import com.example.cletaeats_mobile.ui.repartidor.PedidosRepartidorScreen
 
@@ -24,8 +26,10 @@ fun AppNavigation(
 
         // ── Auth ─────────────────────────────────────────────────
         composable(AppRoutes.LOGIN) {
+            backStackEntry ->
+            val viewModel = remember(backStackEntry) { AppContainer.authViewModel() }
             LoginScreen(
-                viewModel  = AppContainer.authViewModel(),
+                viewModel = viewModel,
                 onLoginOk  = { rol ->
                     navController.navigate(
                         if (rol == "CLIENTE") AppRoutes.RESTAURANTES else AppRoutes.PEDIDOS_REPARTIDOR
@@ -36,8 +40,10 @@ fun AppNavigation(
         }
 
         composable(AppRoutes.REGISTER) {
+            backStackEntry ->
+            val viewModel = remember(backStackEntry) { AppContainer.authViewModel() }
             RegisterScreen(
-                viewModel    = AppContainer.authViewModel(),
+                viewModel = viewModel,
                 onRegistroOk = { rol ->
                     navController.navigate(
                         if (rol == "CLIENTE") AppRoutes.RESTAURANTES else AppRoutes.PEDIDOS_REPARTIDOR
@@ -48,13 +54,16 @@ fun AppNavigation(
         }
 
         // ── Cliente ──────────────────────────────────────────────
-        composable(AppRoutes.RESTAURANTES) {
+        composable(AppRoutes.RESTAURANTES) { backStackEntry ->
+            val viewModel = remember(backStackEntry) { AppContainer.restauranteViewModel() }
             RestaurantesScreen(
-                viewModel          = AppContainer.restauranteViewModel(),
+                viewModel = viewModel,
                 onRestauranteClick = { restauranteId ->
                     navController.navigate(AppRoutes.combosRuta(restauranteId))
                 },
+                onMisPedidos       = { navController.navigate(AppRoutes.MIS_PEDIDOS) },
                 onLogout = {
+                    AppContainer.logout()
                     navController.navigate(AppRoutes.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
@@ -67,9 +76,10 @@ fun AppNavigation(
             arguments = listOf(navArgument("restauranteId") { type = NavType.IntType })
         ) { backStackEntry ->
             val restauranteId = backStackEntry.arguments?.getInt("restauranteId") ?: return@composable
+            val comboViewModel = remember(backStackEntry) { AppContainer.comboViewModel() }
             CombosScreen(
                 restauranteId    = restauranteId,
-                comboViewModel   = AppContainer.comboViewModel(),
+                comboViewModel   = comboViewModel,
                 carritoViewModel = AppContainer.carritoViewModel,
                 onVerCarrito     = { navController.navigate(AppRoutes.CARRITO) },
                 onVolver         = { navController.popBackStack() }
@@ -100,10 +110,21 @@ fun AppNavigation(
             )
         }
 
+        composable(AppRoutes.MIS_PEDIDOS) {
+            backStackEntry ->
+            val viewModel = remember(backStackEntry) { AppContainer.pedidosClienteViewModel() }
+            MisPedidosScreen(
+                viewModel = viewModel,
+                onVolver  = { navController.popBackStack() }
+            )
+        }
+
         // ── Repartidor ───────────────────────────────────────────
         composable(AppRoutes.PEDIDOS_REPARTIDOR) {
+            backStackEntry ->
+            val viewModel = remember(backStackEntry) { AppContainer.pedidosRepartidorViewModel() }
             PedidosRepartidorScreen(
-                viewModel = AppContainer.pedidosRepartidorViewModel(),
+                viewModel = viewModel,
                 onLogout  = {
                     navController.navigate(AppRoutes.LOGIN) {
                         popUpTo(0) { inclusive = true }

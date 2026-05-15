@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -20,8 +21,6 @@ import com.example.cletaeats_mobile.AppContainer
 import com.example.cletaeats_mobile.domain.model.Restaurante
 import com.example.cletaeats_mobile.ui.components.CletaTopBar
 import com.example.cletaeats.ui.theme.*
-import androidx.compose.material.icons.outlined.Spa
-import com.example.cletaeats_mobile.viewmodel.AuthViewModel
 import com.example.cletaeats_mobile.viewmodel.RestauranteViewModel
 import kotlinx.coroutines.launch
 
@@ -30,7 +29,8 @@ import kotlinx.coroutines.launch
 fun RestaurantesScreen(
     viewModel:          RestauranteViewModel,
     onRestauranteClick: (Int) -> Unit,
-    onLogout:           () -> Unit
+    onLogout:           () -> Unit,
+    onMisPedidos:       () -> Unit = {}
 ){
     val uiState  by viewModel.uiState.collectAsState()
     val session  = AppContainer.getSessionManager()
@@ -47,8 +47,9 @@ fun RestaurantesScreen(
         drawerState   = drawerState,
         drawerContent = {
             DrawerContent(
-                nombre    = session.getNombre(),
-                email     = session.getEmail(),
+                nombre          = session.getNombre(),
+                email           = session.getEmail(),
+                onMisPedidos    = { scope.launch { drawerState.close(); onMisPedidos() } },
                 onCerrarSesion = {
                     scope.launch {
                         drawerState.close()
@@ -178,8 +179,8 @@ private fun RestauranteCard(restaurante: Restaurante,  onClickCard:  () -> Unit)
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector        = tipoComidaIcono(restaurante.tipComida),
-                    contentDescription = restaurante.tipComida,
+                    imageVector = Icons.Default.Restaurant,
+                    contentDescription = restaurante.tipoComida,
                     tint               = CletaNaranja,
                     modifier           = Modifier.size(36.dp)
                 )
@@ -205,7 +206,7 @@ private fun RestauranteCard(restaurante: Restaurante,  onClickCard:  () -> Unit)
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text     = restaurante.tipComida.replaceFirstChar { it.uppercase() },
+                        text     = restaurante.tipoComida.replaceFirstChar { it.uppercase() },
                         color    = CletaTextoSecundario,
                         fontSize = 13.sp
                     )
@@ -249,8 +250,9 @@ private fun RestauranteCard(restaurante: Restaurante,  onClickCard:  () -> Unit)
 // ── Contenido del NavDrawer ───────────────────────────────────────
 @Composable
 private fun DrawerContent(
-    nombre:        String,
-    email:         String,
+    nombre: String,
+    email: String,
+    onMisPedidos: () -> Unit,
     onCerrarSesion: () -> Unit
 ) {
     ModalDrawerSheet(
@@ -295,7 +297,7 @@ private fun DrawerContent(
             icon     = { Icon(Icons.Default.Receipt, contentDescription = null, tint = CletaNaranja) },
             label    = { Text("Mis pedidos", color = CletaBlanco) },
             selected = false,
-            onClick  = { /* TODO: navegación a historial de pedidos */ },
+            onClick = onMisPedidos,
             colors   = NavigationDrawerItemDefaults.colors(
                 unselectedContainerColor = CletaGrisMedio
             )
@@ -321,15 +323,15 @@ private fun DrawerContent(
 
 // ── Helper: ícono según tipo de comida ───────────────────────────
 @Composable
-private fun tipoComidaIcono(tipo: String): androidx.compose.ui.graphics.vector.ImageVector {
+private fun tipoComidaIcono(tipo: String): ImageVector {
     return when (tipo.lowercase()) {
         "rápida", "rapida" -> Icons.Default.Fastfood
-        "china"            -> Icons.Default.RiceBowl
-        "saludable"        -> Icons.Default.FitnessCenter
+        "china"            -> Icons.Default.Restaurant
+        "saludable"        -> Icons.Default.Eco
         "italiana"         -> Icons.Default.LocalPizza
-        "mexicana"         -> Icons.Default.TakeoutDining
-        "mariscos"         -> Icons.Default.SetMeal
-        "japonesa"         -> Icons.Default.RiceBowl
+        "mexicana"         -> Icons.Default.LunchDining
+        "mariscos"         -> Icons.Default.RestaurantMenu
+        "japonesa"         -> Icons.Default.RamenDining
         else               -> Icons.Default.Restaurant
     }
 }

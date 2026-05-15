@@ -1,0 +1,43 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+
+# Entorno virtual (si usás venv)
+.venv/
+venv/
+env/
+ENV/
+
+# Base de datos SQLite (NO subir la BD al repo)
+*.db
+*.sqlite
+*.sqlite3
+data/cletaeats.db
+
+# Variables de entorno y secretos
+.env
+.env.local
+.env.*.local
+secrets.py
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Distribución Python
+dist/
+build/
+*.egg-info/

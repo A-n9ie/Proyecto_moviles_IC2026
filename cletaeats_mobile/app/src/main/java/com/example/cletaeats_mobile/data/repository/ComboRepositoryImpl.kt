@@ -1,30 +1,42 @@
 package com.example.cletaeats_mobile.data.repository
 
 import com.example.cletaeats_mobile.data.local.SessionManager
-import com.example.cletaeats_mobile.data.remote.ComboApiService
+import com.example.cletaeats_mobile.data.remote.IComboApi
 import com.example.cletaeats_mobile.domain.Result
 import com.example.cletaeats_mobile.domain.interfaces.IComboRepository
+import com.example.cletaeats_mobile.domain.model.Combo
+import com.example.cletaeats_mobile.domain.model.Restaurante
 import com.example.cletaeats_mobile.domain.model.RestauranteConCombos
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class ComboRepositoryImpl(
-    private val api:     ComboApiService,
+    private val api:     IComboApi,
     private val session: SessionManager
 ) : IComboRepository {
 
-    override suspend fun obtenerCombosPorRestaurante(
-        restauranteId: Int
-    ): Result<RestauranteConCombos> {
-        return try {
-            val (status, data) = api.obtenerCombos(restauranteId, session.getToken())
-            when {
-                status == 200 && data != null -> Result.Success(data)
-                status == 401 -> Result.Error("Sesión expirada")
-                status == 404 -> Result.Error("Restaurante no disponible")
-                status == -1  -> Result.Error("Sin conexión al servidor")
-                else          -> Result.Error("Error al cargar el menú ($status)")
+    override suspend fun obtenerCombosPorRestaurante(restauranteId: Int): Result<RestauranteConCombos> =
+        withContext(Dispatchers.IO) {
+            try {
+                val resp = api.obtenerCombos("Bearer ${session.getToken()}", restauranteId)
+                when (resp.code()) {
+                    200 -> {
+                        val body = resp.body()!!
+                        val r    = body.restaurante
+                        val restaurante = Restaurante(r.id, r.nombre, r.tipoComida,
+                                                      r.direccion, r.imagenUrl)
+                        val combos = body.combos.map {
+                            Combo(it.id, restaurante.id, it.numeroCombo, it.nombre,
+                                  it.descripcion, it.precio, it.imagenUrl)
+                        }
+                        Result.Success(RestauranteConCombos(restaurante, combos))
+                    }
+                    401 -> Result.Error("Sesión expirada")
+                    404 -> Result.Error("Restaurante no disponible")
+                    else -> Result.Error("Error al cargar el menú (${resp.code()})")
+                }
+            } catch (e: Exception) {
+                Result.Error("Sin conexión al servidor")
             }
-        } catch (e: Exception) {
-            Result.Error("Error inesperado: ${e.message}")
         }
-    }
 }
