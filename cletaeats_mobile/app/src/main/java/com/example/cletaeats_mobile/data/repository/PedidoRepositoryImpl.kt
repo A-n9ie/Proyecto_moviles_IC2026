@@ -107,7 +107,7 @@ private fun com.example.cletaeats_mobile.data.remote.FacturaResponse.toFacturaDa
         costoTransporte = costoTransporte,
         iva             = iva,
         total           = total,
-        fechaCreacion   = fechaCreacion
+        fechaCreacion   = fechaCreacion ?: ""
     )
 
 private fun com.example.cletaeats_mobile.data.remote.PedidoListResponse.toPedido() =
