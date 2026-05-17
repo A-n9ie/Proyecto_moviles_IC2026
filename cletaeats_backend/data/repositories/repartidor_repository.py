@@ -74,7 +74,19 @@ class RepartidorRepository(IRepartidorRepository):
     def listar_todos(self) -> list:
         conn = get_connection()
         try:
-            rows = conn.execute("SELECT * FROM REPARTIDOR ORDER BY ID").fetchall()
+            rows = conn.execute("""
+                SELECT
+                    ID                          AS id,
+                    NOMBRE                     AS nombre,
+                    CORREO                     AS email,
+                    TELEFONO                   AS telefono,
+                    CEDULA                     AS cedula,
+                    ESTADO                     AS estado,
+                    KM_RECORRIDOS_DIARIOS      AS km_recorridos_diarios,
+                    AMONESTACIONES             AS amonestaciones
+                FROM REPARTIDOR
+                ORDER BY ID
+            """).fetchall()
             return [dict(r) for r in rows]
         finally:
             conn.close()

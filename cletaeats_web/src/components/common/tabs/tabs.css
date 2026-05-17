@@ -1,0 +1,29 @@
+.tabs-container {
+    display: flex;
+
+    gap: 10px;
+
+    margin-bottom: 20px;
+}
+
+.tab-item {
+    border: none;
+
+    background: var(--gris-medio);
+
+    color: var(--texto-sec);
+
+    padding: 10px 16px;
+
+    border-radius: 10px;
+
+    cursor: pointer;
+
+    transition: 0.15s;
+}
+
+.tab-item.active {
+    background: var(--naranja);
+
+    color: white;
+}

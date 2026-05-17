@@ -1,0 +1,41 @@
+.table-container {
+    width: 100%;
+
+    overflow-x: auto;
+
+    background: var(--gris-medio);
+
+    border: 1px solid var(--gris-borde);
+
+    border-radius: 18px;
+}
+
+.custom-table {
+    width: 100%;
+
+    border-collapse: collapse;
+}
+
+.custom-table th {
+    text-align: left;
+
+    padding: 18px;
+
+    color: var(--texto-sec);
+
+    font-size: 13px;
+
+    border-bottom: 1px solid
+    var(--gris-borde);
+}
+
+.custom-table td {
+    padding: 18px;
+
+    border-bottom: 1px solid
+    rgba(255, 255, 255, 0.05);
+}
+
+.custom-table tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}

@@ -1,0 +1,31 @@
+.pedidos-filters {
+    display: flex;
+
+    gap: 14px;
+
+    margin-bottom: 20px;
+}
+
+.pedidos-search {
+    flex: 1;
+}
+
+.pedidos-select {
+    padding: 10px 14px;
+
+    background: var(--gris-medio);
+
+    border: 1px solid var(--gris-borde);
+
+    border-radius: 8px;
+
+    color: var(--blanco);
+
+    outline: none;
+}
+
+.actions-container {
+    display: flex;
+
+    gap: 8px;
+}

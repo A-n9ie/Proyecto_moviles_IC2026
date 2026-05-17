@@ -9,7 +9,7 @@ class AdminController:
 
     def _validar_admin(self, handler) -> bool:
         token = get_token(handler)
-        sesion = self._session.obtener(token)
+        sesion = self._session.validar(token)
         if not sesion or sesion.get("rol") not in ("ADMIN", "ADMINISTRADOR"):
             send_json(handler, 403, {"error": "Acceso restringido a administradores"})
             return False

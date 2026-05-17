@@ -1,0 +1,42 @@
+.image-upload {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+.image-preview {
+    width: 100%;
+
+    max-width: 260px;
+
+    height: 180px;
+
+    object-fit: cover;
+
+    border-radius: 14px;
+
+    border: 1px solid
+    var(--gris-borde);
+}
+
+.image-placeholder {
+    width: 260px;
+
+    height: 180px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 14px;
+
+    background: var(--gris-medio);
+
+    border: 1px dashed
+    var(--gris-borde);
+
+    color: var(--texto-sec);
+}

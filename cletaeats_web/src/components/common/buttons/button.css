@@ -1,0 +1,48 @@
+.custom-button {
+    border: none;
+
+    border-radius: 8px;
+
+    padding: 10px 16px;
+
+    cursor: pointer;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    transition: 0.15s;
+}
+
+.custom-button.primary {
+    background: var(--naranja);
+
+    color: white;
+}
+
+.custom-button.primary:hover {
+    background: var(--naranja-light);
+}
+
+.custom-button.secondary {
+    background: transparent;
+
+    border: 1px solid var(--gris-borde);
+
+    color: var(--texto-sec);
+}
+
+.custom-button.secondary:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.custom-button.danger {
+    background: rgba(231, 76, 60, 0.15);
+
+    color: var(--error);
+}
+
+.custom-button:disabled {
+    opacity: 0.6;
+
+    cursor: not-allowed;
+}

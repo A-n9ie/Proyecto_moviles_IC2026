@@ -35,9 +35,22 @@ class ComboRepository(IComboRepository):
     def listar_todos(self) -> list:
         conn = get_connection()
         try:
-            rows = conn.execute(
-                "SELECT C.*, R.NOMBRE AS RESTAURANTE_NOMBRE FROM COMBO C JOIN RESTAURANTE R ON C.RESTAURANTE_ID = R.ID ORDER BY C.ID"
-            ).fetchall()
+            rows = conn.execute("""
+                SELECT
+                    C.ID                    AS id,
+                    C.RESTAURANTE_ID        AS restaurante_id,
+                    R.NOMBRE                AS restaurante_nombre,
+                    C.NUMERO_COMBO          AS numero_combo,
+                    C.NOMBRE                AS nombre,
+                    C.DESCRIPCION           AS descripcion,
+                    C.PRECIO                AS precio,
+                    C.IMAGEN_URL            AS imagen_url,
+                    C.ESTADO                AS estado
+                FROM COMBO C
+                JOIN RESTAURANTE R
+                    ON C.RESTAURANTE_ID = R.ID
+                ORDER BY C.ID
+            """).fetchall()
             return [dict(r) for r in rows]
         finally:
             conn.close()

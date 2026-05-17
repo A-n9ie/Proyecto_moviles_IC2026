@@ -1,0 +1,17 @@
+:root {
+    --naranja: #E85D04;
+    --naranja-light: #FF8C42;
+    --naranja-bg: #FFF3EC;
+
+    --gris-oscuro: #1A1A1A;
+    --gris-medio: #2C2C2C;
+    --gris-card: #242424;
+    --gris-borde: #3A3A3A;
+
+    --blanco: #F5F5F0;
+    --texto-sec: #9A9A9A;
+
+    --exito: #2ECC71;
+    --error: #E74C3C;
+    --advertencia: #F39C12;
+}

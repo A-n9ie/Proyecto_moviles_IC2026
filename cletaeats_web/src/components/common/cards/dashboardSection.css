@@ -1,0 +1,16 @@
+.dashboard-section {
+    background: var(--gris-medio);
+
+    border: 1px solid var(--gris-borde);
+
+    border-radius: 18px;
+
+    padding: 22px;
+}
+
+.dashboard-section-title {
+    font-size: 18px;
+    font-weight: 700;
+
+    margin-bottom: 20px;
+}

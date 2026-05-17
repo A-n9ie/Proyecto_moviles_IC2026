@@ -30,7 +30,18 @@ class RestauranteRepository(IRestauranteRepository):
     def listar_todos(self) -> list:
         conn = get_connection()
         try:
-            rows = conn.execute("SELECT * FROM RESTAURANTE ORDER BY ID").fetchall()
+            rows = conn.execute("""
+                SELECT
+                    ID                AS id,
+                    NOMBRE            AS nombre,
+                    TIPO_COMIDA       AS tipo_comida,
+                    DIRECCION         AS direccion,
+                    IMAGEN_URL        AS imagen_url,
+                    ESTADO            AS estado
+                FROM RESTAURANTE
+                ORDER BY ID
+            """).fetchall()
+
             return [dict(r) for r in rows]
         finally:
             conn.close()

@@ -1,0 +1,108 @@
+.dashboard-grid {
+    display: grid;
+
+    grid-template-columns: repeat(
+    auto-fit,
+    minmax(240px, 1fr)
+  );
+
+    gap: 20px;
+
+    margin-bottom: 24px;
+}
+
+.dashboard-content-grid {
+    display: grid;
+
+    grid-template-columns: 2fr 1fr;
+
+    gap: 20px;
+}
+
+.dashboard-table {
+    width: 100%;
+
+    border-collapse: collapse;
+}
+
+.dashboard-table th {
+    text-align: left;
+
+    padding-bottom: 14px;
+
+    color: var(--texto-sec);
+
+    font-size: 13px;
+
+    border-bottom: 1px solid
+    var(--gris-borde);
+}
+
+.dashboard-table td {
+    padding: 14px 0;
+
+    border-bottom: 1px solid
+    rgba(255, 255, 255, 0.05);
+}
+
+.estado-badge {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 5px 10px;
+
+    border-radius: 999px;
+
+    font-size: 12px;
+
+    font-weight: 600;
+}
+
+.estado-badge.entregado {
+    background: rgba(46, 204, 113, 0.12);
+
+    color: var(--exito);
+}
+
+.estado-badge.preparando {
+    background: rgba(243, 156, 18, 0.12);
+
+    color: var(--advertencia);
+}
+
+.estado-badge.camino {
+    background: rgba(52, 152, 219, 0.12);
+
+    color: #3498db;
+}
+
+.repartidor-list {
+    display: flex;
+    flex-direction: column;
+
+    gap: 14px;
+}
+
+.repartidor-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding-bottom: 12px;
+
+    border-bottom: 1px solid
+    rgba(255, 255, 255, 0.05);
+}
+
+.repartidor-name {
+    font-weight: 600;
+}
+
+@media (max-width: 900px) {
+    .dashboard-content-grid {
+        grid-template-columns: 1fr;
+    }
+}
+

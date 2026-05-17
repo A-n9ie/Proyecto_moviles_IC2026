@@ -49,9 +49,19 @@ class ClienteRepository(IClienteRepository):
     def listar_todos(self) -> list:
         conn = get_connection()
         try:
-            rows = conn.execute(
-                "SELECT C.ID, C.NOMBRE, C.CEDULA, C.TELEFONO, C.DIRECCION, U.EMAIL FROM CLIENTE C JOIN USUARIO U ON C.USUARIO_ID = U.ID ORDER BY C.ID"
-            ).fetchall()
+            rows = conn.execute("""
+                SELECT
+                    C.ID          AS id,
+                    C.NOMBRE      AS nombre,
+                    C.CEDULA      AS cedula,
+                    C.TELEFONO    AS telefono,
+                    C.DIRECCION   AS direccion,
+                    U.EMAIL       AS email,
+                    U.ESTADO      AS estado
+                FROM CLIENTE C
+                JOIN USUARIO U ON C.USUARIO_ID = U.ID
+                ORDER BY C.ID
+            """).fetchall()
             return [dict(r) for r in rows]
         finally:
             conn.close()
