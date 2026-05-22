@@ -1,50 +1,49 @@
 # data/repositories/usuario_repository.py
 from typing import Optional
-from domain.interfaces.i_usuario_repository import IUsuarioRepository
+from sqlalchemy import select, insert, update
+from data.database.db_connection import engine
+from data.database.tables import usuario as t_usuario
 from core.entities.usuario import Usuario
-from data.database.db_connection import get_connection
 
 
-class UsuarioRepository(IUsuarioRepository):
+class UsuarioRepository:
 
     def encontrar_por_email(self, email: str) -> Optional[Usuario]:
-        conn = get_connection()
-        try:
+        with engine.connect() as conn:
             row = conn.execute(
-                "SELECT * FROM USUARIO WHERE EMAIL = ?", (email,)
-            ).fetchone()
-            return self._fila_a_usuario(row) if row else None
-        finally:
-            conn.close()
-
-    def crear(self, usuario: Usuario) -> Usuario:
-        conn = get_connection()
-        try:
-            cursor = conn.execute(
-                """
-                INSERT INTO USUARIO (EMAIL, PASSWORD_HASH, ROL, ESTADO)
-                VALUES (?, ?, ?, ?)
-                """,
-                (usuario.email, usuario.password_hash, usuario.rol, usuario.estado)
-            )
-            conn.commit()
-            usuario.id = cursor.lastrowid
-            return usuario
-        finally:
-            conn.close()
+                select(t_usuario).where(t_usuario.c.EMAIL == email)
+            ).mappings().first()
+            return self._map(row) if row else None
 
     def existe_email(self, email: str) -> bool:
-        conn = get_connection()
-        try:
-            count = conn.execute(
-                "SELECT COUNT(*) FROM USUARIO WHERE EMAIL = ?", (email,)
-            ).fetchone()[0]
-            return count > 0
-        finally:
-            conn.close()
+        with engine.connect() as conn:
+            row = conn.execute(
+                select(t_usuario.c.ID).where(t_usuario.c.EMAIL == email)
+            ).first()
+            return row is not None
+
+    def crear(self, u: Usuario) -> Usuario:
+        with engine.begin() as conn:
+            result = conn.execute(insert(t_usuario).values(
+                EMAIL=u.email,
+                PASSWORD_HASH=u.password_hash,
+                ROL=u.rol,
+                ESTADO=u.estado
+            ))
+            u.id = result.inserted_primary_key[0]
+            return u
+
+    def actualizar_estado(self, usuario_id: int, estado: int) -> bool:
+        with engine.begin() as conn:
+            result = conn.execute(
+                update(t_usuario)
+                .where(t_usuario.c.ID == usuario_id)
+                .values(ESTADO=estado)
+            )
+            return result.rowcount > 0
 
     @staticmethod
-    def _fila_a_usuario(row) -> Usuario:
+    def _map(row) -> Usuario:
         return Usuario(
             id=row["ID"],
             email=row["EMAIL"],

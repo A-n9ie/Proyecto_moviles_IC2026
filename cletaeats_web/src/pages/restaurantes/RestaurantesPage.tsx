@@ -1,121 +1,104 @@
-import {
-    useState,
-} from 'react'
-
+import { useState, useMemo } from 'react'
 import Button from '../../components/common/buttons/Button'
-
 import Modal from '../../components/common/modal/Modal'
-
 import Tabs from '../../components/common/tabs/Tabs'
-
 import DataTable from '../../components/common/table/DataTable'
-
 import PageHeader from '../../components/ui/pageHeader/PageHeader'
-
 import RestauranteForm from './RestauranteForm'
-
+import CategoriasTab from './CategoriasTab'
+import ProductosTab from './ProductosTab'
 import { useRestaurantes } from '../../hooks/useRestaurantes'
-
-import type {
-    Restaurante,
-} from '../../types/restaurantes'
-import StatusBadge from "../../components/common/table/StatusBadge.tsx";
+import { useCategorias } from '../../hooks/useCategorias'
+import type { Restaurante } from '../../types/restaurantes'
+import StatusBadge from "../../components/common/table/StatusBadge.tsx"
 
 const RestaurantesPage = () => {
-    const {
-        restaurantes,
-        loading,
-        handleSubmit,
-        handleToggleEstado,
-        handleDelete } = useRestaurantes()
+    const { restaurantes, loading, handleSubmit, handleToggleEstado, handleDelete } = useRestaurantes()
+    const { categorias } = useCategorias()
 
-    const [
-        activeTab,
-        setActiveTab,
-    ] = useState(
-        'restaurantes',
-    )
+    const [activeTab, setActiveTab]               = useState('restaurantes')
+    const [isModalOpen, setIsModalOpen]           = useState(false)
+    const [selectedRestaurante, setSelectedRestaurante] = useState<Restaurante | null>(null)
+    const [filtroCategoria, setFiltroCategoria]   = useState<number>(0)
 
-    const [
-        isModalOpen,
-        setIsModalOpen,
-    ] = useState(false)
-
-    const [
-        selectedRestaurante,
-        setSelectedRestaurante,
-    ] = useState<Restaurante | null>(
-        null,
-    )
-
-    const handleCreate = () => {
-        setSelectedRestaurante(null)
-
-        setIsModalOpen(true)
-    }
-
-    const handleEdit = (
-        restaurante: Restaurante,
-    ) => {
-        setSelectedRestaurante(
-            restaurante,
+    // Filtro por categoría en la tabla de restaurantes
+    const restaurantesFiltrados = useMemo(() => {
+        if (filtroCategoria === 0) return restaurantes
+        return restaurantes.filter(r =>
+            r.categorias?.some(c => c.id === filtroCategoria)
         )
+    }, [restaurantes, filtroCategoria])
 
-        setIsModalOpen(true)
-    }
+    const handleCreate = () => { setSelectedRestaurante(null); setIsModalOpen(true) }
+    const handleEdit   = (r: Restaurante) => { setSelectedRestaurante(r); setIsModalOpen(true) }
 
     return (
         <div>
             <PageHeader
                 title="Restaurantes"
                 subtitle="Administración de restaurantes y menús"
-                action={
-                    <Button
-                        onClick={
-                            handleCreate
-                        }
-                    >
-                        + Nuevo Restaurante
-                    </Button>
-                }
+                action={<Button onClick={handleCreate}>+ Nuevo Restaurante</Button>}
             />
 
             <Tabs
                 activeTab={activeTab}
                 onChange={setActiveTab}
                 tabs={[
-                    {
-                        key: 'restaurantes',
-
-                        label:
-                            'Restaurantes',
-                    },
-
-                    {
-                        key: 'categorias',
-
-                        label:
-                            'Categorías',
-                    },
-
-                    {
-                        key: 'productos',
-
-                        label:
-                            'Productos',
-                    },
+                    { key: 'restaurantes', label: 'Restaurantes' },
+                    { key: 'categorias',   label: 'Categorías'   },
+                    { key: 'productos',    label: 'Productos'    },
                 ]}
             />
 
-            {activeTab ===
-                'restaurantes' && (
+            {activeTab === 'restaurantes' && (
+                <>
+                    {/* ── Filtro por categoría ── */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '16px 0', maxWidth: 380 }}>
+                        <label style={{ color: 'var(--texto-secundario)', fontSize: 13, whiteSpace: 'nowrap' }}>
+                            Categoría:
+                        </label>
+                        <select
+                            value={filtroCategoria}
+                            onChange={e => setFiltroCategoria(Number(e.target.value))}
+                            style={{
+                                background: 'var(--gris-oscuro)', color: 'var(--blanco)',
+                                border: '1px solid var(--gris-borde)', borderRadius: 8,
+                                padding: '8px 12px', fontSize: 13, flex: 1
+                            }}
+                        >
+                            <option value={0}>Todas las categorías</option>
+                            {categorias.map((c: { id: number; nombre: string }) => (
+                                <option key={c.id} value={c.id}>{c.nombre}</option>
+                            ))}
+                        </select>
+                        {filtroCategoria !== 0 && (
+                            <button
+                                onClick={() => setFiltroCategoria(0)}
+                                style={{
+                                    background: 'none', border: 'none', color: 'var(--naranja)',
+                                    cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '4px 6px'
+                                }}
+                                title="Limpiar filtro"
+                            >×</button>
+                        )}
+                    </div>
+
+                    {filtroCategoria !== 0 && (
+                        <p style={{ color: 'var(--texto-secundario)', fontSize: 12, marginBottom: 8 }}>
+                            {restaurantesFiltrados.length} restaurante(s) con categoría "{categorias.find((c: any) => c.id === filtroCategoria)?.nombre}"
+                        </p>
+                    )}
+
                     <DataTable
                         loading={loading}
-                        data={restaurantes}
+                        data={restaurantesFiltrados}
                         columns={[
-                            { key: 'nombre',     title: 'Nombre' },
-                            { key: 'tipo_comida', title: 'Tipo' },
-                            { key: 'direccion',  title: 'Dirección' },
+                            { key: 'nombre', title: 'Nombre' },
+                            {
+                                key: 'categorias', title: 'Categorías',
+                                render: (r: Restaurante) => r.categorias?.map(c => c.nombre).join(', ') ?? '-',
+                            },
+                            { key: 'direccion', title: 'Dirección' },
                             {
                                 key: 'estado', title: 'Estado',
                                 render: (r: Restaurante) => <StatusBadge status={r.estado === 1 ? 'ACTIVO' : 'INACTIVO'} />,
@@ -137,27 +120,21 @@ const RestaurantesPage = () => {
                             },
                         ]}
                     />
-                )}
+                </>
+            )}
+
+            {activeTab === 'categorias' && <CategoriasTab />}
+            {activeTab === 'productos'  && <ProductosTab />}
 
             <Modal
                 isOpen={isModalOpen}
-                title={
-                    selectedRestaurante
-                        ? 'Editar Restaurante'
-                        : 'Nuevo Restaurante'
-                }
-                onClose={() =>
-                    setIsModalOpen(false)
-                }
+                title={selectedRestaurante ? 'Editar Restaurante' : 'Nuevo Restaurante'}
+                onClose={() => setIsModalOpen(false)}
             >
                 <RestauranteForm
-                    key = {selectedRestaurante?.id ?? 'new'}
-                    restaurante={
-                        selectedRestaurante
-                    }
-                    onClose={() =>
-                        setIsModalOpen(false)
-                    }
+                    key={selectedRestaurante?.id ?? 'new'}
+                    restaurante={selectedRestaurante}
+                    onClose={() => setIsModalOpen(false)}
                     onSubmit={async (body) => handleSubmit(body, selectedRestaurante)}
                 />
             </Modal>

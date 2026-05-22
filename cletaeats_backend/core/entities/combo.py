@@ -14,7 +14,8 @@ class Combo:
         descripcion:    str   = "",
         precio:         float = 0.0,
         imagen_url:     str   = "",
-        estado:         int   = 1
+        estado:         int   = 1,
+        productos:      list  = None 
     ):
         self.id             = id
         self.restaurante_id = restaurante_id
@@ -24,6 +25,7 @@ class Combo:
         self.precio         = precio
         self.imagen_url     = imagen_url
         self.estado         = estado
+        self.productos      = productos or []
 
     def get_nombre(self) -> str:  return self.nombre
     def set_nombre(self, v: str): self.nombre = v

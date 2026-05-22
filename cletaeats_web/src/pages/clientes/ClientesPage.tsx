@@ -23,15 +23,9 @@ import type {
 import './clientesPage.css'
 
 const ClientesPage = () => {
-    const {
-        clientes,
-
-        loading,
-
-        handleSubmit,
-
-        handleDelete,
-    } = useClientes()
+    const { clientes, loading, 
+        handleSubmit, handleDelete, 
+        handleToggleEstado } = useClientes()
 
     const [isModalOpen, setIsModalOpen] =
         useState(false)
@@ -116,25 +110,14 @@ const ClientesPage = () => {
                             cliente: Cliente,
                         ) => (
                             <div className="flex gap-2">
+                                <Button variant="secondary" onClick={() => handleEdit(cliente)}>Editar</Button>
                                 <Button
-                                    variant="secondary"
-                                    onClick={() =>
-                                        handleEdit(
-                                            cliente,
-                                        )
-                                    }
+                                    variant={cliente.estado === 1 ? 'danger' : 'success'}
+                                    onClick={() => handleToggleEstado(cliente)}
                                 >
-                                    Editar
+                                    {cliente.estado === 1 ? 'Desactivar' : 'Activar'}
                                 </Button>
-
-                                <Button
-                                    variant="danger"
-                                    onClick={() =>
-                                        handleDelete(cliente)
-                                    }
-                                >
-                                    Eliminar
-                                </Button>
+                                <Button variant="danger" onClick={() => handleDelete(cliente)}>Eliminar</Button>
                             </div>
                         ),
                     },

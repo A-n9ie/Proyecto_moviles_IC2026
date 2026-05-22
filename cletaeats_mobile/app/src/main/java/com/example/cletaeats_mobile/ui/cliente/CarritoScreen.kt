@@ -1,6 +1,8 @@
 package com.example.cletaeats_mobile.ui.cliente
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.cletaeats_mobile.domain.model.ItemCarrito
 import com.example.cletaeats_mobile.ui.components.CletaButton
 import com.example.cletaeats_mobile.ui.components.ErrorBanner
@@ -23,21 +27,23 @@ import com.example.cletaeats.ui.theme.*
 import com.example.cletaeats_mobile.ui.utils.toCRC
 import com.example.cletaeats_mobile.viewmodel.CarritoViewModel
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.draw.clip
+import com.example.cletaeats_mobile.viewmodel.TarjetaViewModel
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CarritoScreen(
     carritoViewModel: CarritoViewModel,
-    onPedidoCreado:   () -> Unit,
-    onVolver:         () -> Unit
+    tarjetaViewModel: TarjetaViewModel,
+    onPedidoCreado: () -> Unit,
+    onVolver: () -> Unit
 ) {
     val state by carritoViewModel.uiState.collectAsState()
 
-    // Navegar a factura cuando el pedido se creó exitosamente
     LaunchedEffect(state.pedidoCreado) {
         if (state.pedidoCreado) onPedidoCreado()
     }
 
-    // ── Estado local: distancia en km ─────────────────────────────
     var distanciaTexto by remember { mutableStateOf("5.0") }
     val distanciaError = distanciaTexto.toDoubleOrNull().let { d ->
         when {
@@ -65,7 +71,6 @@ fun CarritoScreen(
     ) { padding ->
 
         if (state.estaVacio) {
-            // ── Carrito vacío ─────────────────────────────────────
             Column(
                 modifier            = Modifier
                     .fillMaxSize()
@@ -97,7 +102,6 @@ fun CarritoScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
 
-            // ── Encabezado: restaurante ───────────────────────────
             item {
                 Text(
                     text       = state.restauranteNombre,
@@ -114,7 +118,6 @@ fun CarritoScreen(
                 ErrorBanner(state.errorMsg)
             }
 
-            // ── Items del carrito ─────────────────────────────────
             items(state.items) { item ->
                 ItemCarritoCard(
                     item      = item,
@@ -124,7 +127,6 @@ fun CarritoScreen(
                 )
             }
 
-            // ── Campo de distancia (validación dinámica) ──────────
             item {
                 Spacer(Modifier.height(8.dp))
                 Card(
@@ -161,7 +163,6 @@ fun CarritoScreen(
                 }
             }
 
-            // ── Resumen de costos ─────────────────────────────────
             item {
                 ResumenCostos(
                     subtotal    = state.subtotal,
@@ -169,7 +170,13 @@ fun CarritoScreen(
                 )
             }
 
-            // ── Botón confirmar ───────────────────────────────────
+            item {
+                MetodoPagoCard(
+                    tarjetaViewModel = tarjetaViewModel,
+                    carritoViewModel = carritoViewModel
+                )
+            }
+
             item {
                 CletaButton(
                     text      = "Confirmar pedido",
@@ -179,7 +186,7 @@ fun CarritoScreen(
                         )
                     },
                     isLoading = state.isLoading,
-                    enabled   = distanciaValida && !state.estaVacio,
+                    enabled = distanciaValida && !state.estaVacio && state.tarjetaId != null,
                     icon      = Icons.Default.CheckCircle
                 )
                 Spacer(Modifier.height(16.dp))
@@ -226,7 +233,6 @@ private fun ItemCarritoCard(
                 )
             }
 
-            // Controles cantidad
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onReducir, modifier = Modifier.size(32.dp)) {
                     Icon(Icons.Default.Remove, contentDescription = "Reducir", tint = CletaTextoSecundario, modifier = Modifier.size(16.dp))
@@ -236,7 +242,6 @@ private fun ItemCarritoCard(
                     Icon(Icons.Default.Add, contentDescription = "Agregar", tint = CletaNaranja, modifier = Modifier.size(16.dp))
                 }
                 Spacer(Modifier.width(4.dp))
-                // Botón eliminar (ImageButton con ícono de basura)
                 IconButton(
                     onClick  = onEliminar,
                     modifier = Modifier.size(32.dp)
@@ -248,10 +253,10 @@ private fun ItemCarritoCard(
     }
 }
 
-// ── Resumen de costos con cálculo IVA ────────────────────────────
+// ── Resumen de costos ─────────────────────────────────────────────
 @Composable
 private fun ResumenCostos(subtotal: Double, distanciaKm: Double) {
-    val costoTransporte = distanciaKm * 1000.0   // ₡1.000/km hábil
+    val costoTransporte = distanciaKm * 1000.0
     val iva             = subtotal * 0.13
     val total           = subtotal + costoTransporte + iva
 
@@ -278,6 +283,335 @@ private fun ResumenCostos(subtotal: Double, distanciaKm: Double) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MetodoPagoCard(
+    tarjetaViewModel: TarjetaViewModel,
+    carritoViewModel: CarritoViewModel
+) {
+    val tarjetaState by tarjetaViewModel.uiState.collectAsState()
+    // Estado del popup tipo wallet
+    var mostrarWallet by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) { tarjetaViewModel.cargarTarjetas() }
+
+    LaunchedEffect(tarjetaState.tarjetaSeleccionada) {
+        tarjetaState.tarjetaSeleccionada?.let {
+            carritoViewModel.seleccionarTarjeta(it.id)
+        }
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape    = RoundedCornerShape(16.dp),
+        colors   = CardDefaults.cardColors(containerColor = CletaGrisMedio)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.CreditCard, contentDescription = null,
+                    tint = CletaNaranja, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Método de pago", color = CletaBlanco, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.weight(1f))
+                // FIX: botón abre popup wallet
+                TextButton(onClick = { mostrarWallet = true }) {
+                    Icon(Icons.Default.AccountBalanceWallet, contentDescription = null,
+                        tint = CletaNaranja, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("+ Agregar", color = CletaNaranja, fontSize = 12.sp)
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            if (tarjetaState.isLoading) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = CletaNaranja)
+            } else if (tarjetaState.tarjetas.isEmpty()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(CletaGrisClaro.copy(alpha = 0.3f))
+                        .clickable { mostrarWallet = true }
+                        .padding(12.dp)
+                ) {
+                    Icon(Icons.Default.AddCard, contentDescription = null,
+                        tint = CletaNaranja, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Tocá aquí para agregar una tarjeta", color = CletaTextoSecundario, fontSize = 13.sp)
+                }
+            } else {
+                tarjetaState.tarjetas.forEach { tarjeta ->
+                    val seleccionada = tarjeta.id == tarjetaState.tarjetaSeleccionada?.id
+                    Row(
+                        modifier          = Modifier
+                            .fillMaxWidth()
+                            .clickable { tarjetaViewModel.seleccionarTarjeta(tarjeta) }
+                            .padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = seleccionada,
+                            onClick  = { tarjetaViewModel.seleccionarTarjeta(tarjeta) },
+                            colors   = RadioButtonDefaults.colors(selectedColor = CletaNaranja)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text  = "•••• ${tarjeta.numero.takeLast(4)}",
+                                color = CletaBlanco, fontSize = 14.sp
+                            )
+                            if (tarjeta.alias.isNotEmpty()) {
+                                Text(tarjeta.alias, color = CletaTextoSecundario, fontSize = 12.sp)
+                            }
+                        }
+                        if (tarjeta.esPrincipal == 1) {
+                            Surface(
+                                shape = RoundedCornerShape(50),
+                                color = CletaNaranja.copy(alpha = 0.2f)
+                            ) {
+                                Text(
+                                    "Principal",
+                                    color    = CletaNaranja,
+                                    fontSize = 10.sp,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.width(4.dp))
+                        IconButton(
+                            onClick  = { tarjetaViewModel.eliminarTarjeta(tarjeta.id) },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(Icons.Default.DeleteOutline, contentDescription = "Eliminar",
+                                tint = CletaError, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Wallet popup ─────────────────────────────────────────────
+    if (mostrarWallet) {
+        WalletDialog(
+            onDismiss = { mostrarWallet = false },
+            onGuardar = { numero, alias, esPrincipal ->
+                tarjetaViewModel.agregarTarjeta(numero, alias, esPrincipal)
+                mostrarWallet = false
+            }
+        )
+    }
+}
+
+// ── Wallet Dialog tipo popup ──────────────────────────────────────
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun WalletDialog(
+    onDismiss: () -> Unit,
+    onGuardar: (numero: String, alias: String, esPrincipal: Boolean) -> Unit
+) {
+    var numero     by remember { mutableStateOf("") }
+    var alias      by remember { mutableStateOf("") }
+    var principal  by remember { mutableStateOf(false) }
+
+    val numeroError = when {
+        numero.isEmpty()   -> null
+        numero.length < 4  -> "Mínimo 4 dígitos"
+        numero.length > 19 -> "Máximo 19 dígitos"
+        else               -> null
+    }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+            shape    = RoundedCornerShape(24.dp),
+            color    = CletaGrisMedio,
+            tonalElevation = 8.dp
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+
+                // ── Header wallet ──────────────────────────────────
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(CletaNaranja.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.AccountBalanceWallet,
+                            contentDescription = null,
+                            tint     = CletaNaranja,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            "Agregar tarjeta",
+                            color      = CletaBlanco,
+                            fontSize   = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "Tu información está protegida",
+                            color    = CletaTextoSecundario,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = CletaTextoSecundario)
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                // ── Preview visual de tarjeta ──────────────────────
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(
+                            if (numero.isEmpty()) CletaGrisClaro
+                            else CletaNaranja.copy(alpha = 0.85f)
+                        )
+                        .padding(horizontal = 20.dp, vertical = 16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = if (numero.length >= 4)
+                                    "•••• •••• •••• ${numero.takeLast(4)}"
+                                else "•••• •••• •••• ••••",
+                                color      = CletaBlanco,
+                                fontSize   = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text     = alias.ifEmpty { "Alias de tarjeta" },
+                                color    = CletaBlanco.copy(alpha = 0.8f),
+                                fontSize = 12.sp
+                            )
+                        }
+                        Icon(
+                            Icons.Default.CreditCard,
+                            contentDescription = null,
+                            tint     = CletaBlanco.copy(alpha = 0.6f),
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                // ── Campo número ───────────────────────────────────
+                OutlinedTextField(
+                    value         = numero,
+                    onValueChange = { if (it.all { c -> c.isDigit() } && it.length <= 19) numero = it },
+                    label         = { Text("Número de tarjeta") },
+                    isError       = numeroError != null,
+                    supportingText = numeroError?.let { { Text(it) } },
+                    leadingIcon   = { Icon(Icons.Default.CreditCard, contentDescription = null, tint = CletaNaranja) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier      = Modifier.fillMaxWidth(),
+                    colors        = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor  = CletaNaranja,
+                        focusedLabelColor   = CletaNaranja,
+                        focusedTextColor    = CletaBlanco,
+                        unfocusedTextColor  = CletaBlanco,
+                        unfocusedLabelColor = CletaTextoSecundario
+                    )
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                // ── Campo alias ────────────────────────────────────
+                OutlinedTextField(
+                    value         = alias,
+                    onValueChange = { alias = it },
+                    label         = { Text("Alias (ej. Visa personal)") },
+                    leadingIcon   = { Icon(Icons.Default.Label, contentDescription = null, tint = CletaNaranja) },
+                    modifier      = Modifier.fillMaxWidth(),
+                    colors        = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor  = CletaNaranja,
+                        focusedLabelColor   = CletaNaranja,
+                        focusedTextColor    = CletaBlanco,
+                        unfocusedTextColor  = CletaBlanco,
+                        unfocusedLabelColor = CletaTextoSecundario
+                    )
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                // ── Toggle principal ───────────────────────────────
+                Row(
+                    modifier          = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Star, contentDescription = null,
+                        tint = if (principal) CletaNaranja else CletaTextoSecundario,
+                        modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Marcar como tarjeta principal", color = CletaBlanco, fontSize = 14.sp,
+                        modifier = Modifier.weight(1f))
+                    Switch(
+                        checked         = principal,
+                        onCheckedChange = { principal = it },
+                        colors          = SwitchDefaults.colors(
+                            checkedThumbColor  = CletaBlanco,
+                            checkedTrackColor  = CletaNaranja
+                        )
+                    )
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                // ── Botones ────────────────────────────────────────
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(
+                        onClick  = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        colors   = ButtonColors(
+                            containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                            contentColor   = CletaTextoSecundario,
+                            disabledContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                            disabledContentColor   = CletaTextoSecundario
+                        ),
+                        border = ButtonDefaults.outlinedButtonBorder
+                    ) {
+                        Text("Cancelar")
+                    }
+                    Button(
+                        onClick  = { onGuardar(numero, alias, principal) },
+                        enabled  = numero.length >= 4 && numeroError == null,
+                        modifier = Modifier.weight(1f),
+                        colors   = ButtonDefaults.buttonColors(containerColor = CletaNaranja)
+                    ) {
+                        Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Guardar")
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun FilaCosto(label: String, valor: Double) {
     Row(
@@ -290,3 +624,5 @@ private fun FilaCosto(label: String, valor: Double) {
         Text(valor.toCRC(), color = CletaBlanco, fontSize = 14.sp)
     }
 }
+
+

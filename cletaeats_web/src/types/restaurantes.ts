@@ -1,16 +1,22 @@
-// Alineado al backend: tabla RESTAURANTE con NOMBRE, TIPO_COMIDA, DIRECCION, IMAGEN_URL, ESTADO
 export interface Restaurante {
     id: number
+    cedula_juridica: string
     nombre: string
-    tipo_comida: string
+    categorias: Categoria[]
     direccion: string
     imagen_url: string
-    estado: number      // 1=activo, 0=inactivo
+    estado: number
 }
 
 export interface RestauranteRequest {
+    cedula_juridica: string
     nombre: string
-    tipo_comida: string
+    categoria_ids: number[]
     direccion: string
     imagen_url: string
+}
+
+export interface Categoria {
+    id: number
+    nombre: string
 }

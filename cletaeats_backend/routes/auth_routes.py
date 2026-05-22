@@ -1,0 +1,87 @@
+# routes/auth_routes.py
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from core.use_cases.auth_use_cases import AuthUseCases
+from data.repositories.usuario_repository import UsuarioRepository
+from data.repositories.cliente_repository import ClienteRepository
+from data.repositories.repartidor_repository import RepartidorRepository
+from data.repositories.tarjeta_cliente_repository import TarjetaClienteRepository
+from services.session_instance import session_service
+
+router = APIRouter()
+
+_auth_uc = AuthUseCases(UsuarioRepository(), ClienteRepository(), RepartidorRepository(), TarjetaClienteRepository())
+
+ROLES_POR_PLATAFORMA = {
+    "WEB":    {"ADMIN", "EMPLEADO"},
+    "MOBILE": {"CLIENTE", "REPARTIDOR"},
+}
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+    platform: str = "MOBILE"
+
+class RegistroClienteRequest(BaseModel):
+    email: str
+    password: str
+    confirmar_password: str
+    cedula: str
+    nombre: str
+    direccion: str
+    telefono: str
+
+class RegistroRepartidorRequest(BaseModel):
+    email: str
+    password: str
+    confirmar_password: str
+    cedula: str
+    nombre: str
+    correo_contacto: str = ""
+    direccion: str
+    telefono: str
+    tarjeta: str = "0000000000000000"
+
+@router.post("/login")
+def login(body: LoginRequest):
+    ok, datos, error = _auth_uc.login(body.email, body.password)
+    if not ok:
+        raise HTTPException(status_code=401, detail=error)
+    roles_ok = ROLES_POR_PLATAFORMA.get(body.platform, set())
+    if datos["rol"] not in roles_ok:
+        raise HTTPException(status_code=403, detail=f"Rol {datos['rol']} no permitido en {body.platform}")
+    token = session_service.crear_sesion(**datos)
+    return {"token": token, **datos}
+
+@router.post("/registro/cliente", status_code=201)
+def registro_cliente(body: RegistroClienteRequest):
+    ok, datos, error = _auth_uc.registro_cliente(
+        email=body.email, password=body.password,
+        confirmar_password=body.confirmar_password,
+        cedula=body.cedula, nombre=body.nombre,
+        direccion=body.direccion, telefono=body.telefono,
+        tarjeta=""   # tarjeta va en tabla TARJETA_CLIENTE, no en CLIENTE
+    )
+    if not ok:
+        raise HTTPException(status_code=400, detail=error)
+    token = session_service.crear_sesion(**datos)
+    return {"token": token, **datos}
+
+@router.post("/registro/repartidor", status_code=201)
+def registro_repartidor(body: RegistroRepartidorRequest):
+    ok, datos, error = _auth_uc.registro_repartidor(
+        email=body.email, password=body.password,
+        confirmar_password=body.confirmar_password,
+        cedula=body.cedula, nombre=body.nombre,
+        correo_contacto=body.correo_contacto or body.email,
+        direccion=body.direccion, telefono=body.telefono,
+        tarjeta=body.tarjeta
+    )
+    if not ok:
+        raise HTTPException(status_code=400, detail=error)
+    token = session_service.crear_sesion(**datos)
+    return {"token": token, **datos}
+
+@router.post("/logout")
+def logout():
+    return {"mensaje": "Sesión cerrada"}

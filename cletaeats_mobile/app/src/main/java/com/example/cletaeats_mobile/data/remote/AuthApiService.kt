@@ -19,8 +19,7 @@ data class RegistroClienteRequest(
     val cedula: String,
     val nombre: String,
     val direccion: String,
-    val telefono: String,
-    val tarjeta: String
+    val telefono: String
 )
 
 data class RegistroRepartidorRequest(

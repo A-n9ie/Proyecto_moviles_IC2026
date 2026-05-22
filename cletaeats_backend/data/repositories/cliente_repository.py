@@ -1,79 +1,79 @@
 # data/repositories/cliente_repository.py
 from typing import Optional
-from domain.interfaces.i_cliente_repository import IClienteRepository
+from sqlalchemy import select, insert, update
+from data.database.db_connection import engine
+from data.database.tables import cliente as t_cliente, usuario as t_usuario
 from core.entities.cliente import Cliente
-from data.database.db_connection import get_connection
+from data.utils.mapper_utils import to_lower_dict
 
+class ClienteRepository:
 
-class ClienteRepository(IClienteRepository):
-
-    def crear(self, cliente: Cliente) -> Cliente:
-        conn = get_connection()
-        try:
-            cursor = conn.execute(
-                """
-                INSERT INTO CLIENTE (USUARIO_ID, CEDULA, NOMBRE, DIRECCION, TELEFONO, TARJETA)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    cliente.usuario_id, cliente.cedula, cliente.nombre,
-                    cliente.direccion, cliente.telefono, cliente.tarjeta
-                )
-            )
-            conn.commit()
-            cliente.id = cursor.lastrowid
-            return cliente
-        finally:
-            conn.close()
+    def crear(self, c: Cliente) -> Cliente:
+        with engine.begin() as conn:
+            result = conn.execute(insert(t_cliente).values(
+                USUARIO_ID=c.usuario_id,
+                CEDULA=c.cedula,
+                NOMBRE=c.nombre,
+                DIRECCION=c.direccion,
+                TELEFONO=c.telefono
+            ))
+            c.id = result.inserted_primary_key[0]
+            return c
 
     def encontrar_por_usuario_id(self, usuario_id: int) -> Optional[Cliente]:
-        conn = get_connection()
-        try:
+        with engine.connect() as conn:
             row = conn.execute(
-                "SELECT * FROM CLIENTE WHERE USUARIO_ID = ?", (usuario_id,)
-            ).fetchone()
-            return self._fila_a_cliente(row) if row else None
-        finally:
-            conn.close()
+                select(t_cliente).where(t_cliente.c.USUARIO_ID == usuario_id)
+            ).mappings().first()
+            return self._map(row) if row else None
 
     def existe_cedula(self, cedula: str) -> bool:
-        conn = get_connection()
-        try:
-            count = conn.execute(
-                "SELECT COUNT(*) FROM CLIENTE WHERE CEDULA = ?", (cedula,)
-            ).fetchone()[0]
-            return count > 0
-        finally:
-            conn.close()
+        with engine.connect() as conn:
+            row = conn.execute(
+                select(t_cliente.c.ID).where(t_cliente.c.CEDULA == cedula)
+            ).first()
+            return row is not None
 
     def listar_todos(self) -> list:
-        conn = get_connection()
-        try:
-            rows = conn.execute("""
-                SELECT
-                    C.ID          AS id,
-                    C.NOMBRE      AS nombre,
-                    C.CEDULA      AS cedula,
-                    C.TELEFONO    AS telefono,
-                    C.DIRECCION   AS direccion,
-                    U.EMAIL       AS email,
-                    U.ESTADO      AS estado
-                FROM CLIENTE C
-                JOIN USUARIO U ON C.USUARIO_ID = U.ID
-                ORDER BY C.ID
-            """).fetchall()
-            return [dict(r) for r in rows]
-        finally:
-            conn.close()
+        with engine.connect() as conn:
+            rows = conn.execute(
+                select(
+                    t_cliente.c.ID,
+                    t_cliente.c.NOMBRE,
+                    t_cliente.c.CEDULA,
+                    t_cliente.c.TELEFONO,
+                    t_cliente.c.DIRECCION,
+                    t_usuario.c.EMAIL,
+                    t_usuario.c.ESTADO,
+                    t_usuario.c.ID.label("usuario_id")
+                ).join(t_usuario, t_cliente.c.USUARIO_ID == t_usuario.c.ID)
+                .order_by(t_cliente.c.ID)
+            ).mappings().all()
+            return [to_lower_dict(r) for r in rows]
+
+    def actualizar_estado_usuario(self, cliente_id: int, estado: int) -> bool:
+        """Activa/desactiva el usuario asociado al cliente."""
+        with engine.begin() as conn:
+            # Obtener usuario_id del cliente
+            row = conn.execute(
+                select(t_cliente.c.USUARIO_ID).where(t_cliente.c.ID == cliente_id)
+            ).first()
+            if not row:
+                return False
+            result = conn.execute(
+                update(t_usuario)
+                .where(t_usuario.c.ID == row[0])
+                .values(ESTADO=estado)
+            )
+            return result.rowcount > 0
 
     @staticmethod
-    def _fila_a_cliente(row) -> Cliente:
+    def _map(row) -> Cliente:
         return Cliente(
             id=row["ID"],
             usuario_id=row["USUARIO_ID"],
             cedula=row["CEDULA"],
             nombre=row["NOMBRE"],
             direccion=row["DIRECCION"],
-            telefono=row["TELEFONO"],
-            tarjeta=row["TARJETA"]
+            telefono=row["TELEFONO"]
         )

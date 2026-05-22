@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -21,6 +22,7 @@ import com.example.cletaeats_mobile.AppContainer
 import com.example.cletaeats_mobile.domain.model.Restaurante
 import com.example.cletaeats_mobile.ui.components.CletaTopBar
 import com.example.cletaeats.ui.theme.*
+import com.example.cletaeats_mobile.domain.model.Categoria
 import com.example.cletaeats_mobile.viewmodel.RestauranteViewModel
 import kotlinx.coroutines.launch
 
@@ -39,10 +41,8 @@ fun RestaurantesScreen(
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope       = rememberCoroutineScope()
 
-    // Cargar restaurantes al entrar a la pantalla
     LaunchedEffect(Unit) { viewModel.cargarRestaurantes() }
 
-    // ── NavDrawer ─────────────────────────────────────────────────
     ModalNavigationDrawer(
         drawerState   = drawerState,
         drawerContent = {
@@ -76,7 +76,6 @@ fun RestaurantesScreen(
                     .padding(paddingValues)
             ) {
                 when {
-                    // ── Cargando ──────────────────────────────────
                     uiState.isLoading -> {
                         CircularProgressIndicator(
                             modifier = Modifier.align(Alignment.Center),
@@ -84,7 +83,6 @@ fun RestaurantesScreen(
                         )
                     }
 
-                    // ── Error ─────────────────────────────────────
                     uiState.errorMsg != null -> {
                         Column(
                             modifier = Modifier
@@ -116,7 +114,6 @@ fun RestaurantesScreen(
                         }
                     }
 
-                    // ── Lista de restaurantes ─────────────────────
                     else -> {
                         LazyColumn(
                             contentPadding  = PaddingValues(16.dp),
@@ -125,19 +122,32 @@ fun RestaurantesScreen(
                             item {
                                 Text(
                                     "Hola, ${session.getNombre()} 👋",
-                                    color      = CletaBlanco,
-                                    fontSize   = 20.sp,
-                                    fontWeight = FontWeight.Bold
+                                    color = CletaBlanco, fontSize = 20.sp, fontWeight = FontWeight.Bold
                                 )
-                                Text(
-                                    "¿Qué vas a comer hoy?",
-                                    color    = CletaTextoSecundario,
-                                    fontSize = 14.sp
+                                Text("¿Qué vas a comer hoy?", color = CletaTextoSecundario, fontSize = 14.sp)
+                                Spacer(Modifier.height(12.dp))
+
+                                // ── FIX: pasar categorias con icono mejorado ──
+                                FiltroCategoriasRow(
+                                    categorias           = uiState.categorias,
+                                    seleccionadas        = uiState.categoriasSeleccionadas,
+                                    onToggleCategoria    = { viewModel.toggleCategoria(it) },
+                                    onLimpiar            = { viewModel.limpiarFiltros() }
                                 )
                                 Spacer(Modifier.height(8.dp))
+
+                                // Contador de resultados
+                                if (uiState.categoriasSeleccionadas.isNotEmpty()) {
+                                    Text(
+                                        "${uiState.restaurantesFiltrados.size} restaurante(s) encontrado(s)",
+                                        color    = CletaTextoSecundario,
+                                        fontSize = 12.sp
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                }
                             }
 
-                            items(uiState.restaurantes) { restaurante ->
+                            items(uiState.restaurantesFiltrados) { restaurante ->
                                 RestauranteCard(
                                     restaurante  = restaurante,
                                     onClickCard  = { onRestauranteClick(restaurante.id) }
@@ -153,7 +163,7 @@ fun RestaurantesScreen(
 
 // ── Card individual de restaurante ────────────────────────────────
 @Composable
-private fun RestauranteCard(restaurante: Restaurante,  onClickCard:  () -> Unit) {
+private fun RestauranteCard(restaurante: Restaurante, onClickCard: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -168,9 +178,7 @@ private fun RestauranteCard(restaurante: Restaurante,  onClickCard:  () -> Unit)
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // ── Imagen placeholder (el profe pidió imágenes) ──────
-            // Cuando se tengan URLs reales, reemplazar este Box
-            // con AsyncImage de Coil: AsyncImage(model=url, ...)
+            val primeraCat = restaurante.categorias.firstOrNull() ?: ""
             Box(
                 modifier = Modifier
                     .size(72.dp)
@@ -179,8 +187,8 @@ private fun RestauranteCard(restaurante: Restaurante,  onClickCard:  () -> Unit)
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector        = tipoComidaIcono(restaurante.tipoComida),
-                    contentDescription = restaurante.tipoComida,
+                    imageVector = categoriaIcono(primeraCat),
+                    contentDescription = primeraCat,
                     tint               = CletaNaranja,
                     modifier           = Modifier.size(36.dp)
                 )
@@ -188,7 +196,6 @@ private fun RestauranteCard(restaurante: Restaurante,  onClickCard:  () -> Unit)
 
             Spacer(Modifier.width(16.dp))
 
-            // ── Info ──────────────────────────────────────────────
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text       = restaurante.nombre,
@@ -206,8 +213,8 @@ private fun RestauranteCard(restaurante: Restaurante,  onClickCard:  () -> Unit)
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text     = restaurante.tipoComida.replaceFirstChar { it.uppercase() },
-                        color    = CletaTextoSecundario,
+                        text = restaurante.categorias.joinToString(" · ") { it.replaceFirstChar { c -> c.uppercase() } },
+                        color = CletaTextoSecundario,
                         fontSize = 13.sp
                     )
                 }
@@ -228,7 +235,6 @@ private fun RestauranteCard(restaurante: Restaurante,  onClickCard:  () -> Unit)
                 }
             }
 
-            // ── Botón de acción (ImageButton con ícono) ───────────
             IconButton(
                 onClick = onClickCard,
                 modifier = Modifier
@@ -247,7 +253,7 @@ private fun RestauranteCard(restaurante: Restaurante,  onClickCard:  () -> Unit)
     }
 }
 
-// ── Contenido del NavDrawer ───────────────────────────────────────
+// ── NavDrawer ─────────────────────────────────────────────────────
 @Composable
 private fun DrawerContent(
     nombre: String,
@@ -258,7 +264,6 @@ private fun DrawerContent(
     ModalDrawerSheet(
         drawerContainerColor = CletaGrisMedio
     ) {
-        // Encabezado del drawer
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -292,7 +297,6 @@ private fun DrawerContent(
 
         Spacer(Modifier.height(8.dp))
 
-        // Ítem: Mis pedidos (placeholder para fase siguiente)
         NavigationDrawerItem(
             icon     = { Icon(Icons.Default.Receipt, contentDescription = null, tint = CletaNaranja) },
             label    = { Text("Mis pedidos", color = CletaBlanco) },
@@ -303,7 +307,6 @@ private fun DrawerContent(
             )
         )
 
-        // Ítem: Cerrar sesión
         Spacer(Modifier.weight(1f))
         Divider(color = CletaGrisClaro)
         NavigationDrawerItem(
@@ -321,17 +324,81 @@ private fun DrawerContent(
     }
 }
 
-// ── Helper: ícono según tipo de comida ───────────────────────────
 @Composable
-private fun tipoComidaIcono(tipo: String): ImageVector {
-    return when (tipo.lowercase()) {
-        "rápida", "rapida" -> Icons.Default.Fastfood
-        "china"            -> Icons.Default.Restaurant
-        "saludable"        -> Icons.Default.Eco
-        "italiana"         -> Icons.Default.LocalPizza
-        "mexicana"         -> Icons.Default.LunchDining
-        "mariscos"         -> Icons.Default.RestaurantMenu
-        "japonesa"         -> Icons.Default.RamenDining
-        else               -> Icons.Default.Restaurant
+private fun FiltroCategoriasRow(
+    categorias:        List<Categoria>,
+    seleccionadas:     Set<String>,
+    onToggleCategoria: (String) -> Unit,
+    onLimpiar:         () -> Unit
+) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding        = PaddingValues(horizontal = 0.dp)
+    ) {
+        // Chip "Todos"
+        item {
+            FilterChip(
+                selected = seleccionadas.isEmpty(),
+                onClick  = onLimpiar,
+                label    = { Text("Todos") },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.GridView,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                },
+                colors   = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor     = CletaNaranja,
+                    selectedLabelColor         = CletaBlanco,
+                    selectedLeadingIconColor   = CletaBlanco,
+                    containerColor             = CletaGrisMedio,
+                    labelColor                 = CletaTextoSecundario,
+                    iconColor                  = CletaTextoSecundario
+                )
+            )
+        }
+        items(categorias) { cat ->
+            val estaSeleccionada = cat.nombre in seleccionadas
+            FilterChip(
+                selected = estaSeleccionada,
+                onClick  = { onToggleCategoria(cat.nombre) },
+                label    = { Text(cat.nombre.replaceFirstChar { it.uppercase() }) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = if (estaSeleccionada) Icons.Default.Check
+                                      else categoriaIcono(cat.nombre),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor     = CletaNaranja,
+                    selectedLabelColor         = CletaBlanco,
+                    selectedLeadingIconColor   = CletaBlanco,
+                    containerColor             = CletaGrisMedio,
+                    labelColor                 = CletaTextoSecundario,
+                    iconColor                  = CletaNaranja
+                )
+            )
+        }
+    }
+}
+
+// ── Helper: ícono según tipo de comida ───────────────────────────
+fun categoriaIcono(tipo: String): ImageVector {
+    return when (tipo.lowercase().trim()) {
+        "rápida", "rapida", "comida rápida" -> Icons.Default.Fastfood
+        "china", "asiática", "asiatica"     -> Icons.Default.Restaurant
+        "saludable", "vegana", "vegan"      -> Icons.Default.Eco
+        "italiana", "pizza"                 -> Icons.Default.LocalPizza
+        "mexicana", "tacos"                 -> Icons.Default.LunchDining
+        "mariscos", "pescados"              -> Icons.Default.RestaurantMenu
+        "japonesa", "sushi", "ramen"        -> Icons.Default.RamenDining
+        "postres", "dulces", "helados"      -> Icons.Default.Cake
+        "bebidas", "jugos", "café"          -> Icons.Default.LocalCafe
+        "desayunos", "desayuno"             -> Icons.Default.FreeBreakfast
+        "carnes", "parrilla", "bbq"         -> Icons.Default.OutdoorGrill
+        else                                -> Icons.Default.Restaurant
     }
 }

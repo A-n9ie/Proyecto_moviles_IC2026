@@ -3,6 +3,7 @@ package com.example.cletaeats_mobile.ui.cliente
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -101,11 +102,10 @@ fun CombosScreen(
                         ),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Subtítulo con tipo de comida
                         item {
                             comboState.restaurante?.let { r ->
                                 Text(
-                                    text     = "${r.tipoComida.replaceFirstChar { it.uppercase() }} · ${r.direccion}",
+                                    text     = "${r.categorias.firstOrNull() ?: "".replaceFirstChar { it.uppercase() }} · ${r.direccion}",
                                     color    = CletaTextoSecundario,
                                     fontSize = 13.sp
                                 )
@@ -122,10 +122,14 @@ fun CombosScreen(
 
                         items(comboState.combos) { combo ->
                             ComboCard(
-                                combo      = combo,
-                                cantidad   = carritoViewModel.getCantidad(combo.id),
-                                onAgregar  = { carritoViewModel.agregarCombo(combo) },
-                                onReducir  = { carritoViewModel.reducirCombo(combo.id) }
+                                combo               = combo,
+                                cantidad            = carritoViewModel.getCantidad(combo.id),
+                                productosEliminados = carritoViewModel.getProductosEliminados(combo.id), // ← nuevo
+                                onAgregar           = { carritoViewModel.agregarCombo(combo) },
+                                onReducir           = { carritoViewModel.reducirCombo(combo.id) },
+                                onToggleProducto    = { productoId ->                                    // ← nuevo
+                                    carritoViewModel.toggleProductoEnCombo(combo.id, productoId)
+                                }
                             )
                         }
                     }
@@ -138,106 +142,149 @@ fun CombosScreen(
 // ── Card individual de combo ─────────────────────────────────────
 @Composable
 private fun ComboCard(
-    combo:    Combo,
-    cantidad: Int,
-    onAgregar: () -> Unit,
-    onReducir: () -> Unit
+    combo:                 Combo,
+    cantidad:              Int,
+    productosEliminados:   List<Int>,
+    onAgregar:             () -> Unit,
+    onReducir:             () -> Unit,
+    onToggleProducto:      (Int) -> Unit
 ) {
     Card(
-        modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(16.dp),
-        colors    = CardDefaults.cardColors(containerColor = CletaGrisMedio),
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CletaGrisMedio),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
-        Row(
-            modifier          = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // ── Placeholder de imagen del combo ───────────────────
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(CletaNaranja.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text     = "#${combo.numeroCombo}",
-                    color    = CletaNaranja,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
-            }
-
-            Spacer(Modifier.width(14.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text       = combo.nombre,
-                    color      = CletaBlanco,
-                    fontSize   = 15.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                if (combo.descripcion.isNotEmpty()) {
+                // ── Placeholder de imagen del combo ───────────────────
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(CletaNaranja.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
-                        text     = combo.descripcion,
-                        color    = CletaTextoSecundario,
-                        fontSize = 12.sp
+                        text = "#${combo.numeroCombo}",
+                        color = CletaNaranja,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold
                     )
                 }
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    text       = combo.precio.toCRC(),
-                    color      = CletaNaranja,
-                    fontSize   = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
 
-            Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(14.dp))
 
-            // ── Controles + / - (ImageButton con ícono) ───────────
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (cantidad > 0) {
-                    IconButton(
-                        onClick  = onReducir,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(CletaGrisClaro)
-                    ) {
-                        Icon(
-                            Icons.Default.Remove,
-                            contentDescription = "Quitar uno",
-                            tint     = CletaBlanco,
-                            modifier = Modifier.size(18.dp)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = combo.nombre,
+                        color = CletaBlanco,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    if (combo.descripcion.isNotEmpty()) {
+                        Text(
+                            text = combo.descripcion,
+                            color = CletaTextoSecundario,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = combo.precio.toCRC(),
+                        color = CletaNaranja,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(Modifier.width(8.dp))
+
+                // ── Controles + / - (ImageButton con ícono) ───────────
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (cantidad > 0) {
+                        IconButton(
+                            onClick = onReducir,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(CletaGrisClaro)
+                        ) {
+                            Icon(
+                                Icons.Default.Remove,
+                                contentDescription = "Quitar uno",
+                                tint = CletaBlanco,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        Text(
+                            text = "$cantidad",
+                            color = CletaBlanco,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 10.dp)
                         )
                     }
 
-                    Text(
-                        text      = "$cantidad",
-                        color     = CletaBlanco,
-                        fontSize  = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier  = Modifier.padding(horizontal = 10.dp)
-                    )
+                    IconButton(
+                        onClick = onAgregar,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(CletaNaranja)
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Agregar al carrito",
+                            tint = CletaBlanco,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
-
-                IconButton(
-                    onClick  = onAgregar,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(CletaNaranja)
-                ) {
-                    Icon(
-                        Icons.Default.Add,
-                        contentDescription = "Agregar al carrito",
-                        tint     = CletaBlanco,
-                        modifier = Modifier.size(18.dp)
+                // ── Productos del combo (nuevo) ───────────────────────
+                if (combo.productos.isNotEmpty() && cantidad > 0) {
+                    Spacer(Modifier.height(10.dp))
+                    HorizontalDivider(color = CletaGrisClaro.copy(alpha = 0.5f))
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Personalizar combo:",
+                        color = CletaTextoSecundario,
+                        fontSize = 12.sp
                     )
+                    Spacer(Modifier.height(6.dp))
+                    combo.productos.forEach { producto ->
+                        val eliminado = producto.id in productosEliminados
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onToggleProducto(producto.id) }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = if (eliminado) Icons.Default.CheckBoxOutlineBlank
+                                else Icons.Default.CheckBox,
+                                contentDescription = null,
+                                tint = if (eliminado) CletaTextoSecundario else CletaNaranja,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = producto.nombre,
+                                color = if (eliminado) CletaTextoSecundario else CletaBlanco,
+                                fontSize = 13.sp,
+                                style = if (eliminado)
+                                    LocalTextStyle.current.copy(
+                                        textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                                    )
+                                else LocalTextStyle.current
+                            )
+                        }
+                    }
                 }
             }
         }

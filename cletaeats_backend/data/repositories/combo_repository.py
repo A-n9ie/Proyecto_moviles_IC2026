@@ -1,98 +1,106 @@
 # data/repositories/combo_repository.py
 from typing import List, Optional
-from domain.interfaces.i_combo_repository import IComboRepository
+from sqlalchemy import select, insert, update, delete
+from data.database.db_connection import engine
+from data.database.tables import (
+    combo as t_combo, restaurante as t_rest,
+    combo_producto as t_cp, producto as t_prod
+)
 from core.entities.combo import Combo
-from data.database.db_connection import get_connection
+from data.utils.mapper_utils import to_lower_dict
 
 
-class ComboRepository(IComboRepository):
+class ComboRepository:
 
     def obtener_por_restaurante(self, restaurante_id: int) -> List[Combo]:
-        conn = get_connection()
-        try:
+        with engine.connect() as conn:
             rows = conn.execute(
-                """
-                SELECT * FROM COMBO
-                WHERE RESTAURANTE_ID = ? AND ESTADO = 1
-                ORDER BY NUMERO_COMBO
-                """,
-                (restaurante_id,)
-            ).fetchall()
-            return [self._fila_a_combo(r) for r in rows]
-        finally:
-            conn.close()
+                select(t_combo)
+                .where(t_combo.c.RESTAURANTE_ID == restaurante_id)
+                .where(t_combo.c.ESTADO == 1)
+                .order_by(t_combo.c.NUMERO_COMBO)
+            ).mappings().all()
+            return [self._map(r) for r in rows]
 
     def obtener_por_id(self, combo_id: int) -> Optional[Combo]:
-        conn = get_connection()
-        try:
+        with engine.connect() as conn:
             row = conn.execute(
-                "SELECT * FROM COMBO WHERE ID = ?", (combo_id,)
-            ).fetchone()
-            return self._fila_a_combo(row) if row else None
-        finally:
-            conn.close()
+                select(t_combo).where(t_combo.c.ID == combo_id)
+            ).mappings().first()
+            return self._map(row) if row else None
 
     def listar_todos(self) -> list:
-        conn = get_connection()
-        try:
-            rows = conn.execute("""
-                SELECT
-                    C.ID                    AS id,
-                    C.RESTAURANTE_ID        AS restaurante_id,
-                    R.NOMBRE                AS restaurante_nombre,
-                    C.NUMERO_COMBO          AS numero_combo,
-                    C.NOMBRE                AS nombre,
-                    C.DESCRIPCION           AS descripcion,
-                    C.PRECIO                AS precio,
-                    C.IMAGEN_URL            AS imagen_url,
-                    C.ESTADO                AS estado
-                FROM COMBO C
-                JOIN RESTAURANTE R
-                    ON C.RESTAURANTE_ID = R.ID
-                ORDER BY C.ID
-            """).fetchall()
-            return [dict(r) for r in rows]
-        finally:
-            conn.close()
+        with engine.connect() as conn:
+            rows = conn.execute(
+                select(
+                    t_combo.c.ID,
+                    t_combo.c.RESTAURANTE_ID,
+                    t_rest.c.NOMBRE.label("RESTAURANTE_NOMBRE"),
+                    t_combo.c.NUMERO_COMBO,
+                    t_combo.c.NOMBRE,
+                    t_combo.c.DESCRIPCION,
+                    t_combo.c.PRECIO,
+                    t_combo.c.IMAGEN_URL,
+                    t_combo.c.ESTADO
+                )
+                .join(t_rest, t_combo.c.RESTAURANTE_ID == t_rest.c.ID)
+                .order_by(t_combo.c.ID)
+            ).mappings().all()
+            result = []
+            for r in rows:
+                d = to_lower_dict(r)
+                # Incluir productos del combo
+                prods = conn.execute(
+                    select(t_prod.c.ID.label("id"), t_prod.c.NOMBRE.label("nombre"))
+                    .join(t_cp, t_prod.c.ID == t_cp.c.PRODUCTO_ID)
+                    .where(t_cp.c.COMBO_ID == d["id"])
+                ).mappings().all()
+                d["productos"] = [dict(p) for p in prods]
+                result.append(d)
+            return [to_lower_dict(r) for r in rows]
 
     def crear(self, data: dict) -> int:
-        conn = get_connection()
-        try:
-            cur = conn.execute(
-                "INSERT INTO COMBO (RESTAURANTE_ID, NUMERO_COMBO, NOMBRE, DESCRIPCION, PRECIO, ESTADO) VALUES (?,?,?,?,?,1)",
-                (data["restaurante_id"], data["numero_combo"], data["nombre"], data.get("descripcion",""), data["precio"])
-            )
-            conn.commit()
-            return cur.lastrowid
-        finally:
-            conn.close()
+        with engine.begin() as conn:
+            result = conn.execute(insert(t_combo).values(
+                RESTAURANTE_ID=data["restaurante_id"],
+                NUMERO_COMBO=data["numero_combo"],
+                NOMBRE=data["nombre"],
+                DESCRIPCION=data.get("descripcion", ""),
+                PRECIO=data["precio"]
+            ))
+            combo_id = result.inserted_primary_key[0]
+            for pid in data.get("producto_ids", []):
+                conn.execute(insert(t_cp).values(COMBO_ID=combo_id, PRODUCTO_ID=pid))
+            return combo_id
 
     def actualizar_campos(self, id_combo: int, data: dict) -> bool:
-        campos = []
-        vals   = []
-        for k, col in [("nombre","NOMBRE"),("descripcion","DESCRIPCION"),("precio","PRECIO"),("estado","ESTADO")]:
-            if k in data:
-                campos.append(f"{col} = ?")
-                vals.append(data[k])
-        if not campos: return False
-        vals.append(id_combo)
-        conn = get_connection()
-        try:
-            cur = conn.execute(f"UPDATE COMBO SET {', '.join(campos)} WHERE ID = ?", vals)
-            conn.commit()
-            return cur.rowcount > 0
-        finally:
-            conn.close()
+        allowed = {
+            "nombre": "NOMBRE", "descripcion": "DESCRIPCION",
+            "precio": "PRECIO", "estado": "ESTADO"
+        }
+        values = {allowed[k]: v for k, v in data.items() if k in allowed}
+        with engine.begin() as conn:
+            if values:
+                result = conn.execute(
+                    update(t_combo).where(t_combo.c.ID == id_combo).values(**values)
+                )
+                if result.rowcount == 0:
+                    return False
+            if "producto_ids" in data:
+                conn.execute(delete(t_cp).where(t_cp.c.COMBO_ID == id_combo))
+                for pid in data["producto_ids"]:
+                    conn.execute(insert(t_cp).values(COMBO_ID=id_combo, PRODUCTO_ID=pid))
+        return True
 
     @staticmethod
-    def _fila_a_combo(row) -> Combo:
+    def _map(row) -> Combo:
         return Combo(
-            id             = row["ID"],
-            restaurante_id = row["RESTAURANTE_ID"],
-            numero_combo   = row["NUMERO_COMBO"],
-            nombre         = row["NOMBRE"],
-            descripcion    = row["DESCRIPCION"] or "",
-            precio         = row["PRECIO"],
-            imagen_url     = row["IMAGEN_URL"] or "",
-            estado         = row["ESTADO"]
+            id=row["ID"],
+            restaurante_id=row["RESTAURANTE_ID"],
+            numero_combo=row["NUMERO_COMBO"],
+            nombre=row["NOMBRE"],
+            descripcion=row["DESCRIPCION"] or "",
+            precio=row["PRECIO"],
+            imagen_url=row["IMAGEN_URL"] or "",
+            estado=row["ESTADO"]
         )

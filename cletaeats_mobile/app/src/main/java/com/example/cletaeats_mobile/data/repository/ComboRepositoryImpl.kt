@@ -21,22 +21,33 @@ class ComboRepositoryImpl(
                 val resp = api.obtenerCombos("Bearer ${session.getToken()}", restauranteId)
                 when (resp.code()) {
                     200 -> {
-                        val body = resp.body()!!
-                        val r    = body.restaurante
-                        val restaurante = Restaurante(r.id, r.nombre, r.tipoComida,
-                                                      r.direccion, r.imagenUrl)
-                        val combos = body.combos.map {
-                            Combo(it.id, restaurante.id, it.numeroCombo, it.nombre,
-                                  it.descripcion, it.precio, it.imagenUrl)
+                        val combos = resp.body()!!.map { c ->
+                            Combo(
+                                id = c.id,
+                                restauranteId = c.restauranteId,
+                                numeroCombo = c.numeroCombo,
+                                nombre = c.nombre,
+                                descripcion = c.descripcion,
+                                precio = c.precio,
+                                imagenUrl = c.imagenUrl,
+                                productos = c.productos.map {  // ← nuevo
+                                    com.example.cletaeats_mobile.domain.model.Producto(
+                                        id = it.id,
+                                        nombre = it.nombre,
+                                        descripcion = it.descripcion
+                                    )
+                                }
+                            )
                         }
-                        Result.Success(RestauranteConCombos(restaurante, combos))
+                        Result.Success(RestauranteConCombos(restaurante = null, combos = combos))
                     }
-                    401 -> Result.Error("Sesión expirada")
-                    404 -> Result.Error("Restaurante no disponible")
-                    else -> Result.Error("Error al cargar el menú (${resp.code()})")
+
+                    401 -> Result.Error("Sesión expirada.")
+                    else -> Result.Error("Error al cargar combos (${resp.code()})")
                 }
             } catch (e: Exception) {
-                Result.Error("Sin conexión al servidor")
+                Result.Error(e.message ?: "Error desconocido")
             }
         }
+
 }

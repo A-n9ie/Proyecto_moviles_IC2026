@@ -75,7 +75,7 @@ const RepartidoresPage = () => {
                     },
 
                     {
-                        key: 'email',
+                        key: 'correo',
 
                         title: 'Correo',
                     },

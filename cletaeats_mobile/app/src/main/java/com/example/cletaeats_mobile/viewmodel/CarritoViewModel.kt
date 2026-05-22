@@ -16,6 +16,7 @@ data class CarritoUiState(
     val restauranteId:     Int               = 0,
     val restauranteNombre: String            = "",
     val items:             List<ItemCarrito> = emptyList(),
+    val tarjetaId:         Int?              = null,
     val isLoading:         Boolean           = false,
     val errorMsg:          String?           = null,
     val factura:           FacturaData?      = null,
@@ -78,6 +79,9 @@ class CarritoViewModel(private val repo: IPedidoRepository) : ViewModel() {
         _uiState.value = _uiState.value.copy(items = items)
     }
 
+    fun getProductosEliminados(comboId: Int): List<Int> =
+        _uiState.value.items.find { it.combo.id == comboId }?.productosEliminados ?: emptyList()
+
     fun getCantidad(comboId: Int): Int =
         _uiState.value.items.find { it.combo.id == comboId }?.cantidad ?: 0
 
@@ -104,6 +108,34 @@ class CarritoViewModel(private val repo: IPedidoRepository) : ViewModel() {
                 )
             }
         }
+    }
+
+    fun toggleProductoEnCombo(comboId: Int, productoId: Int) {
+        val items = _uiState.value.items.toMutableList()
+        val index = items.indexOfFirst { it.combo.id == comboId }
+        if (index < 0) return
+        val item = items[index]
+        val eliminados = item.productosEliminados.toMutableList()
+        if (productoId in eliminados) {
+            eliminados.remove(productoId)  // re-agregar
+        } else {
+            eliminados.add(productoId)     // eliminar
+        }
+        items[index] = item.copy(
+            productosEliminados = eliminados,
+            configuracion = buildConfiguracion(eliminados)
+        )
+        _uiState.value = _uiState.value.copy(items = items)
+    }
+
+    fun seleccionarTarjeta(tarjetaId: Int) {
+        _uiState.value = _uiState.value.copy(tarjetaId = tarjetaId)
+    }
+
+    private fun buildConfiguracion(productosEliminados: List<Int>): String {
+        if (productosEliminados.isEmpty()) return "{}"
+        val ids = productosEliminados.joinToString(",")
+        return "{\"sin_productos\":[$ids]}"
     }
 
     fun limpiar() {

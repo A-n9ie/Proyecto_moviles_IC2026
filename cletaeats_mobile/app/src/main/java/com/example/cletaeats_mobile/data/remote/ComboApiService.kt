@@ -6,18 +6,21 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Query
 
-data class ComboResponse(
-    val id: Int,
-    @SerializedName("numero_combo") val numeroCombo: Int,
-    val nombre: String,
-    val descripcion: String = "",
-    val precio: Double,
-    @SerializedName("imagen_url") val imagenUrl: String = ""
+data class ProductoResponse(
+    val id:          Int,
+    val nombre:      String,
+    val descripcion: String = ""
 )
 
-data class RestauranteConCombosResponse(
-    val restaurante: RestauranteResponse,
-    val combos: List<ComboResponse>
+data class ComboResponse(
+    val id:                     Int,
+    @SerializedName("numero_combo")    val numeroCombo:       Int,
+    @SerializedName("restaurante_id")  val restauranteId:     Int    = 0,
+    val nombre:                 String,
+    val descripcion:            String = "",
+    val precio:                 Double,
+    @SerializedName("imagen_url")      val imagenUrl:         String = "",
+    val productos:              List<ProductoResponse> = emptyList() // ← nuevo
 )
 
 interface IComboApi {
@@ -25,5 +28,5 @@ interface IComboApi {
     suspend fun obtenerCombos(
         @Header("Authorization") token: String,
         @Query("restaurante") restauranteId: Int
-    ): Response<RestauranteConCombosResponse>
+    ): Response<List<ComboResponse>>
 }

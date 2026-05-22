@@ -9,10 +9,10 @@ import kotlinx.parcelize.Parcelize
  */
 @Parcelize
 data class Restaurante(
-    val id:          Int    = 0,
-    val nombre:      String = "",
-    val tipoComida:   String = "",
-    val direccion:   String = "",
-    val imagenUrl:   String = "",
-    val estado:      Int    = 1
+    val id:         Int             = 0,
+    val nombre:     String          = "",
+    val categorias: List<String>    = emptyList(),
+    val direccion:  String          = "",
+    val imagenUrl:  String          = "",
+    val estado:     Int             = 1
 ) : Parcelable

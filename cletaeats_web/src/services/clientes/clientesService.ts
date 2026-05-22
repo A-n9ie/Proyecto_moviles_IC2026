@@ -24,4 +24,9 @@ export const clientesService = {
     remove: async (id: number): Promise<void> => {
         await axiosClient.delete(`/admin/clientes/${id}`)
     },
+    toggleEstado: async (id: number, estadoActual: number): Promise<void> => {
+        await axiosClient.put(`/admin/clientes/${id}`, {
+            estado: estadoActual === 1 ? 0 : 1,
+        })
+    },
 }

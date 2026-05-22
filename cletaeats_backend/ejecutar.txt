@@ -1,7 +1,19 @@
-En carpeta cletaeats_backend
+# Crear entorno virtual
+python -m venv venv
 
-# 1. Crear BD (solo la primera vez):
+# Activar entorno virtual
+
+# Windows
+venv\Scripts\activate
+
+# Linux / Mac
+source venv/bin/activate
+
+# Instalar dependencias
+pip install -r requirements.txt
+
+# Crear la BD nueva (solo una vez)
 python db_init.py
 
-# 2. Iniciar servidor:
-python main.py
+# Levantar el servidor
+uvicorn app:app --reload --port 8000

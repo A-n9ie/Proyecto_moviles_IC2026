@@ -3,122 +3,40 @@
 Ejecutar UNA SOLA VEZ (o cuando se quiera reiniciar la BD):
     python db_init.py
 """
-from data.database.db_connection import get_connection, DB_PATH
-from services.hash_service import hash_password
 import os
+from sqlalchemy import insert, text
+from data.database.db_connection import engine, DB_PATH
+from data.database.tables import (
+    metadata, usuario, cliente, repartidor,
+    restaurante, categoria, restaurante_categoria,
+    producto, combo, pedido
+)
+from services.hash_service import hash_password
 
+# Crear directorio si no existe
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 print(f"Inicializando BD en: {DB_PATH}")
 
-SQL_SCHEMA = """
-PRAGMA FOREIGN_KEYS = OFF;
+# ── Crear todas las tablas ──────────────────────────────────────────
+with engine.begin() as conn:
+    conn.execute(text("PRAGMA foreign_keys = OFF"))
+    metadata.drop_all(engine)
+    metadata.create_all(engine)
+    conn.execute(text("PRAGMA foreign_keys = ON"))
 
-DROP TABLE IF EXISTS DETALLE_PEDIDO;
-DROP TABLE IF EXISTS PEDIDO;
-DROP TABLE IF EXISTS COMBO;
-DROP TABLE IF EXISTS RESTAURANTE;
-DROP TABLE IF EXISTS REPARTIDOR;
-DROP TABLE IF EXISTS CLIENTE;
-DROP TABLE IF EXISTS USUARIO;
-
-PRAGMA FOREIGN_KEYS = ON;
-
-CREATE TABLE USUARIO (
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    EMAIL TEXT NOT NULL UNIQUE,
-    PASSWORD_HASH TEXT NOT NULL,
-    ROL TEXT NOT NULL CHECK (ROL IN ('CLIENTE','REPARTIDOR','ADMIN','RESTAURANTE')),
-    ESTADO INTEGER NOT NULL DEFAULT 1 CHECK (ESTADO IN (0,1)),
-    FECHA_REGISTRO TEXT NOT NULL DEFAULT (datetime('now'))
-);
-
-CREATE TABLE CLIENTE (
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    USUARIO_ID INTEGER NOT NULL UNIQUE,
-    CEDULA TEXT NOT NULL UNIQUE,
-    NOMBRE TEXT NOT NULL,
-    DIRECCION TEXT NOT NULL,
-    TELEFONO TEXT NOT NULL UNIQUE,
-    TARJETA TEXT NOT NULL,
-    FOREIGN KEY (USUARIO_ID) REFERENCES USUARIO(ID) ON DELETE CASCADE ON UPDATE CASCADE
-);
-
-CREATE TABLE REPARTIDOR (
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    USUARIO_ID INTEGER NOT NULL UNIQUE,
-    CEDULA TEXT NOT NULL UNIQUE,
-    NOMBRE TEXT NOT NULL,
-    CORREO TEXT NOT NULL UNIQUE,
-    DIRECCION TEXT NOT NULL,
-    TELEFONO TEXT NOT NULL UNIQUE,
-    TARJETA TEXT NOT NULL,
-    ESTADO INTEGER NOT NULL DEFAULT 1 CHECK (ESTADO IN (0,1)),
-    KM_RECORRIDOS_DIARIOS REAL NOT NULL DEFAULT 0,
-    COSTO_KM_HABIL REAL NOT NULL DEFAULT 1000,
-    COSTO_KM_FERIADO REAL NOT NULL DEFAULT 1500,
-    AMONESTACIONES INTEGER NOT NULL DEFAULT 0 CHECK (AMONESTACIONES >= 0 AND AMONESTACIONES <= 4),
-    FOREIGN KEY (USUARIO_ID) REFERENCES USUARIO(ID) ON DELETE CASCADE ON UPDATE CASCADE
-);
-
-CREATE TABLE RESTAURANTE (
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    CEDULA_JURIDICA TEXT NOT NULL UNIQUE,
-    NOMBRE TEXT NOT NULL,
-    DIRECCION TEXT NOT NULL,
-    TIPO_COMIDA TEXT NOT NULL,
-    ESTADO INTEGER NOT NULL DEFAULT 1 CHECK (ESTADO IN (0,1)),
-    IMAGEN_URL TEXT
-);
-
-CREATE TABLE COMBO (
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    RESTAURANTE_ID INTEGER NOT NULL,
-    NUMERO_COMBO INTEGER NOT NULL,
-    NOMBRE TEXT NOT NULL,
-    DESCRIPCION TEXT,
-    PRECIO REAL NOT NULL,
-    IMAGEN_URL TEXT,
-    ESTADO INTEGER NOT NULL DEFAULT 1 CHECK (ESTADO IN (0,1)),
-    FOREIGN KEY (RESTAURANTE_ID) REFERENCES RESTAURANTE(ID) ON DELETE CASCADE ON UPDATE CASCADE,
-    CHECK (NUMERO_COMBO BETWEEN 1 AND 9)
-);
-
-CREATE TABLE PEDIDO (
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    CLIENTE_ID INTEGER NOT NULL,
-    RESTAURANTE_ID INTEGER NOT NULL,
-    REPARTIDOR_ID INTEGER,
-    FECHA_CREACION TEXT NOT NULL DEFAULT (datetime('now')),
-    FECHA_ENTREGA TEXT,
-    ESTADO INTEGER NOT NULL DEFAULT 0 CHECK (ESTADO IN (0,1,2,3,4)),
-    DISTANCIA_KM REAL NOT NULL DEFAULT 0,
-    FOREIGN KEY (CLIENTE_ID) REFERENCES CLIENTE(ID) ON DELETE RESTRICT ON UPDATE CASCADE,
-    FOREIGN KEY (RESTAURANTE_ID) REFERENCES RESTAURANTE(ID) ON DELETE RESTRICT ON UPDATE CASCADE,
-    FOREIGN KEY (REPARTIDOR_ID) REFERENCES REPARTIDOR(ID) ON DELETE SET NULL ON UPDATE CASCADE
-);
-
-CREATE TABLE DETALLE_PEDIDO (
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    PEDIDO_ID INTEGER NOT NULL,
-    COMBO_ID INTEGER NOT NULL,
-    CANTIDAD INTEGER NOT NULL DEFAULT 1 CHECK (CANTIDAD > 0),
-    PRECIO_UNITARIO REAL NOT NULL,
-    CONFIGURACION TEXT,
-    FOREIGN KEY (PEDIDO_ID) REFERENCES PEDIDO(ID) ON DELETE CASCADE,
-    FOREIGN KEY (COMBO_ID) REFERENCES COMBO(ID) ON DELETE RESTRICT
-);
-"""
-
+# ── Datos seed ──────────────────────────────────────────────────────
 RESTAURANTES_SEED = [
-    ("3-101-000001", "Burger House",    "Heredia Centro",        "rápida",    "placeholder_burger"),
-    ("3-101-000002", "Dragon Palace",   "Heredia, San Francisco", "china",     "placeholder_dragon"),
-    ("3-101-000003", "Green Garden",    "Heredia, Barreal",       "saludable", "placeholder_garden"),
-    ("3-101-000004", "Pizza Roma",      "Heredia, Mercedes",      "italiana",  "placeholder_pizza"),
-    ("3-101-000005", "Taco Fiesta",     "Heredia, Ulloa",         "mexicana",  "placeholder_taco"),
-    ("3-101-000006", "Mar y Tierra",    "Heredia, La Aurora",     "mariscos",  "placeholder_mar"),
-    ("3-101-000007", "Sushi Zen",       "Heredia, Belén",         "japonesa",  "placeholder_sushi"),
+    ("3-101-000001", "Burger House",  "Heredia Centro",         "placeholder_burger"),
+    ("3-101-000002", "Dragon Palace", "Heredia, San Francisco",  "placeholder_dragon"),
+    ("3-101-000003", "Green Garden",  "Heredia, Barreal",        "placeholder_garden"),
+    ("3-101-000004", "Pizza Roma",    "Heredia, Mercedes",       "placeholder_pizza"),
+    ("3-101-000005", "Taco Fiesta",   "Heredia, Ulloa",          "placeholder_taco"),
+    ("3-101-000006", "Mar y Tierra",  "Heredia, La Aurora",      "placeholder_mar"),
+    ("3-101-000007", "Sushi Zen",     "Heredia, Belén",          "placeholder_sushi"),
 ]
 
-# Nombres de combos por restaurante (9 por cada uno)
+CATEGORIAS_SEED = ["rápida", "china", "saludable", "italiana", "mexicana", "mariscos", "japonesa"]
+
 COMBOS_POR_RESTAURANTE = {
     "Burger House":  ["Clásica Simple","Doble Cheese","BBQ Crispy","Mushroom Swiss","Bacon Deluxe","Mega Combo","Tower Burger","Signature","Ultimate Beast"],
     "Dragon Palace": ["Arroz Frito Básico","Chop Suey","Lo Mein Especial","Dim Sum Mix","Pato Pekín","Cerdo Agridulce","Mariscos Wok","Tofu Especial","Banquete Imperial"],
@@ -129,65 +47,92 @@ COMBOS_POR_RESTAURANTE = {
     "Sushi Zen":     ["Maki Clásico","Nigiri Set","Sashimi","Temaki","Uramaki","Spicy Roll","Dragon Roll","Rainbow Roll","Chef's Special"],
 }
 
+with engine.begin() as conn:
+    conn.execute(text("PRAGMA foreign_keys = ON"))
 
-def seed():
-    conn = get_connection()
+    # Categorías
+    cat_ids = {}
+    for nombre_cat in CATEGORIAS_SEED:
+        result = conn.execute(insert(categoria).values(NOMBRE=nombre_cat))
+        cat_ids[nombre_cat] = result.inserted_primary_key[0]
 
-    # Crear schema
-    conn.executescript(SQL_SCHEMA)
+    # Restaurantes + combos + relación categoría
+    cat_por_restaurante = dict(zip(
+        [r[1] for r in RESTAURANTES_SEED],
+        CATEGORIAS_SEED
+    ))
+    for ced, nombre, dir_, img in RESTAURANTES_SEED:
+        res = conn.execute(insert(restaurante).values(
+            CEDULA_JURIDICA=ced, NOMBRE=nombre, DIRECCION=dir_, IMAGEN_URL=img
+        ))
+        rest_id = res.inserted_primary_key[0]
 
-    # ── Restaurantes + Combos ─────────────────────────────────────
-    for ced, nombre, dir_, tipo, img in RESTAURANTES_SEED:
-        cursor = conn.execute(
-            "INSERT INTO RESTAURANTE (CEDULA_JURIDICA, NOMBRE, DIRECCION, TIPO_COMIDA, IMAGEN_URL) VALUES (?,?,?,?,?)",
-            (ced, nombre, dir_, tipo, img)
-        )
-        restaurante_id = cursor.lastrowid
-        combos = COMBOS_POR_RESTAURANTE[nombre]
-        for i, nombre_combo in enumerate(combos, start=1):
-            precio = 3000 + (i * 1000)  # Combo 1=¢4000 ... Combo 9=¢12000
-            conn.execute(
-                "INSERT INTO COMBO (RESTAURANTE_ID, NUMERO_COMBO, NOMBRE, PRECIO, IMAGEN_URL) VALUES (?,?,?,?,?)",
-                (restaurante_id, i, nombre_combo, precio, "placeholder_combo")
-            )
+        # Asignar categoría
+        conn.execute(insert(restaurante_categoria).values(
+            RESTAURANTE_ID=rest_id,
+            CATEGORIA_ID=cat_ids[cat_por_restaurante[nombre]]
+        ))
 
-    # ── Usuario de prueba: CLIENTE ────────────────────────────────
-    cursor = conn.execute(
-        "INSERT INTO USUARIO (EMAIL, PASSWORD_HASH, ROL) VALUES (?,?,?)",
-        ("cliente@test.com", hash_password("123456"), "CLIENTE")
-    )
-    u_id = cursor.lastrowid
-    conn.execute(
-        "INSERT INTO CLIENTE (USUARIO_ID, CEDULA, NOMBRE, DIRECCION, TELEFONO, TARJETA) VALUES (?,?,?,?,?,?)",
-        (u_id, "1-1111-1111", "Juan Cliente", "Heredia Centro", "88881111", "4000111122223333")
-    )
+        # Combos
+        for i, nombre_combo in enumerate(COMBOS_POR_RESTAURANTE[nombre], start=1):
+            precio = 3000 + (i * 1000)
+            conn.execute(insert(combo).values(
+                RESTAURANTE_ID=rest_id,
+                NUMERO_COMBO=i,
+                NOMBRE=nombre_combo,
+                PRECIO=precio,
+                IMAGEN_URL="placeholder_combo"
+            ))
 
-    # ── Usuario de prueba: REPARTIDOR ─────────────────────────────
-    cursor = conn.execute(
-        "INSERT INTO USUARIO (EMAIL, PASSWORD_HASH, ROL) VALUES (?,?,?)",
-        ("repartidor@test.com", hash_password("123456"), "REPARTIDOR")
-    )
-    
-    u_id = cursor.lastrowid
-    conn.execute(
-        """INSERT INTO REPARTIDOR (USUARIO_ID, CEDULA, NOMBRE, CORREO, DIRECCION, TELEFONO, TARJETA)
-           VALUES (?,?,?,?,?,?,?)""",
-        (u_id, "2-2222-2222", "Pedro Repartidor", "repartidor@test.com",
-         "Heredia, La Aurora", "88882222", "4000222233334444")
-    )
+    # Usuario CLIENTE de prueba
+    res = conn.execute(insert(usuario).values(
+        EMAIL="cliente@test.com",
+        PASSWORD_HASH=hash_password("123456"),
+        ROL="CLIENTE"
+    ))
+    u_cliente_id = res.inserted_primary_key[0]
+    res = conn.execute(insert(cliente).values(
+        USUARIO_ID=u_cliente_id,
+        CEDULA="1-1111-1111",
+        NOMBRE="Juan Cliente",
+        DIRECCION="Heredia Centro",
+        TELEFONO="88881111"
+    ))
+    cliente_id = res.inserted_primary_key[0]
+    # Tarjeta del cliente (tabla TARJETA_CLIENTE)
+    from data.database.tables import tarjeta_cliente
+    conn.execute(insert(tarjeta_cliente).values(
+        CLIENTE_ID=cliente_id,
+        NUMERO="4000111122223333",
+        ALIAS="Visa principal",
+        ES_PRINCIPAL=1
+    ))
 
-    # Admin para el panel web
-    cursor = conn.execute(
-        "INSERT INTO USUARIO (EMAIL, PASSWORD_HASH, ROL) VALUES (?, ?, ?)",
-        ("admin@cletaeats.com", hash_password("admin123"), "ADMIN")
-    )
+    # Usuario REPARTIDOR de prueba
+    res = conn.execute(insert(usuario).values(
+        EMAIL="repartidor@test.com",
+        PASSWORD_HASH=hash_password("123456"),
+        ROL="REPARTIDOR"
+    ))
+    u_rep_id = res.inserted_primary_key[0]
+    conn.execute(insert(repartidor).values(
+        USUARIO_ID=u_rep_id,
+        CEDULA="2-2222-2222",
+        NOMBRE="Pedro Repartidor",
+        CORREO="repartidor@test.com",
+        DIRECCION="Heredia, La Aurora",
+        TELEFONO="88882222",
+        TARJETA="4000222233334444"
+    ))
 
-    conn.commit()
-    conn.close()
-    print("✅ BD inicializada con 7 restaurantes, 63 combos y 2 usuarios de prueba.")
-    print("   CLIENTE:     cliente@test.com    / 123456")
-    print("   REPARTIDOR:  repartidor@test.com / 123456")
-    print("   ADMIN:  admin@cletaeats.com / admin123")
+    # Admin
+    conn.execute(insert(usuario).values(
+        EMAIL="admin@cletaeats.com",
+        PASSWORD_HASH=hash_password("admin123"),
+        ROL="ADMIN"
+    ))
 
-if __name__ == "__main__":
-    seed()
+print("✅ BD inicializada.")
+print("   CLIENTE:    cliente@test.com    / 123456")
+print("   REPARTIDOR: repartidor@test.com / 123456")
+print("   ADMIN:      admin@cletaeats.com / admin123")

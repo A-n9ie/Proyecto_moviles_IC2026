@@ -7,6 +7,7 @@ export interface Combo {
     descripcion: string
     precio: number
     estado: number
+    productos: Producto[]
 }
 
 export interface ComboRequest {
@@ -15,4 +16,11 @@ export interface ComboRequest {
     nombre: string
     descripcion: string
     precio: number
+    producto_ids: number[]
+}
+
+export interface Producto {
+    id: number
+    nombre: string
+    descripcion?: string
 }

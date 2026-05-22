@@ -3,40 +3,30 @@ from typing import Tuple, Optional
 from domain.interfaces.i_usuario_repository import IUsuarioRepository
 from domain.interfaces.i_cliente_repository import IClienteRepository
 from domain.interfaces.i_repartidor_repository import IRepartidorRepository
+from domain.interfaces.i_tarjeta_cliente_repository import ITarjetaClienteRepository
 from core.entities.usuario import Usuario
 from core.entities.cliente import Cliente
 from core.entities.repartidor import Repartidor
+from core.entities.tarjeta_cliente import TarjetaCliente
 from services.hash_service import hash_password, verify_password
 
-# Roles permitidos en la app móvil
 _ROLES_MOVIL = {"CLIENTE", "REPARTIDOR"}
 
-
 class AuthUseCases:
-    """
-    Casos de uso de autenticación.
-    No conoce SQLite, HTTP ni ningún detalle de infraestructura.
-    """
-
     def __init__(
         self,
         usuario_repo: IUsuarioRepository,
         cliente_repo: IClienteRepository,
-        repartidor_repo: IRepartidorRepository
+        repartidor_repo: IRepartidorRepository,
+        tarjeta_repo: ITarjetaClienteRepository
     ):
-        self._usuarios    = usuario_repo
-        self._clientes    = cliente_repo
-        self._repartidores = repartidor_repo
+        self._usuarios      = usuario_repo
+        self._clientes      = cliente_repo
+        self._repartidores  = repartidor_repo
+        self._tarjetas      = tarjeta_repo
 
     # ─── LOGIN ──────────────────────────────────────────────────────
-    def login(
-        self, email: str, password: str
-    ) -> Tuple[bool, Optional[dict], Optional[str]]:
-        """
-        Returns:
-            (True,  datos_sesion, None)     — éxito
-            (False, None,         mensaje)  — falla
-        """
+    def login(self, email: str, password: str) -> Tuple[bool, Optional[dict], Optional[str]]:
         email = (email or "").strip().lower()
         if not email or not password:
             return False, None, "Email y contraseña son requeridos"
@@ -51,9 +41,7 @@ class AuthUseCases:
         if not verify_password(password, usuario.password_hash):
             return False, None, "Contraseña incorrecta"
 
-        # Obtener perfil según rol
         nombre, id_perfil = self._obtener_perfil(usuario)
-
         datos = {
             "id_usuario": usuario.id,
             "email":      usuario.email,
@@ -73,16 +61,15 @@ class AuthUseCases:
         nombre: str,
         direccion: str,
         telefono: str,
-        tarjeta: str
+        tarjeta: str = ""
     ) -> Tuple[bool, Optional[dict], Optional[str]]:
 
-        # Validaciones
         email    = (email or "").strip().lower()
         password = (password or "").strip()
         cedula   = (cedula or "").strip()
         nombre   = (nombre or "").strip()
 
-        if not all([email, password, cedula, nombre, direccion, telefono, tarjeta]):
+        if not all([email, password, confirmar_password, cedula, nombre, direccion, telefono]):
             return False, None, "Todos los campos son requeridos"
         if password != (confirmar_password or "").strip():
             return False, None, "Las contraseñas no coinciden"
@@ -93,7 +80,6 @@ class AuthUseCases:
         if self._clientes.existe_cedula(cedula):
             return False, None, "Esa cédula ya está registrada"
 
-        # Crear usuario
         usuario = self._usuarios.crear(Usuario(
             email=email,
             password_hash=hash_password(password),
@@ -101,15 +87,21 @@ class AuthUseCases:
             estado=1
         ))
 
-        # Crear perfil cliente
         cliente = self._clientes.crear(Cliente(
             usuario_id=usuario.id,
             cedula=cedula,
             nombre=nombre,
             direccion=direccion,
-            telefono=telefono,
-            tarjeta=tarjeta
+            telefono=telefono
         ))
+
+        if tarjeta.strip():
+            self._tarjetas.crear(TarjetaCliente(
+                cliente_id=cliente.id,
+                numero=tarjeta,
+                alias="Principal",
+                es_principal=1
+            ))
 
         datos = {
             "id_usuario": usuario.id,
@@ -179,7 +171,6 @@ class AuthUseCases:
 
     # ─── Helper ─────────────────────────────────────────────────────
     def _obtener_perfil(self, usuario: Usuario) -> Tuple[str, int]:
-        """Retorna (nombre, id_perfil) según el rol del usuario."""
         if usuario.rol == "CLIENTE":
             perfil = self._clientes.encontrar_por_usuario_id(usuario.id)
         elif usuario.rol == "REPARTIDOR":

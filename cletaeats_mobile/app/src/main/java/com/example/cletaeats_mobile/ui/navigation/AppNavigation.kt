@@ -89,7 +89,8 @@ fun AppNavigation(
         composable(AppRoutes.CARRITO) {
             CarritoScreen(
                 carritoViewModel = AppContainer.carritoViewModel,
-                onPedidoCreado   = {
+                tarjetaViewModel = AppContainer.tarjetaViewModel,
+                onPedidoCreado = {
                     navController.navigate(AppRoutes.FACTURA) {
                         popUpTo(AppRoutes.RESTAURANTES)
                     }

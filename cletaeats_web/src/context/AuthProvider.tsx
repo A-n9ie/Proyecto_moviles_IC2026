@@ -22,7 +22,9 @@ interface Props {
 export const AuthProvider = ({
                                  children,
                              }: Props) => {
-    const token = tokenStorage.get()
+    const [token, setToken] = useState<string | null>(
+        tokenStorage.get(),
+    )
 
     const [user, setUser] = useState<User | null>(() => {
         const storedUser =
@@ -53,6 +55,7 @@ export const AuthProvider = ({
         }
 
         tokenStorage.set(response.token)
+        setToken(response.token)
 
         localStorage.setItem(
             'cletaeats_user',
@@ -72,7 +75,7 @@ export const AuthProvider = ({
         tokenStorage.remove()
 
         localStorage.removeItem('cletaeats_user')
-
+        setToken(null)
         setUser(null)
     }
 

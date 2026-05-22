@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Button from '../../components/common/buttons/Button'
 import TextInput from '../../components/common/inputs/TextInput'
 import { useRestaurantes } from '../../hooks/useRestaurantes'
+import { useProductos } from '../../hooks/useProductos'
 import type { Combo, ComboRequest } from '../../types/combos'
 
 interface Props {
@@ -13,14 +14,18 @@ interface Props {
 const ComboForm = ({ combo, onSubmit, onClose }: Props) => {
     const { restaurantes } = useRestaurantes()
 
-    const [form, setForm] =
-        useState<ComboRequest>({
-            restaurante_id: combo?.restaurante_id ?? 0,
-            numero_combo: combo?.numero_combo ?? 1,
-            nombre: combo?.nombre ?? '',
-            descripcion: combo?.descripcion ?? '',
-            precio: combo?.precio ?? 0,
-        })
+    const [form, setForm] = useState<ComboRequest>({
+        restaurante_id: combo?.restaurante_id ?? 0,
+        numero_combo: combo?.numero_combo ?? 1,
+        nombre: combo?.nombre ?? '',
+        descripcion: combo?.descripcion ?? '',
+        precio: combo?.precio ?? 0,
+        producto_ids: combo?.productos?.map(p => p.id) ?? [],  // ← nuevo
+    })
+
+    const { productos } = useProductos()
+    const productosDelRestaurante = productos.filter(p => p.restaurante_id === form.restaurante_id && p.estado === 1)
+
     const [loading, setLoading] = useState(false)
 
     const handleSubmit = async () => {
@@ -78,6 +83,34 @@ const ComboForm = ({ combo, onSubmit, onClose }: Props) => {
                 onChange={set('descripcion')}
                 hint="Opcional — ingredientes o características del combo"
             />
+
+            <div className="text-input-container">
+                <label className="text-input-label">Productos del combo</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 180, overflowY: 'auto' }}>
+                    {productosDelRestaurante.length === 0
+                        ? <span style={{ color: 'var(--gris-texto)', fontSize: 13 }}>
+                            {form.restaurante_id === 0 ? 'Seleccioná un restaurante primero' : 'Sin productos para este restaurante'}
+                        </span>
+                        : productosDelRestaurante.map(prod => (
+                            <label key={prod.id} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={form.producto_ids.includes(prod.id)}
+                                    onChange={e => {
+                                        setForm(p => ({
+                                            ...p,
+                                            producto_ids: e.target.checked
+                                                ? [...p.producto_ids, prod.id]
+                                                : p.producto_ids.filter(id => id !== prod.id)
+                                        }))
+                                    }}
+                                />
+                                {prod.nombre}
+                            </label>
+                        ))
+                    }
+                </div>
+            </div>
 
             <TextInput
                 label="Precio (₡)"

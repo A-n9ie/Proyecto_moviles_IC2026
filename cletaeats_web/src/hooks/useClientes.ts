@@ -42,12 +42,29 @@ export const useClientes = () => {
         }
     }
 
+    const handleToggleEstado = async (cliente: Cliente) => {
+        const accion = cliente.estado === 1 ? 'desactivar' : 'activar'
+        const ok = await confirmService.confirm(`¿Querés ${accion} a "${cliente.nombre}"?`)
+        if (!ok) return
+        try {
+            await updateMut.mutateAsync({
+                id: cliente.id,
+                body: { estado: cliente.estado === 1 ? 0 : 1 } as any,
+            })
+            notificationService.success(`Cliente ${accion === 'activar' ? 'activado' : 'desactivado'}`)
+        } catch (e: any) {
+            notificationService.error(e?.message ?? 'Error cambiando estado')
+        }
+    }
+
+
     return {
         clientes:  query.data ?? [],
         loading:   query.isLoading,
         error:     query.error,
         handleSubmit,
         handleDelete,
+        handleToggleEstado,
         creating:  createMut.isPending,
         updating:  updateMut.isPending,
         deleting:  removeMut.isPending,

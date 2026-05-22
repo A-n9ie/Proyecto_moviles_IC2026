@@ -1,115 +1,96 @@
 # data/repositories/repartidor_repository.py
 from typing import Optional
-from domain.interfaces.i_repartidor_repository import IRepartidorRepository
+from sqlalchemy import select, insert, update
+from data.database.db_connection import engine
+from data.database.tables import repartidor as t_rep, usuario as t_usuario
 from core.entities.repartidor import Repartidor
-from data.database.db_connection import get_connection
+from data.utils.mapper_utils import to_lower_dict
 
-
-class RepartidorRepository(IRepartidorRepository):
+class RepartidorRepository:
 
     def crear(self, r: Repartidor) -> Repartidor:
-        conn = get_connection()
-        try:
-            cursor = conn.execute(
-                """
-                INSERT INTO REPARTIDOR
-                    (USUARIO_ID, CEDULA, NOMBRE, CORREO, DIRECCION, TELEFONO, TARJETA)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                (r.usuario_id, r.cedula, r.nombre, r.correo,
-                 r.direccion, r.telefono, r.tarjeta)
-            )
-            conn.commit()
-            r.id = cursor.lastrowid
+        with engine.begin() as conn:
+            result = conn.execute(insert(t_rep).values(
+                USUARIO_ID=r.usuario_id,
+                CEDULA=r.cedula,
+                NOMBRE=r.nombre,
+                CORREO=r.correo,
+                DIRECCION=r.direccion,
+                TELEFONO=r.telefono,
+                TARJETA=r.tarjeta
+            ))
+            r.id = result.inserted_primary_key[0]
             return r
-        finally:
-            conn.close()
 
-    def encontrar_por_usuario_id(self, usuario_id: int) -> Optional[Repartidor]:
-        conn = get_connection()
-        try:
+    def encontrar_por_usuario_id(self, usuario_id: int):
+        with engine.connect() as conn:
             row = conn.execute(
-                "SELECT * FROM REPARTIDOR WHERE USUARIO_ID = ?", (usuario_id,)
-            ).fetchone()
-            return self._fila_a_repartidor(row) if row else None
-        finally:
-            conn.close()
+                select(t_rep).where(t_rep.c.USUARIO_ID == usuario_id)
+            ).mappings().first()
+            return self._map(row) if row else None
 
     def existe_cedula(self, cedula: str) -> bool:
-        conn = get_connection()
-        try:
+        with engine.connect() as conn:
             return conn.execute(
-                "SELECT COUNT(*) FROM REPARTIDOR WHERE CEDULA = ?", (cedula,)
-            ).fetchone()[0] > 0
-        finally:
-            conn.close()
+                select(t_rep.c.ID).where(t_rep.c.CEDULA == cedula)
+            ).first() is not None
 
     def obtener_primero_disponible(self) -> Optional[Repartidor]:
-        conn = get_connection()
-        try:
+        with engine.connect() as conn:
             row = conn.execute(
-                """
-                SELECT * FROM REPARTIDOR
-                WHERE ESTADO = 1 AND AMONESTACIONES < 4
-                ORDER BY ID
-                LIMIT 1
-                """
-            ).fetchone()
-            return self._fila_a_repartidor(row) if row else None
-        finally:
-            conn.close()
-
-    def actualizar_estado(self, id_repartidor: int, estado: int) -> bool:
-        conn = get_connection()
-        try:
-            cursor = conn.execute(
-                "UPDATE REPARTIDOR SET ESTADO = ? WHERE ID = ?",
-                (estado, id_repartidor)
-            )
-            conn.commit()
-            return cursor.rowcount > 0
-        finally:
-            conn.close()
+                select(t_rep)
+                .where(t_rep.c.ESTADO == 1)
+                .where(t_rep.c.AMONESTACIONES < 4)
+                .order_by(t_rep.c.ID)
+                .limit(1)
+            ).mappings().first()
+            return self._map(row) if row else None
 
     def listar_todos(self) -> list:
-        conn = get_connection()
-        try:
-            rows = conn.execute("""
-                SELECT
-                    ID                          AS id,
-                    NOMBRE                     AS nombre,
-                    CORREO                     AS email,
-                    TELEFONO                   AS telefono,
-                    CEDULA                     AS cedula,
-                    ESTADO                     AS estado,
-                    KM_RECORRIDOS_DIARIOS      AS km_recorridos_diarios,
-                    AMONESTACIONES             AS amonestaciones
-                FROM REPARTIDOR
-                ORDER BY ID
-            """).fetchall()
-            return [dict(r) for r in rows]
-        finally:
-            conn.close()
+        with engine.connect() as conn:
+            rows = conn.execute(
+                select(
+                    t_rep.c.ID,
+                    t_rep.c.NOMBRE,
+                    t_rep.c.CORREO,
+                    t_rep.c.TELEFONO,
+                    t_rep.c.CEDULA,
+                    t_rep.c.ESTADO,
+                    t_rep.c.KM_RECORRIDOS_DIARIOS,
+                    t_rep.c.AMONESTACIONES
+                ).order_by(t_rep.c.ID)
+            ).mappings().all()
+
+            return [to_lower_dict(r) for r in rows]
 
     def actualizar_campos(self, id_rep: int, data: dict) -> bool:
-        campos = []
-        vals   = []
-        for k, col in [("nombre","NOMBRE"),("estado","ESTADO"),("amonestaciones","AMONESTACIONES")]:
-            if k in data:
-                campos.append(f"{col} = ?")
-                vals.append(data[k])
-        if not campos: return False
-        vals.append(id_rep)
-        conn = get_connection()
-        try:
-            cur = conn.execute(f"UPDATE REPARTIDOR SET {', '.join(campos)} WHERE ID = ?", vals)
-            conn.commit()
-            return cur.rowcount > 0
-        finally:
-            conn.close()
+        allowed = {
+            "nombre": t_rep.c.NOMBRE,
+            "estado": t_rep.c.ESTADO,
+            "amonestaciones": t_rep.c.AMONESTACIONES
+        }
+        values = {allowed[k].key: v for k, v in data.items() if k in allowed}
+        if not values:
+            return False
+        with engine.begin() as conn:
+            # Si viene estado, también actualizar USUARIO
+            if "estado" in data:
+                row = conn.execute(
+                    select(t_rep.c.USUARIO_ID).where(t_rep.c.ID == id_rep)
+                ).first()
+                if row:
+                    conn.execute(
+                        update(t_usuario)
+                        .where(t_usuario.c.ID == row[0])
+                        .values(ESTADO=data["estado"])
+                    )
+            result = conn.execute(
+                update(t_rep).where(t_rep.c.ID == id_rep).values(**values)
+            )
+            return result.rowcount > 0
 
     @staticmethod
-    def _fila_a_repartidor(row) -> Repartidor:
+    def _map(row) -> Repartidor:
         return Repartidor(
             id=row["ID"],
             usuario_id=row["USUARIO_ID"],
@@ -125,3 +106,4 @@ class RepartidorRepository(IRepartidorRepository):
             costo_km_feriado=row["COSTO_KM_FERIADO"],
             amonestaciones=row["AMONESTACIONES"]
         )
+    
