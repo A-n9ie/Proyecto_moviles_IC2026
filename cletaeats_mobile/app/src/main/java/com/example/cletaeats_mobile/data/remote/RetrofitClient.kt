@@ -10,7 +10,7 @@ object RetrofitClient {
 
     // Emulador: 10.0.2.2 apunta a localhost del PC
     // Dispositivo físico: cambiar a la IP local del PC
-      private const val BASE_URL = "https://cletaeats-backend.onrender.com/"
+      private const val BASE_URL = "https://proyecto-moviles-ic2026.onrender.com/"
 
     private val okHttp = OkHttpClient.Builder()
         .connectTimeout(5, TimeUnit.SECONDS)
