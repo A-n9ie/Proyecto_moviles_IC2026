@@ -24,3 +24,9 @@ export interface Producto {
     nombre: string
     descripcion?: string
 }
+
+export interface ComboProducto {
+    id: number
+    nombre: string
+    descripcion?: string
+}
