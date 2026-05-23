@@ -14,8 +14,8 @@ app.add_middleware(
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=False,
 )
-
 app.include_router(auth_router,    prefix="/auth")
 app.include_router(admin_router,   prefix="/admin")
 app.include_router(public_router)
