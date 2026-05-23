@@ -11,6 +11,7 @@ DB_PATH = os.environ.get(
     os.path.join(_BASE_DIR, "cletaeats_data", "cletaeats.db")
 )
 
+
 engine = create_engine(
     f"sqlite:///{DB_PATH}",
     connect_args={"check_same_thread": False}, 
