@@ -1,3 +1,1 @@
-from services.session_service import SessionService
-
-session_service = SessionService()
+# DEPRECADO — reemplazado por jwt_service.py
