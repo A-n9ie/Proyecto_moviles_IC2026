@@ -1,38 +1,27 @@
 # db_init.py
-"""
-Ejecutar UNA SOLA VEZ (o cuando se quiera reiniciar la BD):
-    python db_init.py
-"""
 import os
 from sqlalchemy import insert, text
 from data.database.db_connection import engine, DB_PATH
 from data.database.tables import (
-    metadata, usuario, cliente, repartidor,
+    metadata,
     restaurante, categoria, restaurante_categoria,
-    producto, combo, pedido
+    combo, usuario, cliente, tarjeta_cliente, repartidor
 )
 from services.hash_service import hash_password
 
-# Crear directorio si no existe
-os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 print(f"Inicializando BD en: {DB_PATH}")
-
-# ── Crear todas las tablas ──────────────────────────────────────────
-with engine.begin() as conn:
-    conn.execute(text("PRAGMA foreign_keys = OFF"))
-    metadata.drop_all(engine)
-    metadata.create_all(engine)
-    conn.execute(text("PRAGMA foreign_keys = ON"))
+metadata.create_all(engine)
 
 # ── Datos seed ──────────────────────────────────────────────────────
+# (cedula, nombre, direccion, imagen_url, latitud, longitud)
 RESTAURANTES_SEED = [
-    ("3-101-000001", "Burger House",  "Heredia Centro",         "placeholder_burger"),
-    ("3-101-000002", "Dragon Palace", "Heredia, San Francisco",  "placeholder_dragon"),
-    ("3-101-000003", "Green Garden",  "Heredia, Barreal",        "placeholder_garden"),
-    ("3-101-000004", "Pizza Roma",    "Heredia, Mercedes",       "placeholder_pizza"),
-    ("3-101-000005", "Taco Fiesta",   "Heredia, Ulloa",          "placeholder_taco"),
-    ("3-101-000006", "Mar y Tierra",  "Heredia, La Aurora",      "placeholder_mar"),
-    ("3-101-000007", "Sushi Zen",     "Heredia, Belén",          "placeholder_sushi"),
+    ("3-101-000001", "Burger House",  "Heredia Centro",         "placeholder_burger",  9.9981,  -84.1170),
+    ("3-101-000002", "Dragon Palace", "Heredia, San Francisco",  "placeholder_dragon",  9.9994,  -84.1047),
+    ("3-101-000003", "Green Garden",  "Heredia, Barreal",        "placeholder_garden",  9.9900,  -84.1244),
+    ("3-101-000004", "Pizza Roma",    "Heredia, Mercedes",       "placeholder_pizza",   9.9956,  -84.1295),
+    ("3-101-000005", "Taco Fiesta",   "Heredia, Ulloa",          "placeholder_taco",    9.9788,  -84.1152),
+    ("3-101-000006", "Mar y Tierra",  "Heredia, La Aurora",      "placeholder_mar",     10.0023, -84.1185),
+    ("3-101-000007", "Sushi Zen",     "Heredia, Belen",          "placeholder_sushi",   9.9800,  -84.1668),
 ]
 
 CATEGORIAS_SEED = ["rápida", "china", "saludable", "italiana", "mexicana", "mariscos", "japonesa"]
@@ -61,19 +50,22 @@ with engine.begin() as conn:
         [r[1] for r in RESTAURANTES_SEED],
         CATEGORIAS_SEED
     ))
-    for ced, nombre, dir_, img in RESTAURANTES_SEED:
+    for ced, nombre, dir_, img, lat, lng in RESTAURANTES_SEED:
         res = conn.execute(insert(restaurante).values(
-            CEDULA_JURIDICA=ced, NOMBRE=nombre, DIRECCION=dir_, IMAGEN_URL=img
+            CEDULA_JURIDICA=ced,
+            NOMBRE=nombre,
+            DIRECCION=dir_,
+            IMAGEN_URL=img,
+            LATITUD=lat,
+            LONGITUD=lng,
         ))
         rest_id = res.inserted_primary_key[0]
 
-        # Asignar categoría
         conn.execute(insert(restaurante_categoria).values(
             RESTAURANTE_ID=rest_id,
             CATEGORIA_ID=cat_ids[cat_por_restaurante[nombre]]
         ))
 
-        # Combos
         for i, nombre_combo in enumerate(COMBOS_POR_RESTAURANTE[nombre], start=1):
             precio = 3000 + (i * 1000)
             conn.execute(insert(combo).values(
@@ -84,55 +76,60 @@ with engine.begin() as conn:
                 IMAGEN_URL="placeholder_combo"
             ))
 
-    # Usuario CLIENTE de prueba
+    # Usuario cliente de prueba
     res = conn.execute(insert(usuario).values(
         EMAIL="cliente@test.com",
         PASSWORD_HASH=hash_password("123456"),
-        ROL="CLIENTE"
+        ROL="CLIENTE",
+        ESTADO=1
     ))
     u_cliente_id = res.inserted_primary_key[0]
     res = conn.execute(insert(cliente).values(
         USUARIO_ID=u_cliente_id,
-        CEDULA="1-1111-1111",
+        CEDULA="1-0001-0001",
         NOMBRE="Juan Cliente",
-        DIRECCION="Heredia Centro",
-        TELEFONO="88881111"
+        DIRECCION="Heredia Centro, 100m norte del parque",
+        TELEFONO="8888-0001"
     ))
     cliente_id = res.inserted_primary_key[0]
-    # Tarjeta del cliente (tabla TARJETA_CLIENTE)
-    from data.database.tables import tarjeta_cliente
+
     conn.execute(insert(tarjeta_cliente).values(
         CLIENTE_ID=cliente_id,
-        NUMERO="4000111122223333",
-        ALIAS="Visa principal",
+        NUMERO="4111111111111111",
+        ALIAS="Visa Principal",
         ES_PRINCIPAL=1
     ))
 
-    # Usuario REPARTIDOR de prueba
+    # Usuario repartidor de prueba
     res = conn.execute(insert(usuario).values(
         EMAIL="repartidor@test.com",
         PASSWORD_HASH=hash_password("123456"),
-        ROL="REPARTIDOR"
+        ROL="REPARTIDOR",
+        ESTADO=1
     ))
     u_rep_id = res.inserted_primary_key[0]
     conn.execute(insert(repartidor).values(
         USUARIO_ID=u_rep_id,
-        CEDULA="2-2222-2222",
+        CEDULA="1-0002-0002",
         NOMBRE="Pedro Repartidor",
         CORREO="repartidor@test.com",
-        DIRECCION="Heredia, La Aurora",
-        TELEFONO="88882222",
-        TARJETA="4000222233334444"
+        DIRECCION="Heredia, San Francisco",
+        TELEFONO="8888-0002",
+        TARJETA="4111111111111112",
+        ESTADO=1,
+        KM_RECORRIDOS_DIARIOS=0,
+        AMONESTACIONES=0
     ))
 
-    # Admin
+    # Usuario admin
     conn.execute(insert(usuario).values(
         EMAIL="admin@cletaeats.com",
         PASSWORD_HASH=hash_password("admin123"),
-        ROL="ADMIN"
+        ROL="ADMIN",
+        ESTADO=1
     ))
 
-print("✅ BD inicializada.")
+print("BD inicializada.")
 print("   CLIENTE:    cliente@test.com    / 123456")
 print("   REPARTIDOR: repartidor@test.com / 123456")
 print("   ADMIN:      admin@cletaeats.com / admin123")

@@ -50,6 +50,8 @@ restaurante = Table("RESTAURANTE", metadata,
     Column("DIRECCION",       Text,    nullable=False),
     Column("ESTADO",          Integer, nullable=False, default=1),
     Column("IMAGEN_URL",      Text),
+    Column("LATITUD",         Float),
+    Column("LONGITUD",        Float),
     CheckConstraint("ESTADO IN (0,1)", name="ck_restaurante_estado"),
 )
 

@@ -19,12 +19,14 @@ def listar_restaurantes(categoria: Optional[str] = Query(None)):
         if categoria and not any(c["nombre"].lower() == categoria.lower() for c in cats):
             continue
         result.append({
-            "id":         r.id,
-            "nombre":     r.nombre,
-            "direccion":  r.direccion,
-            "imagen_url": r.imagen_url,
-            "estado":     r.estado,
-            "categorias": cats
+                    "id":         r.id,
+                    "nombre":     r.nombre,
+                    "direccion":  r.direccion,
+                    "imagen_url": r.imagen_url,
+                    "estado":     r.estado,
+                    "latitud":    r.latitud,
+                    "longitud":   r.longitud,
+                    "categorias": cats
         })
     return result
 

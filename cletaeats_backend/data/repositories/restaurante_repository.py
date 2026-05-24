@@ -61,6 +61,8 @@ class RestauranteRepository:
                 NOMBRE=data["nombre"],
                 DIRECCION=data["direccion"],
                 IMAGEN_URL=data.get("imagen_url", ""),
+                LATITUD=data.get("latitud"),
+                LONGITUD=data.get("longitud"),
                 ESTADO=1
             ))
             return result.inserted_primary_key[0]
@@ -70,7 +72,9 @@ class RestauranteRepository:
             "nombre":     "NOMBRE",
             "direccion":  "DIRECCION",
             "imagen_url": "IMAGEN_URL",
-            "estado":     "ESTADO"
+            "estado":     "ESTADO",
+            "latitud":    "LATITUD",
+            "longitud":   "LONGITUD",
         }
         values = {allowed[k]: v for k, v in data.items() if k in allowed}
         if not values:
@@ -89,6 +93,7 @@ class RestauranteRepository:
             nombre=row["NOMBRE"],
             direccion=row["DIRECCION"],
             estado=row["ESTADO"],
-            imagen_url=row["IMAGEN_URL"] or ""
+            imagen_url=row["IMAGEN_URL"] or "",
+            latitud=row.get("LATITUD"),
+            longitud=row.get("LONGITUD"),
         )
-    

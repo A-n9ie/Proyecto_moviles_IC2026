@@ -1,10 +1,6 @@
 # core/entities/restaurante.py
 
 class Restaurante:
-    """
-    Restaurante registrado en el sistema.
-    7 restaurantes activos inicialmente.
-    """
     def __init__(
         self,
         id: int = None,
@@ -13,7 +9,9 @@ class Restaurante:
         direccion: str = "",
         estado: int = 1,
         imagen_url: str = "",
-        categorias: list = None
+        categorias: list = None,
+        latitud: float = None,
+        longitud: float = None
     ):
         self.id              = id
         self.cedula_juridica = cedula_juridica
@@ -22,6 +20,8 @@ class Restaurante:
         self.estado          = estado
         self.imagen_url      = imagen_url
         self.categorias      = categorias or []
+        self.latitud         = latitud
+        self.longitud        = longitud
 
     def get_nombre(self) -> str: return self.nombre
     def set_nombre(self, v: str): self.nombre = v
