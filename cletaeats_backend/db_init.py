@@ -10,6 +10,12 @@ from data.database.tables import (
 from services.hash_service import hash_password
 
 print(f"Inicializando BD en: {DB_PATH}")
+
+#Borrar BD existente para recrearla con datos frescos
+if os.path.exists(DB_PATH):
+    os.remove(DB_PATH)
+    print("BD anterior eliminada.")
+
 metadata.create_all(engine)
 
 # ── Datos seed ──────────────────────────────────────────────────────
