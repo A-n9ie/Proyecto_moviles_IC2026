@@ -9,6 +9,8 @@ object AppRoutes {
     const val FACTURA            = "factura"
 
     const val MIS_PEDIDOS        = "mis_pedidos"
+
+    const val MAPA_RESTAURANTES = "mapa_restaurantes"
     const val PEDIDOS_REPARTIDOR = "pedidos_repartidor"
 
     // Helper para construir la ruta con el ID

@@ -17,7 +17,9 @@ data class RestauranteResponse(
     val categorias: List<CategoriaResponse> = emptyList(), // ← antes era tipo_comida: String
     val direccion:  String,
     @SerializedName("imagen_url") val imagenUrl: String = "",
-    val estado:     Int = 1
+    val estado:     Int = 1,
+    val latitud:    Double? = null,
+    val longitud:   Double? = null
 )
 
 interface IRestauranteApi {

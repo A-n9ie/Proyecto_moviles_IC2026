@@ -26,7 +26,9 @@ class RestauranteRepositoryImpl(
                             categorias = r.categorias.map { it.nombre },
                             direccion  = r.direccion,
                             imagenUrl  = r.imagenUrl,
-                            estado     = r.estado
+                            estado     = r.estado,
+                            latitud    = r.latitud,
+                            longitud   = r.longitud
                         )
                     })
                     401 -> Result.Error("Sesión expirada. Volvé a iniciar sesión.")

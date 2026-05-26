@@ -32,7 +32,8 @@ fun RestaurantesScreen(
     viewModel:          RestauranteViewModel,
     onRestauranteClick: (Int) -> Unit,
     onLogout:           () -> Unit,
-    onMisPedidos:       () -> Unit = {}
+    onMisPedidos:       () -> Unit = {},
+    onVerMapa:          () -> Unit = {}
 ){
     val uiState  by viewModel.uiState.collectAsState()
     val session  = AppContainer.getSessionManager()
@@ -50,7 +51,8 @@ fun RestaurantesScreen(
                 nombre          = session.getNombre(),
                 email           = session.getEmail(),
                 onMisPedidos    = { scope.launch { drawerState.close(); onMisPedidos() } },
-                onCerrarSesion = {
+                onVerMapa       = { scope.launch { drawerState.close(); onVerMapa() } },
+                onCerrarSesion  = {
                     scope.launch {
                         drawerState.close()
                         authVM.logout()
@@ -259,6 +261,7 @@ private fun DrawerContent(
     nombre: String,
     email: String,
     onMisPedidos: () -> Unit,
+    onVerMapa: () -> Unit,
     onCerrarSesion: () -> Unit
 ) {
     ModalDrawerSheet(
@@ -310,12 +313,10 @@ private fun DrawerContent(
         Spacer(Modifier.weight(1f))
         Divider(color = CletaGrisClaro)
         NavigationDrawerItem(
-            icon     = {
-                Icon(Icons.Default.ExitToApp, contentDescription = null, tint = CletaError)
-            },
-            label    = { Text("Cerrar sesión", color = CletaError) },
+            icon     = { Icon(Icons.Default.Map, contentDescription = null, tint = CletaNaranja) },
+            label    = { Text("Ver mapa", color = CletaBlanco) },
             selected = false,
-            onClick  = onCerrarSesion,
+            onClick  = onVerMapa,
             colors   = NavigationDrawerItemDefaults.colors(
                 unselectedContainerColor = CletaGrisMedio
             )

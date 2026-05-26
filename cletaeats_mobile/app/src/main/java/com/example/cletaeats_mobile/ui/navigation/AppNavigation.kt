@@ -16,6 +16,11 @@ import com.example.cletaeats_mobile.ui.cliente.FacturaScreen
 import com.example.cletaeats_mobile.ui.cliente.MisPedidosScreen
 import com.example.cletaeats_mobile.ui.cliente.RestaurantesScreen
 import com.example.cletaeats_mobile.ui.repartidor.PedidosRepartidorScreen
+import com.example.cletaeats_mobile.ui.cliente.MapaRestaurantesScreen
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 
 @Composable
 fun AppNavigation(
@@ -61,7 +66,8 @@ fun AppNavigation(
                 onRestauranteClick = { restauranteId ->
                     navController.navigate(AppRoutes.combosRuta(restauranteId))
                 },
-                onMisPedidos       = { navController.navigate(AppRoutes.MIS_PEDIDOS) },
+                onMisPedidos = { navController.navigate(AppRoutes.MIS_PEDIDOS) },
+                onVerMapa    = { navController.navigate(AppRoutes.MAPA_RESTAURANTES) },
                 onLogout = {
                     AppContainer.logout()
                     navController.navigate(AppRoutes.LOGIN) {
@@ -117,6 +123,25 @@ fun AppNavigation(
             MisPedidosScreen(
                 viewModel = viewModel,
                 onVolver  = { navController.popBackStack() }
+            )
+        }
+
+        composable(AppRoutes.MAPA_RESTAURANTES) { backStackEntry ->
+            val viewModel = remember(backStackEntry) { AppContainer.restauranteViewModel() }
+            val uiState by viewModel.uiState.collectAsState()
+
+            LaunchedEffect(Unit) {
+                if (uiState.restaurantes.isEmpty()) {
+                    viewModel.cargarRestaurantes()
+                }
+            }
+
+            MapaRestaurantesScreen(
+                restaurantes       = uiState.restaurantesFiltrados,
+                onRestauranteClick = { restauranteId ->
+                    navController.navigate(AppRoutes.combosRuta(restauranteId))
+                },
+                onVolver = { navController.popBackStack() }
             )
         }
 
