@@ -20,6 +20,8 @@ data class CarritoUiState(
     val isLoading:         Boolean           = false,
     val errorMsg:          String?           = null,
     val factura:           FacturaData?      = null,
+    val distanciaKm:       Double            = 0.0,
+    val tieneGps:          Boolean           = false,   // ← indica si es GPS real o estimado
     val pedidoCreado:      Boolean           = false
 ) {
     val subtotal:    Double get() = items.sumOf { it.subtotal }
@@ -85,17 +87,22 @@ class CarritoViewModel(private val repo: IPedidoRepository) : ViewModel() {
     fun getCantidad(comboId: Int): Int =
         _uiState.value.items.find { it.combo.id == comboId }?.cantidad ?: 0
 
+    fun fijarDistancia(km: Double, tieneGps: Boolean = false) {
+        _uiState.value = _uiState.value.copy(
+            distanciaKm = km,
+            tieneGps    = tieneGps
+        )
+    }
     // ─── Confirmar pedido ─────────────────────────────────────────
-    fun confirmarPedido(distanciaKm: Double) {
+    fun confirmarPedido() {                          // la distacia se calcula
         val state = _uiState.value
         if (state.estaVacio || state.restauranteId == 0) return
-
         _uiState.value = state.copy(isLoading = true, errorMsg = null)
         viewModelScope.launch {
             when (val result = repo.crearPedido(
                 restauranteId = state.restauranteId,
                 items         = state.items,
-                distanciaKm   = distanciaKm
+                distanciaKm   = state.distanciaKm
             )) {
                 is Result.Success -> _uiState.value = state.copy(
                     isLoading    = false,
@@ -129,9 +136,8 @@ class CarritoViewModel(private val repo: IPedidoRepository) : ViewModel() {
     }
 
     fun seleccionarTarjeta(tarjetaId: Int) {
-        _uiState.value = _uiState.value.copy(tarjetaId = tarjetaId)
+        _uiState.value = _uiState.value.copy(tarjetaId = if (tarjetaId == -1) null else tarjetaId)
     }
-
     private fun buildConfiguracion(productosEliminados: List<Int>): String {
         if (productosEliminados.isEmpty()) return "{}"
         val ids = productosEliminados.joinToString(",")

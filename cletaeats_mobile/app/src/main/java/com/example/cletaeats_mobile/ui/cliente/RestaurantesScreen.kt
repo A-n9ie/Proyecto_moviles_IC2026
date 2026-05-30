@@ -304,7 +304,17 @@ private fun DrawerContent(
             icon     = { Icon(Icons.Default.Receipt, contentDescription = null, tint = CletaNaranja) },
             label    = { Text("Mis pedidos", color = CletaBlanco) },
             selected = false,
-            onClick = onMisPedidos,
+            onClick  = onMisPedidos,
+            colors   = NavigationDrawerItemDefaults.colors(
+                unselectedContainerColor = CletaGrisMedio
+            )
+        )
+
+        NavigationDrawerItem(
+            icon     = { Icon(Icons.Default.Map, contentDescription = null, tint = CletaNaranja) },
+            label    = { Text("Ver mapa", color = CletaBlanco) },
+            selected = false,
+            onClick  = onVerMapa,
             colors   = NavigationDrawerItemDefaults.colors(
                 unselectedContainerColor = CletaGrisMedio
             )
@@ -312,11 +322,12 @@ private fun DrawerContent(
 
         Spacer(Modifier.weight(1f))
         Divider(color = CletaGrisClaro)
+
         NavigationDrawerItem(
-            icon     = { Icon(Icons.Default.Map, contentDescription = null, tint = CletaNaranja) },
-            label    = { Text("Ver mapa", color = CletaBlanco) },
+            icon     = { Icon(Icons.Default.Logout, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            label    = { Text("Cerrar sesión", color = MaterialTheme.colorScheme.error) },
             selected = false,
-            onClick  = onVerMapa,
+            onClick  = onCerrarSesion,
             colors   = NavigationDrawerItemDefaults.colors(
                 unselectedContainerColor = CletaGrisMedio
             )

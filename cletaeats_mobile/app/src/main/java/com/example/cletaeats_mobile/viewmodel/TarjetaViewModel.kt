@@ -16,7 +16,10 @@ data class TarjetaUiState(
     val tarjetaSeleccionada: Tarjeta?   = null,  // la que se usará para pagar
     val errorMsg:          String?       = null,
     val exito:             Boolean       = false
-)
+){
+    val limiteAlcanzado: Boolean
+        get() = tarjetas.size >= 5
+}
 
 class TarjetaViewModel(private val repo: ITarjetaRepository) : ViewModel() {
 
@@ -44,6 +47,10 @@ class TarjetaViewModel(private val repo: ITarjetaRepository) : ViewModel() {
 
     fun agregarTarjeta(numero: String, alias: String, esPrincipal: Boolean) {
         if (numero.isBlank()) return
+        if (_uiState.value.tarjetas.size >= 5) {
+            _uiState.value = _uiState.value.copy(errorMsg = "Límite de 5 tarjetas alcanzado. Eliminá una para agregar otra.")
+            return
+        }
         _uiState.value = _uiState.value.copy(isLoading = true, errorMsg = null)
         viewModelScope.launch {
             when (val result = repo.agregarTarjeta(numero, alias, esPrincipal)) {

@@ -19,7 +19,6 @@ class SessionManager(context: Context) {
     }
 
     fun clearSession() = prefs.edit().clear().apply()
-
     fun isLoggedIn()   = prefs.getBoolean("logged_in", false)
     fun getToken()     = prefs.getString("token", "") ?: ""
     fun getRol()       = prefs.getString("rol", "") ?: ""
@@ -27,4 +26,18 @@ class SessionManager(context: Context) {
     fun getEmail()     = prefs.getString("email", "") ?: ""
     fun getIdUsuario() = prefs.getInt("id_usuario", -1)
     fun getIdPerfil()  = prefs.getInt("id_perfil", -1)
+
+    // ── Modo de datos ────────────────────────────────────────────
+    fun saveDataMode(mode: DataMode) {
+        prefs.edit().putString("data_mode", mode.name).apply()
+    }
+
+    fun getDataMode(): DataMode {
+        val saved = prefs.getString("data_mode", DataMode.API_REMOTA.name)
+        return DataMode.valueOf(saved ?: DataMode.API_REMOTA.name)
+    }
+
+    fun clearDataMode() {
+        prefs.edit().remove("data_mode").apply()
+    }
 }

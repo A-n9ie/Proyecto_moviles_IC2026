@@ -25,6 +25,16 @@ import com.example.cletaeats_mobile.ui.utils.toCRC
 import com.example.cletaeats_mobile.viewmodel.CarritoViewModel
 import com.example.cletaeats_mobile.viewmodel.ComboViewModel
 
+import android.annotation.SuppressLint
+import android.location.Location
+import androidx.compose.ui.platform.LocalContext
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.*
 @Composable
 fun CombosScreen(
     restauranteId:    Int,
@@ -35,7 +45,16 @@ fun CombosScreen(
 ) {
     val comboState   by comboViewModel.uiState.collectAsState()
     val carritoState by carritoViewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
+    var permisoUbicacion by remember { mutableStateOf(false) }
+
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permisos ->
+        permisoUbicacion = permisos[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                permisos[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+    }
     // Cargar combos al entrar a la pantalla
     LaunchedEffect(restauranteId) {
         comboViewModel.cargarCombos(restauranteId)
@@ -45,6 +64,53 @@ fun CombosScreen(
     LaunchedEffect(comboState.restaurante) {
         comboState.restaurante?.let { r ->
             carritoViewModel.iniciarCarrito(restauranteId, r.nombre)
+        }
+    }
+
+    LaunchedEffect(restauranteId) {
+        comboViewModel.cargarCombos(restauranteId)
+    }
+
+    // Pedir permiso al entrar a la pantalla
+    LaunchedEffect(Unit) {
+        launcher.launch(arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ))
+    }
+
+    LaunchedEffect(permisoUbicacion, comboState.restaurante) {
+        var restaurante = comboState.restaurante
+        val lat = restaurante?.latitud  ?: return@LaunchedEffect
+        val lng = restaurante?.longitud ?: return@LaunchedEffect
+
+        if (!permisoUbicacion) {
+            carritoViewModel.fijarDistancia(5.0, tieneGps = false)
+            return@LaunchedEffect
+        }
+
+        try {
+            val fusedClient = LocationServices.getFusedLocationProviderClient(context)
+            fusedClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null)
+                .addOnSuccessListener { location: Location? ->
+                    if (location != null) {
+                        val resultado = FloatArray(1)
+                        Location.distanceBetween(
+                            location.latitude, location.longitude,
+                            lat, lng,
+                            resultado
+                        )
+                        val km = (resultado[0] / 1000.0).coerceAtLeast(0.5)
+                        carritoViewModel.fijarDistancia(km, tieneGps = true)
+                    } else {
+                        carritoViewModel.fijarDistancia(5.0, tieneGps = false)
+                    }
+                }
+                .addOnFailureListener {
+                    carritoViewModel.fijarDistancia(5.0, tieneGps = false)
+                }
+        } catch (e: SecurityException) {
+            carritoViewModel.fijarDistancia(5.0, tieneGps = false)
         }
     }
 
@@ -92,6 +158,7 @@ fun CombosScreen(
 
                 // ── Lista de combos ───────────────────────────────
                 else -> {
+
                     LazyColumn(
                         contentPadding      = PaddingValues(
                             start  = 16.dp,

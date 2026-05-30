@@ -44,16 +44,7 @@ fun CarritoScreen(
         if (state.pedidoCreado) onPedidoCreado()
     }
 
-    var distanciaTexto by remember { mutableStateOf("5.0") }
-    val distanciaError = distanciaTexto.toDoubleOrNull().let { d ->
-        when {
-            d == null -> "Ingresá un número válido"
-            d <= 0    -> "La distancia debe ser mayor a 0"
-            d > 100   -> "¿Más de 100 km? Verificá el dato"
-            else      -> null
-        }
-    }
-    val distanciaValida = distanciaError == null && distanciaTexto.isNotEmpty()
+    val distanciaKm = state.distanciaKm
 
     Scaffold(
         topBar = {
@@ -134,40 +125,44 @@ fun CarritoScreen(
                     shape    = RoundedCornerShape(16.dp),
                     colors   = CardDefaults.cardColors(containerColor = CletaGrisMedio)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Route, contentDescription = null,
-                                tint = CletaNaranja, modifier = Modifier.size(20.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Distancia de entrega", color = CletaBlanco, fontWeight = FontWeight.SemiBold)
-                        }
-                        Spacer(Modifier.height(10.dp))
-                        OutlinedTextField(
-                            value         = distanciaTexto,
-                            onValueChange = { distanciaTexto = it },
-                            label         = { Text("Kilómetros") },
-                            isError       = distanciaError != null,
-                            supportingText = distanciaError?.let { { Text(it) } },
-                            trailingIcon  = { Text("km", color = CletaTextoSecundario, fontSize = 13.sp, modifier = Modifier.padding(end = 8.dp)) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier      = Modifier.fillMaxWidth(),
-                            colors        = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor  = CletaNaranja,
-                                focusedLabelColor   = CletaNaranja,
-                                focusedTextColor    = CletaBlanco,
-                                unfocusedTextColor  = CletaBlanco,
-                                unfocusedLabelColor = CletaTextoSecundario
-                            )
+                    Row(
+                        modifier          = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            if (state.tieneGps) Icons.Default.MyLocation else Icons.Default.LocationOff,
+                            contentDescription = null,
+                            tint     = if (state.tieneGps) CletaNaranja else CletaTextoSecundario,
+                            modifier = Modifier.size(20.dp)
                         )
+                        Spacer(Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                "Distancia de entrega",
+                                color      = CletaBlanco,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                if (state.distanciaKm > 0)
+                                    "${String.format("%.1f", state.distanciaKm)} km"
+                                else
+                                    "Calculando...",
+                                color    = CletaNaranja,
+                                fontSize = 14.sp
+                            )
+                            Text(
+                                if (state.tieneGps) "Calculada con tu ubicación GPS"
+                                else                "Estimada (GPS no disponible)",
+                                color    = CletaTextoSecundario,
+                                fontSize = 11.sp
+                            )
+                        }
                     }
                 }
             }
 
             item {
-                ResumenCostos(
-                    subtotal    = state.subtotal,
-                    distanciaKm = distanciaTexto.toDoubleOrNull() ?: 0.0
-                )
+                ResumenCostos(subtotal = state.subtotal, distanciaKm = distanciaKm)
             }
 
             item {
@@ -181,12 +176,10 @@ fun CarritoScreen(
                 CletaButton(
                     text      = "Confirmar pedido",
                     onClick   = {
-                        carritoViewModel.confirmarPedido(
-                            distanciaTexto.toDouble()
-                        )
+                        carritoViewModel.confirmarPedido()
                     },
                     isLoading = state.isLoading,
-                    enabled = distanciaValida && !state.estaVacio && state.tarjetaId != null,
+                    enabled = !state.estaVacio && state.tarjetaId != null && state.distanciaKm > 0,
                     icon      = Icons.Default.CheckCircle
                 )
                 Spacer(Modifier.height(16.dp))
@@ -313,13 +306,25 @@ private fun MetodoPagoCard(
                 Spacer(Modifier.width(8.dp))
                 Text("Método de pago", color = CletaBlanco, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.weight(1f))
-                // FIX: botón abre popup wallet
-                TextButton(onClick = { mostrarWallet = true }) {
+
+                TextButton(
+                    onClick  = { mostrarWallet = true },
+                    enabled  = !tarjetaState.limiteAlcanzado
+                ) {
                     Icon(Icons.Default.AccountBalanceWallet, contentDescription = null,
                         tint = CletaNaranja, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
                     Text("+ Agregar", color = CletaNaranja, fontSize = 12.sp)
                 }
+            }
+
+            if (tarjetaState.limiteAlcanzado) {
+                Text(
+                    "Límite de 5 tarjetas alcanzado",
+                    color    = CletaTextoSecundario,
+                    fontSize = 11.sp,
+                    modifier = Modifier.align(Alignment.End)
+                )
             }
 
             Spacer(Modifier.height(10.dp))
@@ -381,7 +386,13 @@ private fun MetodoPagoCard(
                         }
                         Spacer(Modifier.width(4.dp))
                         IconButton(
-                            onClick  = { tarjetaViewModel.eliminarTarjeta(tarjeta.id) },
+                            onClick  = {
+                                tarjetaViewModel.eliminarTarjeta(tarjeta.id)
+                                // Si se eliminó la tarjeta activa, limpiar selección en el carrito
+                                if (tarjeta.id == tarjetaState.tarjetaSeleccionada?.id) {
+                                    carritoViewModel.seleccionarTarjeta(-1)  // -1 = ninguna
+                                }
+                            },
                             modifier = Modifier.size(28.dp)
                         ) {
                             Icon(Icons.Default.DeleteOutline, contentDescription = "Eliminar",
@@ -417,10 +428,10 @@ private fun WalletDialog(
     var principal  by remember { mutableStateOf(false) }
 
     val numeroError = when {
-        numero.isEmpty()   -> null
-        numero.length < 4  -> "Mínimo 4 dígitos"
-        numero.length > 19 -> "Máximo 19 dígitos"
-        else               -> null
+        numero.isEmpty()    -> null
+        numero.length < 8  -> "Mínimo 8 dígitos"
+        numero.length > 19  -> "Máximo 19 dígitos"
+        else                -> null
     }
 
     Dialog(
@@ -598,7 +609,7 @@ private fun WalletDialog(
                     }
                     Button(
                         onClick  = { onGuardar(numero, alias, principal) },
-                        enabled  = numero.length >= 4 && numeroError == null,
+                        enabled  = numero.length >= 8 && numeroError == null,
                         modifier = Modifier.weight(1f),
                         colors   = ButtonDefaults.buttonColors(containerColor = CletaNaranja)
                     ) {

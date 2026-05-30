@@ -21,6 +21,10 @@ retrofit = "2.11.0"
 okhttp   = "4.12.0"
 gson     = "2.10.1"
 
+room             = "2.7.1"
+firebaseBom      = "33.7.0"
+googleServices   = "4.4.2"
+
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -52,8 +56,15 @@ gson               = { group = "com.google.code.gson",   name = "gson",         
 google-maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "googleMaps" }
 play-services-location = { group = "com.google.android.gms",  name = "play-services-location", version.ref = "playServicesLocation" }
 
+androidx-room-runtime  = { group = "androidx.room",          name = "room-runtime",           version.ref = "room"       }
+androidx-room-ktx      = { group = "androidx.room",          name = "room-ktx",               version.ref = "room"       }
+androidx-room-compiler = { group = "androidx.room",          name = "room-compiler",           version.ref = "room"       }
+firebase-bom           = { group = "com.google.firebase",    name = "firebase-bom",            version.ref = "firebaseBom" }
+firebase-firestore     = { group = "com.google.firebase",    name = "firebase-firestore-ktx"                              }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 

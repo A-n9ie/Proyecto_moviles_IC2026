@@ -15,6 +15,6 @@ data class Restaurante(
     val direccion:  String       = "",
     val imagenUrl:  String       = "",
     val estado:     Int          = 1,
-    val latitud:    Double?      = null,
-    val longitud:   Double?      = null
+    val latitud:    Double       = 0.0,
+    val longitud:   Double       = 0.0
 ) : Parcelable

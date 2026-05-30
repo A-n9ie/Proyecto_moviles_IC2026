@@ -6,27 +6,33 @@ import com.example.cletaeats_mobile.domain.Result
 import com.example.cletaeats_mobile.domain.interfaces.IRestauranteRepository
 import com.example.cletaeats_mobile.domain.model.Categoria
 import com.example.cletaeats_mobile.domain.model.Restaurante
+import com.example.cletaeats_mobile.data.local.DataMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-
 data class RestauranteUiState(
     val isLoading:            Boolean           = false,
     val restaurantes:         List<Restaurante> = emptyList(),
-    val restaurantesFiltrados: List<Restaurante> = emptyList(), // ← nuevo
-    val categorias:           List<Categoria>   = emptyList(),  // ← nuevo
-    val categoriasSeleccionadas: Set<String>    = emptySet(),   // ← nuevo
+    val restaurantesFiltrados: List<Restaurante> = emptyList(),
+    val categorias:           List<Categoria>   = emptyList(),
+    val categoriasSeleccionadas: Set<String>    = emptySet(),
+    val modoActivo:           DataMode          = DataMode.API_REMOTA,
     val errorMsg:             String?           = null
 )
 
-class RestauranteViewModel(private val repo: IRestauranteRepository) : ViewModel() {
-
-    private val _uiState = MutableStateFlow(RestauranteUiState())
+class RestauranteViewModel(
+    private val repo: IRestauranteRepository,
+    private val modo: DataMode = DataMode.API_REMOTA
+    ) : ViewModel() {
+    private val _uiState = MutableStateFlow(RestauranteUiState(modoActivo = modo))
     val uiState: StateFlow<RestauranteUiState> = _uiState.asStateFlow()
 
     fun cargarRestaurantes() {
-        _uiState.value = RestauranteUiState(isLoading = true)
+        _uiState.value = _uiState.value.copy(
+            isLoading = true,
+            errorMsg = null
+        )
         viewModelScope.launch {
             // Cargar categorías y restaurantes en paralelo
             val catResult  = repo.obtenerCategorias()
@@ -36,15 +42,17 @@ class RestauranteViewModel(private val repo: IRestauranteRepository) : ViewModel
             val restaurantes = (restResult as? Result.Success)?.data
 
             if (restaurantes == null) {
-                _uiState.value = RestauranteUiState(
-                    errorMsg   = (restResult as Result.Error).message,
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMsg = (restResult as Result.Error).message,
                     categorias = categorias
                 )
             } else {
-                _uiState.value = RestauranteUiState(
-                    restaurantes          = restaurantes,
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    restaurantes = restaurantes,
                     restaurantesFiltrados = restaurantes,
-                    categorias            = categorias
+                    categorias = categorias
                 )
             }
         }

@@ -6,6 +6,7 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Query
 
+
 data class CategoriaResponse(
     val id:     Int,
     val nombre: String
@@ -18,8 +19,8 @@ data class RestauranteResponse(
     val direccion:  String,
     @SerializedName("imagen_url") val imagenUrl: String = "",
     val estado:     Int = 1,
-    val latitud:    Double? = null,
-    val longitud:   Double? = null
+    val latitud:    Double = 0.0,
+    val longitud:   Double = 0.0
 )
 
 interface IRestauranteApi {
