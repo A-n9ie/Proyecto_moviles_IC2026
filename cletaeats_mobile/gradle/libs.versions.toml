@@ -10,6 +10,7 @@ kotlin = "2.3.21"
 composeBom = "2026.05.00"
 googleMaps = "4.3.3"
 playServicesLocation = "21.3.0"
+ksp = "2.3.9"
 
 navigationCompose = "2.9.8"
 lifecycleViewmodelCompose = "2.8.4"
@@ -67,4 +68,5 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 

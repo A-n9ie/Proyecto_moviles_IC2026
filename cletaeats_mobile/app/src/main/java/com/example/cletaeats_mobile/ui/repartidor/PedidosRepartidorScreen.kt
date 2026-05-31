@@ -19,6 +19,10 @@ import com.example.cletaeats_mobile.domain.model.Pedido
 import com.example.cletaeats.ui.theme.*
 import com.example.cletaeats_mobile.viewmodel.PedidosRepartidorViewModel
 import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalContext
+import com.example.cletaeats_mobile.data.remote.RepartidorLocationService
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,6 +35,19 @@ fun PedidosRepartidorScreen(
     val authVM      = remember { AppContainer.authViewModel() }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope       = rememberCoroutineScope()
+
+    val context = LocalContext.current
+    val locationService = remember { RepartidorLocationService(context) }
+
+// Publicar ubicación cada 10 segundos mientras hay pedidos activos
+    LaunchedEffect(uiState.pedidos) {
+        while (isActive && uiState.pedidos.isNotEmpty()) {
+            uiState.pedidos.forEach { pedido ->
+                locationService.publicarUbicacion(pedido.id)
+            }
+            delay(10_000L)
+        }
+    }
 
     // Mensajes de éxito/error como Snackbar
     val snackbarHost = remember { SnackbarHostState() }

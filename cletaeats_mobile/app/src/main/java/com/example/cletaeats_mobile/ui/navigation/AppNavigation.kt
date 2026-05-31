@@ -27,6 +27,8 @@ import com.example.cletaeats_mobile.data.local.DataMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import com.example.cletaeats_mobile.ui.cliente.RastreoRepartidorScreen
+
 @Composable
 fun AppNavigation(
     navController:    NavHostController,
@@ -157,12 +159,23 @@ fun AppNavigation(
             )
         }
 
-        composable(AppRoutes.MIS_PEDIDOS) {
-            backStackEntry ->
+        composable(AppRoutes.MIS_PEDIDOS) { backStackEntry ->
             val viewModel = remember(backStackEntry) { AppContainer.pedidosClienteViewModel() }
             MisPedidosScreen(
-                viewModel = viewModel,
-                onVolver  = { navController.popBackStack() }
+                viewModel  = viewModel,
+                onVolver   = { navController.popBackStack() },
+                onRastrear = { pedidoId -> navController.navigate(AppRoutes.rastreoRuta(pedidoId)) }
+            )
+        }
+
+        composable(
+            route = AppRoutes.RASTREO_REPARTIDOR,
+            arguments = listOf(navArgument("pedidoId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val pedidoId = backStackEntry.arguments?.getInt("pedidoId") ?: return@composable
+            RastreoRepartidorScreen(
+                pedidoId = pedidoId,
+                onVolver = { navController.popBackStack() }
             )
         }
 
@@ -198,5 +211,9 @@ fun AppNavigation(
                 }
             )
         }
+
+
+
+
     }
 }

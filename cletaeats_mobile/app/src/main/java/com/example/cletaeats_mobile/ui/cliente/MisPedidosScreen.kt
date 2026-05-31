@@ -23,7 +23,8 @@ import com.example.cletaeats_mobile.viewmodel.PedidosClienteViewModel
 @Composable
 fun MisPedidosScreen(
     viewModel: PedidosClienteViewModel,
-    onVolver: () -> Unit
+    onVolver: () -> Unit,
+    onRastrear: (Int) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -83,7 +84,9 @@ fun MisPedidosScreen(
                             color = CletaBlanco, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         Spacer(Modifier.height(4.dp))
                     }
-                    items(uiState.pedidos) { pedido -> PedidoClienteCard(pedido) }
+                    items(uiState.pedidos) { pedido ->
+                        PedidoClienteCard(pedido, onRastrear = { onRastrear(pedido.id) })
+                    }
                 }
             }
         }
@@ -91,7 +94,7 @@ fun MisPedidosScreen(
 }
 
 @Composable
-private fun PedidoClienteCard(pedido: Pedido) {
+private fun PedidoClienteCard(pedido: Pedido, onRastrear: () -> Unit) {
     val estadoColor = when (pedido.estado) {
         3    -> CletaExito
         4    -> CletaError
@@ -133,6 +136,21 @@ private fun PedidoClienteCard(pedido: Pedido) {
             Spacer(Modifier.height(4.dp))
             Text("${pedido.itemsCount} combo(s) · ${pedido.distanciaKm} km",
                 color = CletaTextoSecundario, fontSize = 12.sp)
+
+            // Solo mostrar si el pedido está EN_CAMINO (estado 2)
+            if (pedido.estado == 2) {
+                Spacer(Modifier.height(10.dp))
+                Button(
+                    onClick = onRastrear,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = CletaNaranja)
+                ) {
+                    Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Rastrear repartidor", fontWeight = FontWeight.SemiBold)
+                }
+            }
         }
     }
 }
