@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun RestaurantesScreen(
     viewModel:          RestauranteViewModel,
-    onRestauranteClick: (Int) -> Unit,
+    onRestauranteClick: (Restaurante) -> Unit,
     onLogout:           () -> Unit,
     onMisPedidos:       () -> Unit = {},
     onVerMapa:          () -> Unit = {}
@@ -152,7 +152,7 @@ fun RestaurantesScreen(
                             items(uiState.restaurantesFiltrados) { restaurante ->
                                 RestauranteCard(
                                     restaurante  = restaurante,
-                                    onClickCard  = { onRestauranteClick(restaurante.id) }
+                                    onClickCard = { onRestauranteClick(restaurante) }
                                 )
                             }
                         }

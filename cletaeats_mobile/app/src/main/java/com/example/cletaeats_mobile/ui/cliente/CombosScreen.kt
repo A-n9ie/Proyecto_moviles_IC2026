@@ -34,10 +34,20 @@ import com.google.android.gms.location.Priority
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.*
+
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.coroutines.resume
+
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import android.os.Looper
 @Composable
 fun CombosScreen(
     restauranteId:    Int,
+    restauranteLat:   Double,
+    restauranteLng:   Double,
     comboViewModel:   ComboViewModel,
     carritoViewModel: CarritoViewModel,
     onVerCarrito:     () -> Unit,
@@ -67,10 +77,6 @@ fun CombosScreen(
         }
     }
 
-    LaunchedEffect(restauranteId) {
-        comboViewModel.cargarCombos(restauranteId)
-    }
-
     // Pedir permiso al entrar a la pantalla
     LaunchedEffect(Unit) {
         launcher.launch(arrayOf(
@@ -79,10 +85,12 @@ fun CombosScreen(
         ))
     }
 
-    LaunchedEffect(permisoUbicacion, comboState.restaurante) {
-        var restaurante = comboState.restaurante
-        val lat = restaurante?.latitud  ?: return@LaunchedEffect
-        val lng = restaurante?.longitud ?: return@LaunchedEffect
+    LaunchedEffect(permisoUbicacion) {
+        // Las coordenadas llegan directo por parámetro — no dependen de la carga de combos
+        if (restauranteLat == 0.0 && restauranteLng == 0.0) {
+            carritoViewModel.fijarDistancia(5.0, tieneGps = false)
+            return@LaunchedEffect
+        }
 
         if (!permisoUbicacion) {
             carritoViewModel.fijarDistancia(5.0, tieneGps = false)
@@ -91,24 +99,54 @@ fun CombosScreen(
 
         try {
             val fusedClient = LocationServices.getFusedLocationProviderClient(context)
-            fusedClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null)
-                .addOnSuccessListener { location: Location? ->
-                    if (location != null) {
-                        val resultado = FloatArray(1)
-                        Location.distanceBetween(
-                            location.latitude, location.longitude,
-                            lat, lng,
-                            resultado
-                        )
-                        val km = (resultado[0] / 1000.0).coerceAtLeast(0.5)
-                        carritoViewModel.fijarDistancia(km, tieneGps = true)
-                    } else {
-                        carritoViewModel.fijarDistancia(5.0, tieneGps = false)
+
+            val lastLocation: Location? = withTimeoutOrNull(2_000L) {
+                suspendCancellableCoroutine { cont ->
+                    fusedClient.lastLocation
+                        .addOnSuccessListener { loc -> cont.resume(loc) }
+                        .addOnFailureListener { cont.resume(null) }
+                }
+            }
+
+            if (lastLocation != null) {
+                val resultado = FloatArray(1)
+                Location.distanceBetween(
+                    lastLocation.latitude, lastLocation.longitude,
+                    restauranteLat, restauranteLng, resultado
+                )
+                carritoViewModel.fijarDistancia(
+                    (resultado[0] / 1000.0).coerceAtLeast(0.5), tieneGps = true
+                )
+            } else {
+                carritoViewModel.fijarDistancia(5.0, tieneGps = false)
+
+                val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10_000L)
+                    .setMaxUpdates(1).build()
+
+                val activeLocation: Location? = withTimeoutOrNull(10_000L) {
+                    suspendCancellableCoroutine { cont ->
+                        val callback = object : LocationCallback() {
+                            override fun onLocationResult(result: LocationResult) {
+                                fusedClient.removeLocationUpdates(this)
+                                cont.resume(result.lastLocation)
+                            }
+                        }
+                        fusedClient.requestLocationUpdates(request, callback, Looper.getMainLooper())
+                        cont.invokeOnCancellation { fusedClient.removeLocationUpdates(callback) }
                     }
                 }
-                .addOnFailureListener {
-                    carritoViewModel.fijarDistancia(5.0, tieneGps = false)
+
+                if (activeLocation != null) {
+                    val resultado = FloatArray(1)
+                    Location.distanceBetween(
+                        activeLocation.latitude, activeLocation.longitude,
+                        restauranteLat, restauranteLng, resultado
+                    )
+                    carritoViewModel.fijarDistancia(
+                        (resultado[0] / 1000.0).coerceAtLeast(0.5), tieneGps = true
+                    )
                 }
+            }
         } catch (e: SecurityException) {
             carritoViewModel.fijarDistancia(5.0, tieneGps = false)
         }
@@ -312,45 +350,45 @@ private fun ComboCard(
                         )
                     }
                 }
-                // ── Productos del combo (nuevo) ───────────────────────
-                if (combo.productos.isNotEmpty() && cantidad > 0) {
-                    Spacer(Modifier.height(10.dp))
-                    HorizontalDivider(color = CletaGrisClaro.copy(alpha = 0.5f))
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        "Personalizar combo:",
-                        color = CletaTextoSecundario,
-                        fontSize = 12.sp
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    combo.productos.forEach { producto ->
-                        val eliminado = producto.id in productosEliminados
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onToggleProducto(producto.id) }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = if (eliminado) Icons.Default.CheckBoxOutlineBlank
-                                else Icons.Default.CheckBox,
-                                contentDescription = null,
-                                tint = if (eliminado) CletaTextoSecundario else CletaNaranja,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                text = producto.nombre,
-                                color = if (eliminado) CletaTextoSecundario else CletaBlanco,
-                                fontSize = 13.sp,
-                                style = if (eliminado)
-                                    LocalTextStyle.current.copy(
-                                        textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
-                                    )
-                                else LocalTextStyle.current
-                            )
-                        }
+            }
+            // ── Productos del combo (nuevo) ───────────────────────
+            if (combo.productos.isNotEmpty() && cantidad > 0) {
+                Spacer(Modifier.height(10.dp))
+                HorizontalDivider(color = CletaGrisClaro.copy(alpha = 0.5f))
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Personalizar combo:",
+                    color = CletaTextoSecundario,
+                    fontSize = 12.sp
+                )
+                Spacer(Modifier.height(6.dp))
+                combo.productos.forEach { producto ->
+                    val eliminado = producto.id in productosEliminados
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onToggleProducto(producto.id) }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (eliminado) Icons.Default.CheckBoxOutlineBlank
+                            else Icons.Default.CheckBox,
+                            contentDescription = null,
+                            tint = if (eliminado) CletaTextoSecundario else CletaNaranja,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = producto.nombre,
+                            color = if (eliminado) CletaTextoSecundario else CletaBlanco,
+                            fontSize = 13.sp,
+                            style = if (eliminado)
+                                LocalTextStyle.current.copy(
+                                    textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                                )
+                            else LocalTextStyle.current
+                        )
                     }
                 }
             }

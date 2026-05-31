@@ -4,7 +4,9 @@ object AppRoutes {
     const val LOGIN              = "login"
     const val REGISTER           = "register"
     const val RESTAURANTES       = "restaurantes"
-    const val COMBOS             = "combos/{restauranteId}"     // GET /combos?restaurante=ID
+    const val COMBOS = "combos/{restauranteId}/{lat}/{lng}"
+    fun combosRuta(restauranteId: Int, lat: Double, lng: Double) =
+        "combos/$restauranteId/$lat/$lng"
     const val CARRITO            = "carrito"
     const val FACTURA            = "factura"
     const val MIS_PEDIDOS        = "mis_pedidos"

@@ -33,6 +33,8 @@ class RestauranteBody(BaseModel):
     imagen_url: str = ""
     estado: Optional[int] = None
     categoria_ids: Optional[List[int]] = None
+    latitud: Optional[float] = None
+    longitud: Optional[float] = None 
 
 class ComboBody(BaseModel):
     restaurante_id: Optional[int] = None

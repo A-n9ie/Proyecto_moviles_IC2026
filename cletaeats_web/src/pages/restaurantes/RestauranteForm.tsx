@@ -8,6 +8,7 @@ import TextInput from '../../components/common/inputs/TextInput'
 
 import { useCategorias } from '../../hooks/useCategorias'
 
+import MapaPicker from './MapaPicker'
 //import ImageUpload from '../../components/common/upload/ImageUpload'
 
 import type {
@@ -31,12 +32,14 @@ const RestauranteForm = ({
                              onClose,
                          }: Props) => {
     const [form, setForm] = useState<RestauranteRequest>({
-        nombre: restaurante?.nombre ?? '',
-        categoria_ids: restaurante?.categorias?.map(c => c.id) ?? [],
-        direccion: restaurante?.direccion ?? '',
-        imagen_url: restaurante?.imagen_url ?? '',
-        cedula_juridica: restaurante?.cedula_juridica ?? '',
-    })
+    nombre: restaurante?.nombre ?? '',
+    categoria_ids: restaurante?.categorias?.map(c => c.id) ?? [],
+    direccion: restaurante?.direccion ?? '',
+    imagen_url: restaurante?.imagen_url ?? '',
+    cedula_juridica: restaurante?.cedula_juridica ?? '',
+    latitud: restaurante?.latitud ?? null,
+    longitud: restaurante?.longitud ?? null,
+})
 
     const [loading, setLoading] =
         useState(false)
@@ -59,7 +62,7 @@ const RestauranteForm = ({
     const { categorias } = useCategorias()
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col ">
             <TextInput
                 label="Cédula Jurídica"
                 value={form.cedula_juridica}
@@ -103,6 +106,13 @@ const RestauranteForm = ({
                        onChange={(v) => setForm(p => ({...p, direccion: v}))}
                        rules={[{ type: 'required' }]}
             />
+
+            <MapaPicker
+                latitud={form.latitud}
+                longitud={form.longitud}
+                onChange={(lat, lng) => setForm(p => ({ ...p, latitud: lat, longitud: lng }))}
+            />
+
             <TextInput label="URL de imagen" value={form.imagen_url}
                        onChange={(v) => setForm(p => ({...p, imagen_url: v}))}
                        hint="Opcional — nombre del placeholder o URL completa"

@@ -4,6 +4,7 @@ import com.google.gson.annotations.SerializedName
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 data class ProductoResponse(
@@ -29,4 +30,10 @@ interface IComboApi {
         @Header("Authorization") token: String,
         @Query("restaurante") restauranteId: Int
     ): Response<List<ComboResponse>>
+
+    @GET("restaurantes/{id}")
+    suspend fun obtenerRestaurante(
+        @Header("Authorization") token: String,
+        @Path("id") restauranteId: Int
+    ): Response<RestauranteResponse>
 }

@@ -18,36 +18,58 @@ class ComboRepositoryImpl(
     override suspend fun obtenerCombosPorRestaurante(restauranteId: Int): Result<RestauranteConCombos> =
         withContext(Dispatchers.IO) {
             try {
-                val resp = api.obtenerCombos("Bearer ${session.getToken()}", restauranteId)
-                when (resp.code()) {
+                val token = "Bearer ${session.getToken()}"
+
+                // Llamadas en paralelo
+                val respCombos      = api.obtenerCombos(token, restauranteId)
+                val respRestaurante = try {
+                    api.obtenerRestaurante(token, restauranteId)
+                } catch (_: Exception) { null }
+
+                when (respCombos.code()) {
                     200 -> {
-                        val combos = resp.body()!!.map { c ->
+                        val combos = respCombos.body()!!.map { c ->
                             Combo(
-                                id = c.id,
+                                id            = c.id,
                                 restauranteId = c.restauranteId,
-                                numeroCombo = c.numeroCombo,
-                                nombre = c.nombre,
-                                descripcion = c.descripcion,
-                                precio = c.precio,
-                                imagenUrl = c.imagenUrl,
-                                productos = c.productos.map {  // ← nuevo
+                                numeroCombo   = c.numeroCombo,
+                                nombre        = c.nombre,
+                                descripcion   = c.descripcion,
+                                precio        = c.precio,
+                                imagenUrl     = c.imagenUrl,
+                                productos     = c.productos.map {
                                     com.example.cletaeats_mobile.domain.model.Producto(
-                                        id = it.id,
-                                        nombre = it.nombre,
+                                        id          = it.id,
+                                        nombre      = it.nombre,
                                         descripcion = it.descripcion
                                     )
                                 }
                             )
                         }
-                        Result.Success(RestauranteConCombos(restaurante = null, combos = combos))
-                    }
 
-                    401 -> Result.Error("Sesión expirada.")
-                    else -> Result.Error("Error al cargar combos (${resp.code()})")
+                        // Armar el restaurante con coordenadas si la llamada funcionó
+                        val restaurante = if (respRestaurante?.isSuccessful == true) {
+                            respRestaurante.body()!!.let { r ->
+                                Restaurante(
+                                    id         = r.id,
+                                    nombre     = r.nombre,
+                                    categorias = r.categorias.map { it.nombre },
+                                    direccion  = r.direccion,
+                                    imagenUrl  = r.imagenUrl,
+                                    estado     = r.estado,
+                                    latitud    = r.latitud,
+                                    longitud   = r.longitud
+                                )
+                            }
+                        } else null
+
+                        Result.Success(RestauranteConCombos(restaurante = restaurante, combos = combos))
+                    }
+                    401  -> Result.Error("Sesión expirada.")
+                    else -> Result.Error("Error al cargar combos (${respCombos.code()})")
                 }
             } catch (e: Exception) {
                 Result.Error(e.message ?: "Error desconocido")
             }
         }
-
 }

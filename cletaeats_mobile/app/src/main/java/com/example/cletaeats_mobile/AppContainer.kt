@@ -55,7 +55,7 @@ object AppContainer {
     val tarjetaViewModel: TarjetaViewModel by lazy { TarjetaViewModel(tarjetaRepo) }
     val syncManager: SyncManager by lazy { SyncManager(appContext) }
     // ── Repositorios (lazy) ──────────────────────────────────────
-    private fun restauranteRepository(): IRestauranteRepository =
+    private val restauranteRepository: IRestauranteRepository by lazy {
         when (sessionManager.getDataMode()) {
             DataMode.API_REMOTA   -> RestauranteRepositoryImpl(
                 RetrofitClient.create<IRestauranteApi>(), sessionManager)
@@ -63,6 +63,7 @@ object AppContainer {
                 CletaEatsDatabase.getInstance(appContext))
             DataMode.CLOUD        -> RestauranteCloudRepositoryImpl()
         }
+    }
     private val comboRepository by lazy {
         ComboRepositoryImpl(RetrofitClient.create<IComboApi>(), sessionManager)
     }
@@ -84,7 +85,7 @@ object AppContainer {
     fun authViewModel()            = AuthViewModel(authRepository)
     fun tarjetaViewModel()         = TarjetaViewModel(tarjetaRepo)
     fun restauranteViewModel() = RestauranteViewModel(
-        restauranteRepository(),
+        restauranteRepository,
         sessionManager.getDataMode()
     )
     fun comboViewModel()           = ComboViewModel(comboRepository)

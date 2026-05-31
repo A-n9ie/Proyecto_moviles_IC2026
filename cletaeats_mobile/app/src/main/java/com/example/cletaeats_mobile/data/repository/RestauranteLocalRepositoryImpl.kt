@@ -31,7 +31,7 @@ class RestauranteLocalRepositoryImpl(
             try {
                 val restaurantes = dao.obtenerTodos()
                 val categorias = restaurantes
-                    .flatMap { it.categorias.split(",").map { c -> c.trim() } }
+                    .flatMap { it.categorias.split(",").map { c -> c.trim() }.filter { it.isNotEmpty() } }
                     .distinct()
                     .mapIndexed { i, nombre -> Categoria(i, nombre) }
                 Result.Success(categorias)

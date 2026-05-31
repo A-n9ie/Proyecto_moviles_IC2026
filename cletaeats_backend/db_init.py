@@ -21,13 +21,14 @@ metadata.create_all(engine)
 # ── Datos seed ──────────────────────────────────────────────────────
 # (cedula, nombre, direccion, imagen_url, latitud, longitud)
 RESTAURANTES_SEED = [
-    ("3-101-000001", "Burger House",  "Heredia Centro",         "placeholder_burger",  9.9981,  -84.1170),
-    ("3-101-000002", "Dragon Palace", "Heredia, San Francisco",  "placeholder_dragon",  9.9994,  -84.1047),
-    ("3-101-000003", "Green Garden",  "Heredia, Barreal",        "placeholder_garden",  9.9900,  -84.1244),
-    ("3-101-000004", "Pizza Roma",    "Heredia, Mercedes",       "placeholder_pizza",   9.9956,  -84.1295),
-    ("3-101-000005", "Taco Fiesta",   "Heredia, Ulloa",          "placeholder_taco",    9.9788,  -84.1152),
-    ("3-101-000006", "Mar y Tierra",  "Heredia, La Aurora",      "placeholder_mar",     10.0023, -84.1185),
-    ("3-101-000007", "Sushi Zen",     "Heredia, Belen",          "placeholder_sushi",   9.9800,  -84.1668),
+    # (cedula,          nombre,          direccion,                    imagen_url,           latitud,   longitud)
+    ("3-101-000001", "Burger House",   "San José, Avenida Central",   "placeholder_burger",  9.9281,  -84.0907),  # San José
+    ("3-101-000002", "Dragon Palace",  "Alajuela, Parque Central",    "placeholder_dragon",  10.0162, -84.2141),  # Alajuela
+    ("3-101-000003", "Green Garden",   "Cartago, Las Ruinas",         "placeholder_garden",  9.8647,  -83.9193),  # Cartago
+    ("3-101-000004", "Pizza Roma",     "Heredia, Parque Central",     "placeholder_pizza",   9.9981,  -84.1170),  # Heredia
+    ("3-101-000005", "Taco Fiesta",    "Guanacaste, Liberia Centro",  "placeholder_taco",    10.6340, -85.4374),  # Guanacaste
+    ("3-101-000006", "Mar y Tierra",   "Puntarenas, Malecón",         "placeholder_mar",     9.9760,  -84.8282),  # Puntarenas
+    ("3-101-000007", "Sushi Zen",      "Limón, Parque Vargas",        "placeholder_sushi",   9.9907,  -83.0361),  # Limón
 ]
 
 CATEGORIAS_SEED = ["rápida", "china", "saludable", "italiana", "mexicana", "mariscos", "japonesa"]

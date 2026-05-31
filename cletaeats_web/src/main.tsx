@@ -8,6 +8,7 @@ import App from './App'
 import AppProviders from './providers/AppProviders'
 
 import './styles/globals.css'
+import 'leaflet/dist/leaflet.css'
 
 import {
     Toaster,

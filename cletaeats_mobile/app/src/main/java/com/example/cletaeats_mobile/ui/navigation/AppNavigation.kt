@@ -92,8 +92,10 @@ fun AppNavigation(
             val viewModel = remember(backStackEntry) { AppContainer.restauranteViewModel() }
             RestaurantesScreen(
                 viewModel = viewModel,
-                onRestauranteClick = { restauranteId ->
-                    navController.navigate(AppRoutes.combosRuta(restauranteId))
+                onRestauranteClick = { restaurante ->
+                    navController.navigate(
+                        AppRoutes.combosRuta(restaurante.id, restaurante.latitud, restaurante.longitud)
+                    )
                 },
                 onMisPedidos = { navController.navigate(AppRoutes.MIS_PEDIDOS) },
                 onVerMapa    = { navController.navigate(AppRoutes.MAPA_RESTAURANTES) },
@@ -108,12 +110,21 @@ fun AppNavigation(
 
         composable(
             route     = AppRoutes.COMBOS,
-            arguments = listOf(navArgument("restauranteId") { type = NavType.IntType })
+            arguments = listOf(
+                navArgument("restauranteId") { type = NavType.IntType },
+                navArgument("lat")           { type = NavType.StringType },  // Double como String
+                navArgument("lng")           { type = NavType.StringType }
+            )
         ) { backStackEntry ->
             val restauranteId = backStackEntry.arguments?.getInt("restauranteId") ?: return@composable
+            val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0
+            val lng = backStackEntry.arguments?.getString("lng")?.toDoubleOrNull() ?: 0.0
             val comboViewModel = remember(backStackEntry) { AppContainer.comboViewModel() }
+
             CombosScreen(
                 restauranteId    = restauranteId,
+                restauranteLat   = lat,
+                restauranteLng   = lng,
                 comboViewModel   = comboViewModel,
                 carritoViewModel = AppContainer.carritoViewModel,
                 onVerCarrito     = { navController.navigate(AppRoutes.CARRITO) },
