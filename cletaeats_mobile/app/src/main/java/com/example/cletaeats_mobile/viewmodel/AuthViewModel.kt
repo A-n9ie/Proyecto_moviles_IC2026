@@ -2,6 +2,7 @@ package com.example.cletaeats_mobile.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cletaeats_mobile.data.local.DataMode
 import com.example.cletaeats_mobile.domain.Result
 import com.example.cletaeats_mobile.domain.interfaces.IAuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,10 +31,11 @@ class AuthViewModel(private val repo: IAuthRepository) : ViewModel() {
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
-    fun login(email: String, password: String) {
+    fun login(email: String, password: String, modo: DataMode = DataMode.API_REMOTA) {
         _uiState.value = AuthUiState(isLoading = true)
         viewModelScope.launch {
-            when (val result = repo.login(email, password)) {
+
+            when (val result = repo.login(email, password, modo)) {
                 is Result.Success -> _uiState.value = AuthUiState(
                     isLoggedIn = true,
                     rol        = result.data.rol,

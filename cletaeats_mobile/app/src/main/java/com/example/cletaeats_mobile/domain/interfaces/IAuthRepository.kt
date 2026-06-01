@@ -1,10 +1,11 @@
 package com.example.cletaeats_mobile.domain.interfaces
 
+import com.example.cletaeats_mobile.data.local.DataMode
 import com.example.cletaeats_mobile.domain.Result
 import com.example.cletaeats_mobile.domain.model.Usuario
 
 interface IAuthRepository {
-    suspend fun login(email: String, password: String): Result<Usuario>
+    suspend fun login(email: String, password: String, modo: DataMode): Result<Usuario>
 
     suspend fun registroCliente(
         email: String, password: String, confirmarPassword: String,

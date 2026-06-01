@@ -30,6 +30,10 @@ import com.example.cletaeats_mobile.data.repository.RestauranteCloudRepositoryIm
 import com.example.cletaeats_mobile.data.sync.SyncManager
 import com.example.cletaeats_mobile.domain.interfaces.IRestauranteRepository
 
+import com.example.cletaeats_mobile.data.remote.IPerfilApi
+import com.example.cletaeats_mobile.data.repository.PerfilRepositoryImpl
+import com.example.cletaeats_mobile.viewmodel.PerfilViewModel
+
 /**
  * DI manual. PATRÓN MVC:
  *   Model      = data classes + repositorios
@@ -47,6 +51,9 @@ object AppContainer {
     // Singleton porque CarritoScreen y CombosScreen comparten
     // el mismo estado del carrito durante la misma sesión.
     private var _carritoViewModel: CarritoViewModel? = null
+    private val perfilRepo by lazy {
+        PerfilRepositoryImpl(RetrofitClient.create<IPerfilApi>(), sessionManager)
+    }
     val carritoViewModel: CarritoViewModel
         get() {
             if (_carritoViewModel == null) _carritoViewModel = CarritoViewModel(pedidoRepository)
@@ -55,7 +62,7 @@ object AppContainer {
     val tarjetaViewModel: TarjetaViewModel by lazy { TarjetaViewModel(tarjetaRepo) }
     val syncManager: SyncManager by lazy { SyncManager(appContext) }
     // ── Repositorios (lazy) ──────────────────────────────────────
-    private val restauranteRepository: IRestauranteRepository by lazy {
+    private fun buildRestauranteRepository(): IRestauranteRepository =
         when (sessionManager.getDataMode()) {
             DataMode.API_REMOTA   -> RestauranteRepositoryImpl(
                 RetrofitClient.create<IRestauranteApi>(), sessionManager)
@@ -63,7 +70,6 @@ object AppContainer {
                 CletaEatsDatabase.getInstance(appContext))
             DataMode.CLOUD        -> RestauranteCloudRepositoryImpl()
         }
-    }
     private val comboRepository by lazy {
         ComboRepositoryImpl(RetrofitClient.create<IComboApi>(), sessionManager)
     }
@@ -73,7 +79,7 @@ object AppContainer {
     private val tarjetaRepo by lazy {
         TarjetaRepositoryImpl(RetrofitClient.create<ITarjetaApi>(), sessionManager) }
     private val authRepository by lazy {
-        AuthRepositoryImpl(RetrofitClient.create<IAuthApi>(), RetrofitClient.create<ITarjetaApi>(), sessionManager)
+        AuthRepositoryImpl(RetrofitClient.create<IAuthApi>(), RetrofitClient.create<ITarjetaApi>(), sessionManager, syncManager)
     }
 
     fun init(context: Context) {
@@ -85,12 +91,13 @@ object AppContainer {
     fun authViewModel()            = AuthViewModel(authRepository)
     fun tarjetaViewModel()         = TarjetaViewModel(tarjetaRepo)
     fun restauranteViewModel() = RestauranteViewModel(
-        restauranteRepository,
+        buildRestauranteRepository(),
         sessionManager.getDataMode()
     )
     fun comboViewModel()           = ComboViewModel(comboRepository)
     fun pedidosClienteViewModel() = PedidosClienteViewModel(pedidoRepository)
     fun pedidosRepartidorViewModel() = PedidosRepartidorViewModel(pedidoRepository)
+    fun perfilViewModel() = PerfilViewModel(perfilRepo, sessionManager)
     fun logout() {
         sessionManager.clearSession()
         // Resetear carritoViewModel para la próxima sesión

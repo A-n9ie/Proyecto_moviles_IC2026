@@ -6,9 +6,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Login
+import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +27,7 @@ import com.example.cletaeats_mobile.ui.components.ErrorBanner
 import com.example.cletaeats.ui.theme.*
 import com.example.cletaeats_mobile.viewmodel.AuthViewModel
 
+import com.example.cletaeats_mobile.data.local.DataMode
 @Composable
 fun LoginScreen(
     viewModel:    AuthViewModel,
@@ -33,6 +37,7 @@ fun LoginScreen(
     // ── Estado local de los campos ────────────────────────────────
     var email    by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var modoSeleccionado by remember { mutableStateOf(DataMode.API_REMOTA) }
 
     // ── Validaciones DINÁMICAS (en el momento, sin submit) ────────
     val emailError    = if (email.isNotEmpty() && !email.contains("@"))
@@ -141,10 +146,46 @@ fun LoginScreen(
 
             Spacer(Modifier.height(28.dp))
 
+            Text(
+                "Modo de datos",
+                color    = CletaTextoSecundario,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(bottom = 6.dp)
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                DataMode.entries.forEach { modo ->
+                    val (label, icono) = when (modo) {
+                        DataMode.API_REMOTA   -> "Remoto"  to Icons.Default.Wifi
+                        DataMode.LOCAL_SQLITE -> "Local"   to Icons.Default.Storage
+                        DataMode.CLOUD        -> "Nube"    to Icons.Default.Cloud
+                    }
+                    FilterChip(
+                        selected = modoSeleccionado == modo,
+                        onClick  = { modoSeleccionado = modo },
+                        label    = { Text(label, fontSize = 12.sp) },
+                        leadingIcon = {
+                            Icon(icono, contentDescription = null, modifier = Modifier.size(14.dp))
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors   = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor   = CletaNaranja,
+                            selectedLabelColor       = CletaBlanco,
+                            selectedLeadingIconColor = CletaBlanco,
+                            containerColor           = CletaGrisMedio,
+                            labelColor               = CletaTextoSecundario
+                        )
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+
             // ── Botón ingresar (ImageButton con ícono + texto) ────
             CletaButton(
                 text      = "Ingresar",
-                onClick   = { viewModel.login(email, password) },
+                onClick   = { viewModel.login(email, password, modoSeleccionado) },
                 isLoading = uiState.isLoading,
                 enabled   = formValido,
                 icon      = Icons.Default.Login

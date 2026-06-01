@@ -29,6 +29,11 @@ class PedidoBody(BaseModel):
     distancia_km: float = 5.0
     items: List[ItemPedido]
 
+class PerfilBody(BaseModel):
+    nombre:    str
+    telefono:  str
+    direccion: str
+
 @router.get("/tarjetas")
 def listar_tarjetas(sesion: dict = Depends(get_current_user)):
     cliente = ClienteRepository().encontrar_por_usuario_id(sesion["id_usuario"])
@@ -96,3 +101,41 @@ def ver_factura(id_pedido: int, sesion: dict = Depends(get_current_user)):
     if not factura:
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
     return factura
+
+@router.get("/perfil")
+def obtener_perfil(sesion: dict = Depends(get_current_user)):
+    """Devuelve los datos del perfil del cliente autenticado."""
+    cliente = ClienteRepository().encontrar_por_usuario_id(sesion["id_usuario"])
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    return {
+        "id":        cliente.id,
+        "nombre":    cliente.nombre,
+        "telefono":  cliente.telefono,
+        "direccion": cliente.direccion,
+        "cedula":    cliente.cedula      # solo lectura en la respuesta
+    }
+
+
+@router.put("/perfil")
+def actualizar_perfil(body: PerfilBody, sesion: dict = Depends(get_current_user)):
+    """Actualiza nombre, teléfono y dirección del cliente autenticado."""
+    from sqlalchemy import update
+    from data.database.db_connection import engine
+    from data.database.tables import cliente as t_cliente
+
+    cliente = ClienteRepository().encontrar_por_usuario_id(sesion["id_usuario"])
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+
+    with engine.begin() as conn:
+        conn.execute(
+            update(t_cliente)
+            .where(t_cliente.c.ID == cliente.id)
+            .values(
+                NOMBRE    = body.nombre.strip(),
+                TELEFONO  = body.telefono.strip(),
+                DIRECCION = body.direccion.strip()
+            )
+        )
+    return {"mensaje": "Perfil actualizado correctamente"}

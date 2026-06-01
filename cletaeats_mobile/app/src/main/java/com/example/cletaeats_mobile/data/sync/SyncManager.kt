@@ -54,19 +54,61 @@ class SyncManager(private val context: Context) {
     }
 
     /**
-     * Sube restaurantes locales no sincronizados hacia Cloud.
+     * Sube TODOS los restaurantes de SQLite hacia Cloud (Firestore).
+     * No depende del flag sincronizado — siempre sube todo.
      */
     suspend fun sincronizarHaciaCloud() = withContext(Dispatchers.IO) {
         if (!hayInternet()) return@withContext SyncResult.SinInternet
         try {
-            val noSincronizados = dao.obtenerTodos().filter { !it.sincronizado }
-            noSincronizados.forEach { entity ->
+            val todos = dao.obtenerTodos()
+            if (todos.isEmpty()) return@withContext SyncResult.Error("SQLite vacío, nada que subir")
+            todos.forEach { entity ->
                 cloud.guardar(entity.toDomain())
-                dao.insertar(entity.copy(sincronizado = true))
             }
-            SyncResult.Exito(noSincronizados.size)
+            // Marcar todos como sincronizados
+            todos.forEach { dao.insertar(it.copy(sincronizado = true)) }
+            android.util.Log.d("SYNC", "Subidos ${todos.size} restaurantes a Firestore")
+            SyncResult.Exito(todos.size)
         } catch (e: Exception) {
+            android.util.Log.e("SYNC", "Error subiendo a Cloud: ${e.message}")
             SyncResult.Error(e.message ?: "Error subiendo a Cloud")
+        }
+    }
+
+    /**
+     * Descarga restaurantes desde el API remoto y los guarda en SQLite.
+     * Llamar después de un login exitoso en modo API_REMOTA para tener
+     * datos disponibles cuando se use modo LOCAL_SQLITE sin internet.
+     */
+    suspend fun sincronizarDesdeApi(token: String) = withContext(Dispatchers.IO) {
+        if (!hayInternet()) return@withContext SyncResult.SinInternet
+        try {
+            val retrofit = com.example.cletaeats_mobile.data.remote.RetrofitClient
+                .create<com.example.cletaeats_mobile.data.remote.IRestauranteApi>()
+            val resp = retrofit.obtenerRestaurantes("Bearer $token")
+            if (resp.isSuccessful) {
+                val entities = resp.body()!!.map { r ->
+                    RestauranteEntity(
+                        id           = r.id,
+                        nombre       = r.nombre,
+                        categorias   = r.categorias.joinToString(",") { it.nombre },
+                        direccion    = r.direccion,
+                        imagenUrl    = r.imagenUrl,
+                        estado       = r.estado,
+                        latitud      = r.latitud,
+                        longitud     = r.longitud,
+                        sincronizado = false   // ← CAMBIAR a false para que sincronizarHaciaCloud() los tome
+                    )
+                }
+                dao.insertarTodos(entities)
+                android.util.Log.d("SYNC", "Guardados ${entities.size} restaurantes en SQLite")
+                SyncResult.Exito(entities.size)
+            } else {
+                SyncResult.Error("Error al sincronizar (${resp.code()})")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SYNC", "Error sincronizando desde API: ${e.message}")
+            SyncResult.Error(e.message ?: "Error de sincronización")
         }
     }
 

@@ -32,6 +32,7 @@ fun RestaurantesScreen(
     viewModel:          RestauranteViewModel,
     onRestauranteClick: (Restaurante) -> Unit,
     onLogout:           () -> Unit,
+    onVerPerfil:        () -> Unit,
     onMisPedidos:       () -> Unit = {},
     onVerMapa:          () -> Unit = {}
 ){
@@ -129,7 +130,6 @@ fun RestaurantesScreen(
                                 Text("¿Qué vas a comer hoy?", color = CletaTextoSecundario, fontSize = 14.sp)
                                 Spacer(Modifier.height(12.dp))
 
-                                // ── FIX: pasar categorias con icono mejorado ──
                                 FiltroCategoriasRow(
                                     categorias           = uiState.categorias,
                                     seleccionadas        = uiState.categoriasSeleccionadas,

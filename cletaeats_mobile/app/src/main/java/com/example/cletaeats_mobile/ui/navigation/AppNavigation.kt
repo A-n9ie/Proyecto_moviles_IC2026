@@ -22,13 +22,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 
-import com.example.cletaeats_mobile.ui.auth.SeleccionModoScreen
-import com.example.cletaeats_mobile.data.local.DataMode
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import com.example.cletaeats_mobile.ui.cliente.RastreoRepartidorScreen
 
+import com.example.cletaeats_mobile.ui.cliente.PerfilScreen
 @Composable
 fun AppNavigation(
     navController:    NavHostController,
@@ -43,7 +39,8 @@ fun AppNavigation(
             LoginScreen(
                 viewModel = viewModel,
                 onLoginOk = { rol ->
-                    navController.navigate(AppRoutes.SELECCION_MODO) {
+                    val destino = if (rol == "CLIENTE") AppRoutes.RESTAURANTES else AppRoutes.PEDIDOS_REPARTIDOR
+                    navController.navigate(destino) {
                         popUpTo(AppRoutes.LOGIN) { inclusive = true }
                     }
                 },
@@ -51,7 +48,7 @@ fun AppNavigation(
             )
         }
 
-        composable(AppRoutes.SELECCION_MODO) {
+       /* composable(AppRoutes.SELECCION_MODO) {
             val session = AppContainer.getSessionManager()
             val nombre  = session.getNombre()
 
@@ -73,15 +70,16 @@ fun AppNavigation(
                     ) { popUpTo(AppRoutes.SELECCION_MODO) { inclusive = true } }
                 }
             )
-        }
+        }*/
 
         composable(AppRoutes.REGISTER) {
             backStackEntry ->
             val viewModel = remember(backStackEntry) { AppContainer.authViewModel() }
             RegisterScreen(
                 viewModel = viewModel,
-                onRegistroOk = { _ ->
-                    navController.navigate(AppRoutes.SELECCION_MODO) {
+                onRegistroOk = { rol ->
+                    val destino = if (rol == "CLIENTE") AppRoutes.RESTAURANTES else AppRoutes.PEDIDOS_REPARTIDOR
+                    navController.navigate(destino) {
                         popUpTo(AppRoutes.LOGIN) { inclusive = true }
                     }
                 },
@@ -101,6 +99,7 @@ fun AppNavigation(
                 },
                 onMisPedidos = { navController.navigate(AppRoutes.MIS_PEDIDOS) },
                 onVerMapa    = { navController.navigate(AppRoutes.MAPA_RESTAURANTES) },
+                onVerPerfil  = { navController.navigate(AppRoutes.PERFIL) },
                 onLogout = {
                     AppContainer.logout()
                     navController.navigate(AppRoutes.LOGIN) {
@@ -212,8 +211,13 @@ fun AppNavigation(
             )
         }
 
-
-
-
+        composable(AppRoutes.PERFIL) { backStackEntry ->
+            val perfilVM  = remember(backStackEntry) { AppContainer.perfilViewModel() }
+            PerfilScreen(
+                perfilViewModel  = perfilVM,
+                tarjetaViewModel = AppContainer.tarjetaViewModel,
+                onVolver         = { navController.popBackStack() }
+            )
+        }
     }
 }

@@ -14,23 +14,76 @@ import com.example.cletaeats_mobile.domain.model.Usuario
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+import com.example.cletaeats_mobile.data.local.DataMode
+import com.example.cletaeats_mobile.data.sync.SyncManager
+
 class AuthRepositoryImpl(
     private val api:     IAuthApi,
     private val tarjetaApi: ITarjetaApi,
-    private val session: SessionManager
+    private val session: SessionManager,
+    private val sync:    SyncManager? = null
 ) : IAuthRepository {
 
-    override suspend fun login(email: String, password: String): Result<Usuario> =
+    override suspend fun login(email: String, password: String, modo: DataMode): Result<Usuario> =
         withContext(Dispatchers.IO) {
+
+            // ── MODO LOCAL: autenticar con sesión previa guardada ─────
+            if (modo == DataMode.LOCAL_SQLITE) {
+                val savedEmail = session.getOfflineEmail()   // ← cambiar getEmail() por getOfflineEmail()
+                val savedToken = session.getOfflineToken()   // ← cambiar getToken() por getOfflineToken()
+                return@withContext if (savedToken.isNotEmpty() && savedEmail == email) {
+                    session.saveDataMode(modo)
+                    // Restaurar la sesión activa desde las credenciales offline
+                    session.saveSession(
+                        savedToken,
+                        session.getOfflineIdUsuario(),
+                        savedEmail,
+                        session.getOfflineRol(),
+                        session.getOfflineNombre(),
+                        session.getOfflineIdPerfil()
+                    )
+                    Result.Success(
+                        Usuario(
+                            idUsuario       = session.getOfflineIdUsuario(),
+                            email    = savedEmail,
+                            rol      = session.getOfflineRol(),
+                            nombre   = session.getOfflineNombre(),
+                            idPerfil = session.getOfflineIdPerfil(),
+                            token    = savedToken
+                        )
+                    )
+                } else {
+                    Result.Error("No hay sesión guardada para este correo. Iniciá sesión en línea primero.")
+                }
+            }
+
+            // ── MODOS REMOTO / CLOUD: llamada HTTP normal ─────────────
             try {
                 val resp = api.login(LoginRequest(email, password))
                 when (resp.code()) {
                     200 -> {
                         val body = resp.body()!!
+                        session.saveDataMode(modo)
                         session.saveSession(body.token, body.idUsuario, body.email,
-                                            body.rol, body.nombre, body.idPerfil)
+                            body.rol, body.nombre, body.idPerfil)
+
+                        // Sync según el modo seleccionado
+                        when (modo) {
+                            DataMode.API_REMOTA -> {
+                                // Guardar en SQLite para uso offline posterior
+                                sync?.sincronizarDesdeApi(body.token)
+                            }
+                            DataMode.CLOUD -> {
+                                // 1. Bajar del API a SQLite
+                                sync?.sincronizarDesdeApi(body.token)
+                                // 2. Subir de SQLite a Firestore
+                                sync?.sincronizarHaciaCloud()
+                            }
+                            else -> {}
+                        }
+
                         Result.Success(Usuario(body.idUsuario, body.email, body.rol,
-                                               body.nombre, body.idPerfil, body.token))
+                            body.nombre, body.idPerfil, body.token))
                     }
                     401 -> Result.Error("Correo o contraseña incorrectos")
                     403 -> Result.Error("Este rol solo puede acceder desde la web")
