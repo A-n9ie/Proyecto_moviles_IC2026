@@ -25,6 +25,8 @@ import com.example.cletaeats.ui.theme.*
 import com.example.cletaeats_mobile.domain.model.Categoria
 import com.example.cletaeats_mobile.viewmodel.RestauranteViewModel
 import kotlinx.coroutines.launch
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -188,12 +190,21 @@ private fun RestauranteCard(restaurante: Restaurante, onClickCard: () -> Unit) {
                     .background(CletaNaranja.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = categoriaIcono(primeraCat),
-                    contentDescription = primeraCat,
-                    tint               = CletaNaranja,
-                    modifier           = Modifier.size(36.dp)
-                )
+                if (restaurante.imagenUrl.isNotBlank()) {
+                    AsyncImage(
+                        model = restaurante.imagenUrl,
+                        contentDescription = restaurante.nombre,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        imageVector = categoriaIcono(primeraCat),
+                        contentDescription = primeraCat,
+                        tint = CletaNaranja,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
             }
 
             Spacer(Modifier.width(16.dp))
