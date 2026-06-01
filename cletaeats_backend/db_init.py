@@ -10,7 +10,7 @@ from data.database.tables import (
 from services.hash_service import hash_password
 
 print(f"Inicializando BD en: {DB_PATH}")
-
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 #Borrar BD existente para recrearla con datos frescos
 if os.path.exists(DB_PATH):
     os.remove(DB_PATH)
