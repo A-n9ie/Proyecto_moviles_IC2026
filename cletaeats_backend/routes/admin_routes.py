@@ -10,6 +10,9 @@ from data.repositories.combo_repository import ComboRepository
 from data.repositories.categoria_repository import CategoriaRepository
 from data.repositories.producto_repository import ProductoRepository
 from data.repositories.pedido_repository import PedidoRepository
+from fastapi import File, UploadFile
+import uuid, os, shutil
+
 
 router = APIRouter()
 
@@ -168,3 +171,14 @@ def actualizar_combo(id: int, body: ComboBody, _=Depends(require_admin), repos=D
 @router.get("/pedidos")
 def listar_pedidos(_=Depends(require_admin), repos=Depends(get_repos)):
     return repos["pedido"].listar_todos()
+
+# ── Upload de imagen ──────────────────────────────────────────────────
+@router.post("/upload-imagen")
+async def upload_imagen(file: UploadFile = File(...), _=Depends(require_admin)):
+    os.makedirs("uploads", exist_ok=True)
+    extension = file.filename.split(".")[-1]
+    nombre = f"{uuid.uuid4()}.{extension}"
+    ruta = f"uploads/{nombre}"
+    with open(ruta, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    return {"url": f"/uploads/{nombre}"}

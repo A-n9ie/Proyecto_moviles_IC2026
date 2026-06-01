@@ -82,5 +82,6 @@ dependencies {
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
 }

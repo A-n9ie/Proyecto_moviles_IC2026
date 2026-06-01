@@ -9,7 +9,7 @@ import TextInput from '../../components/common/inputs/TextInput'
 import { useCategorias } from '../../hooks/useCategorias'
 
 import MapaPicker from './MapaPicker'
-//import ImageUpload from '../../components/common/upload/ImageUpload'
+import ImageUpload from '../../components/common/upload/ImageUpload'
 
 import type {
     Restaurante,
@@ -113,21 +113,10 @@ const RestauranteForm = ({
                 onChange={(lat, lng) => setForm(p => ({ ...p, latitud: lat, longitud: lng }))}
             />
 
-            <TextInput label="URL de imagen" value={form.imagen_url}
-                       onChange={(v) => setForm(p => ({...p, imagen_url: v}))}
-                       hint="Opcional — nombre del placeholder o URL completa"
-            />
-
-            {/*<ImageUpload
-                value={form.imagen}
-                onChange={(value) =>
-                setForm((prev) => ({
-                    ...prev,
-
-                    imagen: value,
-                }))
-            }
-                />*/}
+            <ImageUpload
+    value={form.imagen_url}
+    onChange={(url) => setForm(p => ({ ...p, imagen_url: url }))}
+/>
 
     <div className="flex justify-end gap-3 pt-4">
     <Button
