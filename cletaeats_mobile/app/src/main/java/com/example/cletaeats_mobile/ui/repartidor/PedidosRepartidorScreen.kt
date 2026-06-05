@@ -28,7 +28,8 @@ import kotlinx.coroutines.isActive
 @Composable
 fun PedidosRepartidorScreen(
     viewModel: PedidosRepartidorViewModel,
-    onLogout:  () -> Unit
+    onLogout:  () -> Unit,
+    onVerMapa: (Int) -> Unit
 ) {
     val uiState     by viewModel.uiState.collectAsState()
     val session     = AppContainer.getSessionManager()
@@ -39,21 +40,20 @@ fun PedidosRepartidorScreen(
     val context = LocalContext.current
     val locationService = remember { RepartidorLocationService(context) }
 
-// Publicar ubicación cada 10 segundos mientras hay pedidos activos
-    LaunchedEffect(uiState.pedidos) {
-        while (isActive && uiState.pedidos.isNotEmpty()) {
-            uiState.pedidos.forEach { pedido ->
-                locationService.publicarUbicacion(pedido.id)
-            }
-            delay(10_000L)
-        }
-    }
-
     // Mensajes de éxito/error como Snackbar
     val snackbarHost = remember { SnackbarHostState() }
     LaunchedEffect(uiState.mensajeOk, uiState.errorMsg) {
         uiState.mensajeOk?.let { snackbarHost.showSnackbar(it); viewModel.clearMensajes() }
         uiState.errorMsg?.let { snackbarHost.showSnackbar(it); viewModel.clearMensajes() }
+    }
+
+    LaunchedEffect(uiState.pedidos) {
+        while (isActive && uiState.pedidos.isNotEmpty()) {
+            uiState.pedidos
+                .filter { it.estado == 2 }  // solo los EN_CAMINO
+                .forEach { pedido -> locationService.publicarUbicacion(pedido.id) }
+            delay(10_000L)
+        }
     }
 
     // Cargar pedidos al entrar
@@ -145,7 +145,8 @@ fun PedidosRepartidorScreen(
                             items(uiState.pedidos) { pedido ->
                                 PedidoRepartidorCard(
                                     pedido         = pedido,
-                                    onMarcarEntregado = { viewModel.marcarEntregado(pedido.id) }
+                                    onMarcarEntregado = { viewModel.marcarEntregado(pedido.id) },
+                                    onVerMapa = { onVerMapa(pedido.id) }
                                 )
                             }
                         }
@@ -160,7 +161,8 @@ fun PedidosRepartidorScreen(
 @Composable
 private fun PedidoRepartidorCard(
     pedido:            Pedido,
-    onMarcarEntregado: () -> Unit
+    onMarcarEntregado: () -> Unit,
+    onVerMapa:         () -> Unit
 ) {
     val estadoColor = when (pedido.estado) {
         0 -> CletaTextoSecundario   // CREADO
@@ -235,16 +237,31 @@ private fun PedidoRepartidorCard(
 
             Spacer(Modifier.height(14.dp))
 
-            // ── Botón marcar entregado (ImageButton con ícono) ────
-            Button(
-                onClick  = onMarcarEntregado,
-                modifier = Modifier.fillMaxWidth(),
-                shape    = RoundedCornerShape(10.dp),
-                colors   = ButtonDefaults.buttonColors(containerColor = CletaExito)
-            ) {
-                Icon(Icons.Default.LocalShipping, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Marcar como entregado", fontWeight = FontWeight.SemiBold)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Botón mapa
+                OutlinedButton(
+                    onClick  = onVerMapa,
+                    modifier = Modifier.weight(1f),
+                    shape    = RoundedCornerShape(10.dp),
+                    colors   = ButtonDefaults.outlinedButtonColors(contentColor = CletaNaranja),
+                    border   = ButtonDefaults.outlinedButtonBorder
+                ) {
+                    Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Ver ruta", fontWeight = FontWeight.SemiBold)
+                }
+
+                // Botón entregar
+                Button(
+                    onClick  = onMarcarEntregado,
+                    modifier = Modifier.weight(1f),
+                    shape    = RoundedCornerShape(10.dp),
+                    colors   = ButtonDefaults.buttonColors(containerColor = CletaExito)
+                ) {
+                    Icon(Icons.Default.LocalShipping, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Entregar", fontWeight = FontWeight.SemiBold)
+                }
             }
         }
     }

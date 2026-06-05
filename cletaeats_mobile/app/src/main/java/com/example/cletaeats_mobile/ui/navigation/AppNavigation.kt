@@ -25,6 +25,8 @@ import androidx.compose.runtime.LaunchedEffect
 import com.example.cletaeats_mobile.ui.cliente.RastreoRepartidorScreen
 
 import com.example.cletaeats_mobile.ui.cliente.PerfilScreen
+import com.example.cletaeats_mobile.ui.repartidor.MapaSeguimientoScreen
+
 @Composable
 fun AppNavigation(
     navController:    NavHostController,
@@ -47,30 +49,6 @@ fun AppNavigation(
                 onIrRegistro = { navController.navigate(AppRoutes.REGISTER) }
             )
         }
-
-       /* composable(AppRoutes.SELECCION_MODO) {
-            val session = AppContainer.getSessionManager()
-            val nombre  = session.getNombre()
-
-            SeleccionModoScreen(
-                nombreUsuario = nombre,
-                onModoSeleccionado = { modo ->
-                    session.saveDataMode(modo)
-
-                    // Si el modo es CLOUD, sincronizar en background
-                    if (modo == DataMode.CLOUD) {
-                        CoroutineScope(Dispatchers.IO).launch {
-                            AppContainer.syncManager.sincronizarDesdeCloud()
-                        }
-                    }
-
-                    val rol = session.getRol()
-                    navController.navigate(
-                        if (rol == "CLIENTE") AppRoutes.RESTAURANTES else AppRoutes.PEDIDOS_REPARTIDOR
-                    ) { popUpTo(AppRoutes.SELECCION_MODO) { inclusive = true } }
-                }
-            )
-        }*/
 
         composable(AppRoutes.REGISTER) {
             backStackEntry ->
@@ -207,6 +185,25 @@ fun AppNavigation(
                     navController.navigate(AppRoutes.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
+                },
+                onVerMapa     = { pedidoId -> navController.navigate(AppRoutes.mapaSeguimientoRuta(pedidoId)) }
+            )
+        }
+
+        composable(AppRoutes.MAPA_SEGUIMIENTO) { backStackEntry ->
+            val pedidoId = backStackEntry.arguments?.getString("pedidoId")?.toIntOrNull() ?: return@composable
+
+            // Buscar el pedido en el viewmodel del repartidor
+            val repVM = remember { AppContainer.pedidosRepartidorViewModel() }
+            val state by repVM.uiState.collectAsState()
+            val pedido = state.pedidos.find { it.id == pedidoId } ?: return@composable
+
+            MapaSeguimientoScreen(
+                pedido      = pedido,
+                onVolver    = { navController.popBackStack() },
+                onEntregado = {
+                    repVM.marcarEntregado(pedidoId)
+                    navController.popBackStack()
                 }
             )
         }

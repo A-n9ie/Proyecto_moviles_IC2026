@@ -17,6 +17,11 @@ data class CrearPedidoRequest(
     @SerializedName("distancia_km")  val distanciaKm: Double
 )
 
+data class CrearPedidoResponse(
+    @SerializedName("mensaje")  val mensaje: String,
+    @SerializedName("factura")  val factura: FacturaResponse
+)
+
 // ── Response ──────────────────────────────────────────────────────
 data class ItemFacturaResponse(
     @SerializedName("combo_nombre")    val comboNombre: String,
@@ -51,7 +56,9 @@ data class PedidoListResponse(
     @SerializedName("distancia_km")       val distanciaKm: Double,
     @SerializedName("fecha_creacion")     val fechaCreacion: String,
     @SerializedName("fecha_entrega")      val fechaEntrega: String? = null,
-    @SerializedName("items_count")        val itemsCount: Int
+    @SerializedName("items_count")        val itemsCount: Int,
+    @SerializedName("restaurante_latitud")  val restauranteLatitud:  Double? = null,
+    @SerializedName("restaurante_longitud") val restauranteLongitud: Double? = null,
 )
 
 interface IPedidoApi {
@@ -59,7 +66,7 @@ interface IPedidoApi {
     suspend fun crearPedido(
         @Header("Authorization") token: String,
         @Body body: CrearPedidoRequest
-    ): Response<FacturaResponse>
+    ): Response<CrearPedidoResponse>
 
     @GET("pedidos/cliente")
     suspend fun obtenerPedidosCliente(

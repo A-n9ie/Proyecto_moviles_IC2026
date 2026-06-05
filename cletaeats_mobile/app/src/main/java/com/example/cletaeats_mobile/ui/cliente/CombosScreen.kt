@@ -59,6 +59,7 @@ fun CombosScreen(
 
     var permisoUbicacion by remember { mutableStateOf(false) }
 
+
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permisos ->
@@ -85,7 +86,11 @@ fun CombosScreen(
         ))
     }
 
-    LaunchedEffect(permisoUbicacion) {
+    LaunchedEffect(permisoUbicacion, restauranteLat, restauranteLng) {
+        if (carritoViewModel.uiState.value.distanciaKm == 0.0) {
+            carritoViewModel.fijarDistancia(5.0, tieneGps = false)  // fallback inmediato
+        }
+
         // Las coordenadas llegan directo por parámetro — no dependen de la carga de combos
         if (restauranteLat == 0.0 && restauranteLng == 0.0) {
             carritoViewModel.fijarDistancia(5.0, tieneGps = false)
@@ -150,6 +155,41 @@ fun CombosScreen(
         } catch (e: SecurityException) {
             carritoViewModel.fijarDistancia(5.0, tieneGps = false)
         }
+    }
+
+    // Diálogo de conflicto de restaurante
+    if (carritoState.restauranteAnteriorNombre.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = {
+                carritoViewModel.cancelarCambioRestaurante()
+                onVolver()
+            },
+            containerColor = CletaGrisMedio,
+            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = CletaNaranja) },
+            title = { Text("¿Cambiar restaurante?", color = CletaBlanco, fontWeight = FontWeight.Bold) },
+            text  = {
+                Text(
+                    "Tu carrito tiene combos de \"${carritoState.restauranteAnteriorNombre}\". " +
+                            "Si continuás, se perderán esos ítems.",
+                    color = CletaTextoSecundario
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        carritoViewModel.confirmarCambioRestaurante(restauranteId,
+                            carritoState.restauranteNombre)  // nombre llegará al cargar
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = CletaNaranja)
+                ) { Text("Sí, cambiar") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    carritoViewModel.cancelarCambioRestaurante()
+                    onVolver()
+                }) { Text("Cancelar", color = CletaTextoSecundario) }
+            }
+        )
     }
 
     Scaffold(

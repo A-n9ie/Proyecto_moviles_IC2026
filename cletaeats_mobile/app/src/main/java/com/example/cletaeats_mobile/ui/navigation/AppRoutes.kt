@@ -14,9 +14,10 @@ object AppRoutes {
     const val PEDIDOS_REPARTIDOR = "pedidos_repartidor"
     const val SELECCION_MODO     = "seleccion_modo"
     const val PERFIL             = "perfil"
+    const val MAPA_SEGUIMIENTO   = "mapa_seguimiento/{pedidoId}"
     // Helper para construir la ruta con el ID
     fun combosRuta(restauranteId: Int) = "combos/$restauranteId"
-
+    fun mapaSeguimientoRuta(pedidoId: Int) = "mapa_seguimiento/$pedidoId"
     const val RASTREO_REPARTIDOR = "rastreo_repartidor/{pedidoId}"
     fun rastreoRuta(pedidoId: Int) = "rastreo_repartidor/$pedidoId"
 }

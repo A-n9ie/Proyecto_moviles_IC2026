@@ -22,7 +22,8 @@ data class CarritoUiState(
     val factura:           FacturaData?      = null,
     val distanciaKm:       Double            = 0.0,
     val tieneGps:          Boolean           = false,   // ← indica si es GPS real o estimado
-    val pedidoCreado:      Boolean           = false
+    val pedidoCreado:      Boolean           = false,
+    val restauranteAnteriorNombre: String    = ""
 ) {
     val subtotal:    Double get() = items.sumOf { it.subtotal }
     val totalItems:  Int    get() = items.sumOf { it.cantidad }
@@ -40,15 +41,32 @@ class CarritoViewModel(private val repo: IPedidoRepository) : ViewModel() {
 
     // ─── Gestión del restaurante activo ───────────────────────────
     fun iniciarCarrito(restauranteId: Int, restauranteNombre: String) {
-        if (_uiState.value.restauranteId != restauranteId) {
-            // Restaurante diferente → vaciar carrito
-            _uiState.value = CarritoUiState(
-                restauranteId     = restauranteId,
-                restauranteNombre = restauranteNombre
+        val state = _uiState.value
+        if (state.restauranteId != restauranteId && !state.estaVacio) {
+            // Hay items de otro restaurante — activar alerta
+            _uiState.value = state.copy(
+                restauranteAnteriorNombre = state.restauranteNombre,
+                // Guardamos temporalmente el nuevo restaurante pendiente
             )
-        } else {
-            _uiState.value = _uiState.value.copy(restauranteNombre = restauranteNombre)
+            // No cambiamos todavía — esperamos confirmación del usuario
+            return
         }
+        // Sin conflicto: iniciar normalmente
+        _uiState.value = CarritoUiState(
+            restauranteId     = restauranteId,
+            restauranteNombre = restauranteNombre
+        )
+    }
+
+    fun confirmarCambioRestaurante(nuevoId: Int, nuevoNombre: String) {
+        _uiState.value = CarritoUiState(
+            restauranteId     = nuevoId,
+            restauranteNombre = nuevoNombre
+        )
+    }
+
+    fun cancelarCambioRestaurante() {
+        _uiState.value = _uiState.value.copy(restauranteAnteriorNombre = "")
     }
 
     // ─── Agregar / quitar combos ──────────────────────────────────

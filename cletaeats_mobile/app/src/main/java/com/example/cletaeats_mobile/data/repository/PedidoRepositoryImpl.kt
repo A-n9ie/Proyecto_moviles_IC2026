@@ -2,8 +2,10 @@ package com.example.cletaeats_mobile.data.repository
 
 import com.example.cletaeats_mobile.data.local.SessionManager
 import com.example.cletaeats_mobile.data.remote.CrearPedidoRequest
+import com.example.cletaeats_mobile.data.remote.FacturaResponse
 import com.example.cletaeats_mobile.data.remote.IPedidoApi
 import com.example.cletaeats_mobile.data.remote.ItemPedidoRequest
+import com.example.cletaeats_mobile.data.remote.PedidoListResponse
 import com.example.cletaeats_mobile.domain.Result
 import com.example.cletaeats_mobile.domain.interfaces.IPedidoRepository
 import com.example.cletaeats_mobile.domain.model.FacturaData
@@ -31,7 +33,7 @@ class PedidoRepositoryImpl(
             )
             val resp = api.crearPedido(token, body)
             when (resp.code()) {
-                201 -> Result.Success(resp.body()!!.toFacturaData())
+                201 -> Result.Success(resp.body()!!.factura.toFacturaData())
                 400 -> {
                     val errorBody = resp.errorBody()?.string()
                     val msg = try {
@@ -91,7 +93,7 @@ class PedidoRepositoryImpl(
 }
 
 // ── Extensiones de mapeo ──────────────────────────────────────────
-private fun com.example.cletaeats_mobile.data.remote.FacturaResponse.toFacturaData() =
+private fun FacturaResponse.toFacturaData() =
     FacturaData(
         pedidoId          = pedidoId,
         estado            = estado,
@@ -110,7 +112,7 @@ private fun com.example.cletaeats_mobile.data.remote.FacturaResponse.toFacturaDa
         fechaCreacion   = fechaCreacion ?: ""
     )
 
-private fun com.example.cletaeats_mobile.data.remote.PedidoListResponse.toPedido() =
+private fun PedidoListResponse.toPedido() =
     Pedido(
         id                = id,
         estado            = estado,
@@ -121,5 +123,7 @@ private fun com.example.cletaeats_mobile.data.remote.PedidoListResponse.toPedido
         distanciaKm       = distanciaKm,
         fechaCreacion     = fechaCreacion,
         fechaEntrega      = fechaEntrega ?: "",
-        itemsCount        = itemsCount
+        itemsCount        = itemsCount,
+        restauranteLatitud  = restauranteLatitud,
+        restauranteLongitud = restauranteLongitud
     )

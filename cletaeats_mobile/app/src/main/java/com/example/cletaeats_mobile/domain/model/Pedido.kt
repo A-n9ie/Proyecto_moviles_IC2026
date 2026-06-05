@@ -10,5 +10,7 @@ data class Pedido(
     val distanciaKm:       Double = 0.0,
     val fechaCreacion:     String = "",
     val fechaEntrega:      String = "",
-    val itemsCount:        Int    = 0
+    val itemsCount:        Int    = 0,
+    val restauranteLatitud:  Double? = null,
+    val restauranteLongitud: Double? = null
 )

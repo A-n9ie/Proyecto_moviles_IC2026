@@ -30,6 +30,25 @@ def listar_restaurantes(categoria: Optional[str] = Query(None)):
         })
     return result
 
+@router.get("/restaurantes/{id_restaurante}")
+def obtener_restaurante(id_restaurante: int):
+    repo_rest = RestauranteRepository()
+    repo_cat  = CategoriaRepository()
+    r = repo_rest.obtener_por_id(id_restaurante)
+    if not r:
+        raise HTTPException(status_code=404, detail="Restaurante no encontrado")
+    cats = repo_cat.obtener_por_restaurante(r.id)
+    return {
+        "id":         r.id,
+        "nombre":     r.nombre,
+        "direccion":  r.direccion,
+        "imagen_url": r.imagen_url,
+        "estado":     r.estado,
+        "latitud":    r.latitud,
+        "longitud":   r.longitud,
+        "categorias": cats
+    }
+
 @router.get("/combos")
 def listar_combos(restaurante: int = Query(..., description="ID del restaurante")):
     repo_combo = ComboRepository()

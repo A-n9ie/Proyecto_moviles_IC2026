@@ -179,7 +179,7 @@ fun CarritoScreen(
                         carritoViewModel.confirmarPedido()
                     },
                     isLoading = state.isLoading,
-                    enabled = !state.estaVacio && state.tarjetaId != null && state.distanciaKm > 0,
+                    enabled = !state.estaVacio && state.tarjetaId != null && !state.isLoading,
                     icon      = Icons.Default.CheckCircle
                 )
                 Spacer(Modifier.height(16.dp))
