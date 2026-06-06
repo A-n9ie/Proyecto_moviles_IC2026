@@ -48,6 +48,7 @@ fun CombosScreen(
     restauranteId:    Int,
     restauranteLat:   Double,
     restauranteLng:   Double,
+    restauranteNombre:String,
     comboViewModel:   ComboViewModel,
     carritoViewModel: CarritoViewModel,
     onVerCarrito:     () -> Unit,
@@ -66,16 +67,11 @@ fun CombosScreen(
         permisoUbicacion = permisos[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                 permisos[Manifest.permission.ACCESS_COARSE_LOCATION] == true
     }
-    // Cargar combos al entrar a la pantalla
-    LaunchedEffect(restauranteId) {
-        comboViewModel.cargarCombos(restauranteId)
-    }
 
-    // Inicializar carrito con este restaurante cuando ya tengamos el nombre
-    LaunchedEffect(comboState.restaurante) {
-        comboState.restaurante?.let { r ->
-            carritoViewModel.iniciarCarrito(restauranteId, r.nombre)
-        }
+    LaunchedEffect(restauranteId) {
+        // Iniciar carrito SIEMPRE con el nombre que ya viene por parámetro de navegación
+        carritoViewModel.iniciarCarrito(restauranteId, restauranteNombre)
+        comboViewModel.cargarCombos(restauranteId)
     }
 
     // Pedir permiso al entrar a la pantalla

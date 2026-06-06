@@ -72,7 +72,7 @@ fun AppNavigation(
                 viewModel = viewModel,
                 onRestauranteClick = { restaurante ->
                     navController.navigate(
-                        AppRoutes.combosRuta(restaurante.id, restaurante.latitud, restaurante.longitud)
+                        AppRoutes.combosRuta(restaurante.id, restaurante.latitud, restaurante.longitud, restaurante.nombre)
                     )
                 },
                 onMisPedidos = { navController.navigate(AppRoutes.MIS_PEDIDOS) },
@@ -92,18 +92,23 @@ fun AppNavigation(
             arguments = listOf(
                 navArgument("restauranteId") { type = NavType.IntType },
                 navArgument("lat")           { type = NavType.StringType },  // Double como String
-                navArgument("lng")           { type = NavType.StringType }
+                navArgument("lng")           { type = NavType.StringType },
+                navArgument("nombre")        { type = NavType.StringType; defaultValue = "" }
             )
         ) { backStackEntry ->
             val restauranteId = backStackEntry.arguments?.getInt("restauranteId") ?: return@composable
             val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0
             val lng = backStackEntry.arguments?.getString("lng")?.toDoubleOrNull() ?: 0.0
             val comboViewModel = remember(backStackEntry) { AppContainer.comboViewModel() }
+            val nombre = java.net.URLDecoder.decode(
+                backStackEntry.arguments?.getString("nombre") ?: "", "UTF-8"
+            )
 
             CombosScreen(
                 restauranteId    = restauranteId,
                 restauranteLat   = lat,
                 restauranteLng   = lng,
+                restauranteNombre = nombre,
                 comboViewModel   = comboViewModel,
                 carritoViewModel = AppContainer.carritoViewModel,
                 onVerCarrito     = { navController.navigate(AppRoutes.CARRITO) },

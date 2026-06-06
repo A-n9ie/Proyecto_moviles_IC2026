@@ -20,7 +20,7 @@ data class CarritoUiState(
     val isLoading:         Boolean           = false,
     val errorMsg:          String?           = null,
     val factura:           FacturaData?      = null,
-    val distanciaKm:       Double            = 0.0,
+    val distanciaKm:       Double            = 5.0,
     val tieneGps:          Boolean           = false,   // ← indica si es GPS real o estimado
     val pedidoCreado:      Boolean           = false,
     val restauranteAnteriorNombre: String    = ""

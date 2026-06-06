@@ -47,3 +47,11 @@ proguard-rules.pro
 
 # Archivos de tests generados
 **/test-results/
+
+# Archivos de configuración local del IDE (varían por máquina)
+.idea/misc.xml
+.idea/workspace.xml
+.idea/vcs.xml
+.idea/deploymentTargetSelector.xml
+
+app/google-services.json

@@ -4,9 +4,10 @@ object AppRoutes {
     const val LOGIN              = "login"
     const val REGISTER           = "register"
     const val RESTAURANTES       = "restaurantes"
-    const val COMBOS = "combos/{restauranteId}/{lat}/{lng}"
-    fun combosRuta(restauranteId: Int, lat: Double, lng: Double) =
-        "combos/$restauranteId/$lat/$lng"
+    const val COMBOS = "combos/{restauranteId}/{lat}/{lng}/{nombre}"
+    fun combosRuta(id: Int, lat: Double?, lng: Double?, nombre: String) =
+        "combos/$id/${lat ?: 0.0}/${lng ?: 0.0}/${java.net.URLEncoder.encode(nombre, "UTF-8")}"
+
     const val CARRITO            = "carrito"
     const val FACTURA            = "factura"
     const val MIS_PEDIDOS        = "mis_pedidos"

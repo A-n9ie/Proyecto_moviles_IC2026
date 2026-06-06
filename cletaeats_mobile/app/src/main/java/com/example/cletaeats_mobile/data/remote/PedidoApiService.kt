@@ -62,29 +62,29 @@ data class PedidoListResponse(
 )
 
 interface IPedidoApi {
-    @POST("pedidos")
+    @POST("cliente/pedidos")
     suspend fun crearPedido(
         @Header("Authorization") token: String,
         @Body body: CrearPedidoRequest
     ): Response<CrearPedidoResponse>
 
-    @GET("pedidos/cliente")
+    @GET("cliente/pedidos")
     suspend fun obtenerPedidosCliente(
         @Header("Authorization") token: String
     ): Response<List<PedidoListResponse>>
 
-    @GET("pedidos/repartidor")
+    @GET("repartidor/pedidos")
     suspend fun obtenerPedidosRepartidor(
         @Header("Authorization") token: String
     ): Response<List<PedidoListResponse>>
 
-    @PUT("pedidos/{id}/entregar")
+    @PUT("repartidor/pedidos/{id}/entregar")
     suspend fun marcarEntregado(
         @Header("Authorization") token: String,
         @Path("id") pedidoId: Int
     ): Response<Unit>
 
-    @GET("pedidos/{id}/factura")
+    @GET("cliente/pedidos/{id}/factura")
     suspend fun obtenerFactura(
         @Header("Authorization") token: String,
         @Path("id") pedidoId: Int

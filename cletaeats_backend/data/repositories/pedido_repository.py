@@ -152,6 +152,9 @@ class PedidoRepository:
                 "total":              subtotal + costo_km
             }
 
+    def actualizar_estado(self, id_rep: int, estado: int) -> bool:
+        return self.actualizar_campos(id_rep, {"estado": estado})
+
     @staticmethod
     def _map(row) -> Pedido:
         return Pedido(

@@ -25,9 +25,10 @@ class ComboViewModel(private val repo: IComboRepository) : ViewModel() {
     val uiState: StateFlow<ComboUiState> = _uiState.asStateFlow()
 
     fun cargarCombos(restauranteId: Int) {
-        if (_uiState.value.restaurante?.id == restauranteId && _uiState.value.combos.isNotEmpty()) {
-            return  // Ya cargado, evitar llamada repetida
-        }
+        val state = _uiState.value
+        if (state.combos.isNotEmpty() &&
+            state.combos.first().restauranteId == restauranteId) return
+
         _uiState.value = ComboUiState(isLoading = true)
         viewModelScope.launch {
             when (val result = repo.obtenerCombosPorRestaurante(restauranteId)) {
