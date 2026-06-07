@@ -28,6 +28,13 @@ class RepartidorRepository:
                 select(t_rep).where(t_rep.c.USUARIO_ID == usuario_id)
             ).mappings().first()
             return self._map(row) if row else None
+        
+    def obtener_por_id(self, repartidor_id: int) -> Optional[Repartidor]:
+     with engine.connect() as conn:
+        row = conn.execute(
+            select(t_rep).where(t_rep.c.ID == repartidor_id)
+        ).mappings().first()
+        return self._map(row) if row else None
 
     def existe_cedula(self, cedula: str) -> bool:
         with engine.connect() as conn:
@@ -67,7 +74,8 @@ class RepartidorRepository:
         allowed = {
             "nombre": t_rep.c.NOMBRE,
             "estado": t_rep.c.ESTADO,
-            "amonestaciones": t_rep.c.AMONESTACIONES
+            "amonestaciones": t_rep.c.AMONESTACIONES,
+            "rating": t_rep.c.RATING,
         }
         values = {allowed[k].key: v for k, v in data.items() if k in allowed}
         if not values:

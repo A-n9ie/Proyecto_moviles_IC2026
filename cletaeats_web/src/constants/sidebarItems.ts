@@ -31,4 +31,9 @@ export const sidebarItems: SidebarItem[] = [
         icon: '🥡',
         path: '/combos',
     },
+    {
+    label: 'Reportes',
+    icon: '📈',
+    path: '/reportes',
+},
 ]

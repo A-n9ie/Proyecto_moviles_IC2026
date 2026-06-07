@@ -11,6 +11,10 @@ from data.repositories.combo_repository import ComboRepository
 from data.repositories.restaurante_repository import RestauranteRepository
 from data.repositories.repartidor_repository import RepartidorRepository
 from core.use_cases.pedido_use_cases import PedidoUseCases
+from data.database.tables import usuario as t_usuario
+from sqlalchemy import select
+from data.database.db_connection import engine
+from data.repositories.repartidor_repository import RepartidorRepository
 
 router = APIRouter()
 
@@ -33,6 +37,9 @@ class PerfilBody(BaseModel):
     nombre:    str
     telefono:  str
     direccion: str
+
+class RatingBody(BaseModel):
+    rating: int  # 1 a 5
 
 @router.get("/tarjetas")
 def listar_tarjetas(sesion: dict = Depends(get_current_user)):
@@ -75,6 +82,13 @@ def crear_pedido(body: PedidoBody, sesion: dict = Depends(get_current_user)):
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
 
+    with engine.connect() as conn:
+        row = conn.execute(
+            select(t_usuario.c.ESTADO).where(t_usuario.c.ID == sesion["id_usuario"])
+        ).scalar()
+    if row == 0:
+        raise HTTPException(status_code=403, detail="Tu cuenta está suspendida")
+
     use_cases = PedidoUseCases(
         pedido_repo=PedidoRepository(),
         combo_repo=ComboRepository(),
@@ -108,6 +122,8 @@ def obtener_perfil(sesion: dict = Depends(get_current_user)):
     cliente = ClienteRepository().encontrar_por_usuario_id(sesion["id_usuario"])
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    
+    
     return {
         "id":        cliente.id,
         "nombre":    cliente.nombre,
@@ -139,3 +155,37 @@ def actualizar_perfil(body: PerfilBody, sesion: dict = Depends(get_current_user)
             )
         )
     return {"mensaje": "Perfil actualizado correctamente"}
+
+@router.post("/pedidos/{id_pedido}/rating")
+def calificar_repartidor(id_pedido: int, body: RatingBody, sesion: dict = Depends(get_current_user)):
+    if body.rating < 1 or body.rating > 5:
+        raise HTTPException(status_code=400, detail="El rating debe ser entre 1 y 5")
+    pedido = PedidoRepository().obtener_por_id(id_pedido)
+    if not pedido:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    if pedido.estado != 3:
+        raise HTTPException(status_code=400, detail="Solo se puede calificar un pedido entregado")
+    ok = RepartidorRepository().actualizar_campos(
+        pedido.repartidor_id, {"rating": body.rating}
+    )
+    return {"mensaje": "Calificación registrada"}
+
+@router.put("/pedidos/{id_pedido}/cancelar")
+def cancelar_pedido(id_pedido: int, sesion: dict = Depends(get_current_user)):
+    cliente = ClienteRepository().encontrar_por_usuario_id(sesion["id_usuario"])
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    pedido = PedidoRepository().obtener_por_id(id_pedido)
+    if not pedido:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    if pedido.cliente_id != cliente.id:
+        raise HTTPException(status_code=403, detail="Este pedido no te pertenece")
+    if pedido.estado != 0:
+        raise HTTPException(status_code=400, detail="Solo se puede cancelar un pedido recién creado")
+    ok = PedidoRepository().actualizar_estado(id_pedido, 4)
+    if not ok:
+        raise HTTPException(status_code=400, detail="No se pudo cancelar el pedido")
+    # Liberar repartidor si estaba asignado
+    if pedido.repartidor_id:
+        RepartidorRepository().actualizar_estado(pedido.repartidor_id, 1)
+    return {"mensaje": "Pedido cancelado"}

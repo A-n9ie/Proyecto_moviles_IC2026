@@ -155,6 +155,71 @@ class PedidoRepository:
     def actualizar_estado(self, id_rep: int, estado: int) -> bool:
         return self.actualizar_campos(id_rep, {"estado": estado})
 
+    def restaurante_mas_pedidos(self) -> dict:
+     from sqlalchemy import func
+     with engine.connect() as conn:
+        row = conn.execute(
+            select(t_rest.c.NOMBRE, func.count(t_pedido.c.ID).label("TOTAL"))
+            .join(t_rest, t_pedido.c.RESTAURANTE_ID == t_rest.c.ID)
+            .group_by(t_rest.c.ID)
+            .order_by(func.count(t_pedido.c.ID).desc())
+            .limit(1)
+        ).mappings().first()
+        return to_lower_dict(row) if row else {}
+
+def restaurante_menos_pedidos(self) -> dict:
+    from sqlalchemy import func
+    with engine.connect() as conn:
+        row = conn.execute(
+            select(t_rest.c.NOMBRE, func.count(t_pedido.c.ID).label("TOTAL"))
+            .join(t_rest, t_pedido.c.RESTAURANTE_ID == t_rest.c.ID)
+            .group_by(t_rest.c.ID)
+            .order_by(func.count(t_pedido.c.ID).asc())
+            .limit(1)
+        ).mappings().first()
+        return to_lower_dict(row) if row else {}
+
+def monto_por_restaurante(self) -> list:
+    from sqlalchemy import func
+    with engine.connect() as conn:
+        rows = conn.execute(
+            select(
+                t_rest.c.NOMBRE,
+                func.sum(t_detalle.c.CANTIDAD * t_detalle.c.PRECIO_UNITARIO).label("MONTO_TOTAL")
+            )
+            .join(t_detalle, t_detalle.c.PEDIDO_ID == t_pedido.c.ID)
+            .join(t_rest, t_pedido.c.RESTAURANTE_ID == t_rest.c.ID)
+            .group_by(t_rest.c.ID)
+            .order_by(func.sum(t_detalle.c.CANTIDAD * t_detalle.c.PRECIO_UNITARIO).desc())
+        ).mappings().all()
+        return [to_lower_dict(r) for r in rows]
+
+def cliente_top(self) -> dict:
+    from sqlalchemy import func
+    with engine.connect() as conn:
+        row = conn.execute(
+            select(t_cliente.c.NOMBRE, func.count(t_pedido.c.ID).label("TOTAL"))
+            .join(t_cliente, t_pedido.c.CLIENTE_ID == t_cliente.c.ID)
+            .group_by(t_cliente.c.ID)
+            .order_by(func.count(t_pedido.c.ID).desc())
+            .limit(1)
+        ).mappings().first()
+        return to_lower_dict(row) if row else {}
+
+def hora_pico(self) -> dict:
+    from sqlalchemy import func
+    with engine.connect() as conn:
+        row = conn.execute(
+            select(
+                func.strftime("%H", t_pedido.c.FECHA_CREACION).label("HORA"),
+                func.count(t_pedido.c.ID).label("TOTAL")
+            )
+            .group_by(func.strftime("%H", t_pedido.c.FECHA_CREACION))
+            .order_by(func.count(t_pedido.c.ID).desc())
+            .limit(1)
+        ).mappings().first()
+        return to_lower_dict(row) if row else {}
+
     @staticmethod
     def _map(row) -> Pedido:
         return Pedido(

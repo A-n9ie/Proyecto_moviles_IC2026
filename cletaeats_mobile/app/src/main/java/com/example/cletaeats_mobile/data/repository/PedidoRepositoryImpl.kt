@@ -14,6 +14,7 @@ import com.example.cletaeats_mobile.domain.model.ItemFactura
 import com.example.cletaeats_mobile.domain.model.Pedido
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.example.cletaeats_mobile.data.remote.RatingRequest
 
 class PedidoRepositoryImpl(
     private val api:     IPedidoApi,
@@ -90,7 +91,28 @@ class PedidoRepositoryImpl(
                 }
             } catch (e: Exception) { Result.Error("Sin conexión al servidor") }
         }
+
+    override suspend fun calificarRepartidor(pedidoId: Int, rating: Int): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            try {
+                val resp = api.calificarRepartidor(token, pedidoId, RatingRequest(rating))
+                if (resp.code() == 200) Result.Success(Unit)
+                else Result.Error("No se pudo enviar la calificación")
+            } catch (e: Exception) { Result.Error("Sin conexión al servidor") }
+        }
+
+    override suspend fun cancelarPedido(pedidoId: Int): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            try {
+                val resp = api.cancelarPedido(token, pedidoId)
+                if (resp.code() == 200) Result.Success(Unit)
+                else Result.Error("No se pudo cancelar el pedido")
+            } catch (e: Exception) { Result.Error("Sin conexión al servidor") }
+        }
+
 }
+
+
 
 // ── Extensiones de mapeo ──────────────────────────────────────────
 private fun FacturaResponse.toFacturaData() =

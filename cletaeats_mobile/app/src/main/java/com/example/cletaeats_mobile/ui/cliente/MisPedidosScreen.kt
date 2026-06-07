@@ -18,6 +18,7 @@ import com.example.cletaeats_mobile.AppContainer
 import com.example.cletaeats_mobile.domain.model.Pedido
 import com.example.cletaeats.ui.theme.*
 import com.example.cletaeats_mobile.viewmodel.PedidosClienteViewModel
+import androidx.compose.foundation.BorderStroke
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,7 +86,12 @@ fun MisPedidosScreen(
                         Spacer(Modifier.height(4.dp))
                     }
                     items(uiState.pedidos) { pedido ->
-                        PedidoClienteCard(pedido, onRastrear = { onRastrear(pedido.id) })
+                        PedidoClienteCard(
+                            pedido = pedido,
+                            onRastrear = { onRastrear(pedido.id) },
+                            onCalificar = { rating -> viewModel.calificarRepartidor(pedido.id, rating) },
+                            onCancelar = { viewModel.cancelarPedido(pedido.id) }
+                        )
                     }
                 }
             }
@@ -94,7 +100,12 @@ fun MisPedidosScreen(
 }
 
 @Composable
-private fun PedidoClienteCard(pedido: Pedido, onRastrear: () -> Unit) {
+private fun PedidoClienteCard(
+    pedido: Pedido,
+    onRastrear: () -> Unit,
+    onCalificar: (Int) -> Unit,
+    onCancelar: () -> Unit
+) {
     val estadoColor = when (pedido.estado) {
         3    -> CletaExito
         4    -> CletaError
@@ -151,6 +162,54 @@ private fun PedidoClienteCard(pedido: Pedido, onRastrear: () -> Unit) {
                     Text("Rastrear repartidor", fontWeight = FontWeight.SemiBold)
                 }
             }
+
+            if (pedido.estado == 3) {
+                var rating by remember { mutableStateOf(0) }
+                var enviado by remember { mutableStateOf(false) }
+
+                Spacer(Modifier.height(10.dp))
+                Text("Calificar repartidor:", color = CletaBlanco, fontSize = 13.sp)
+                Spacer(Modifier.height(4.dp))
+                Row {
+                    (1..5).forEach { estrella ->
+                        IconButton(
+                            onClick = {
+                                if (!enviado) {
+                                    rating = estrella
+                                    onCalificar(estrella)
+                                    enviado = true
+                                }
+                            },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (estrella <= rating) Icons.Default.Star else Icons.Default.StarBorder,
+                                contentDescription = "$estrella estrellas",
+                                tint = CletaNaranja
+                            )
+                        }
+                    }
+                }
+                if (enviado) {
+                    Text("¡Gracias por tu calificación!", color = CletaExito, fontSize = 12.sp)
+                }
+            }
+
+            if (pedido.estado == 0) {
+                Spacer(Modifier.height(10.dp))
+                OutlinedButton(
+                    onClick = onCancelar,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = CletaError),
+                    border = BorderStroke(1.dp, CletaError)
+                ) {
+                    Icon(Icons.Default.Cancel, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Cancelar pedido", fontWeight = FontWeight.SemiBold)
+                }
+            }
+
         }
     }
 }

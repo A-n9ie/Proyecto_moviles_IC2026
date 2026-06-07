@@ -39,8 +39,10 @@ repartidor = Table("REPARTIDOR", metadata,
     Column("COSTO_KM_HABIL",        Float,   nullable=False, default=1000),
     Column("COSTO_KM_FERIADO",      Float,   nullable=False, default=1500),
     Column("AMONESTACIONES",        Integer, nullable=False, default=0),
+    Column("RATING", Float, nullable=False, default=0.0),
     CheckConstraint("ESTADO IN (0,1)",                     name="ck_repartidor_estado"),
     CheckConstraint("AMONESTACIONES >= 0 AND AMONESTACIONES <= 4", name="ck_repartidor_amones"),
+    
 )
 
 restaurante = Table("RESTAURANTE", metadata,

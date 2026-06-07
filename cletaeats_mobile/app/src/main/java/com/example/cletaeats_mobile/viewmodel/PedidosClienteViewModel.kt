@@ -30,4 +30,18 @@ class PedidosClienteViewModel(private val repo: IPedidoRepository) : ViewModel()
             }
         }
     }
+
+    fun calificarRepartidor(pedidoId: Int, rating: Int) {
+        viewModelScope.launch {
+            repo.calificarRepartidor(pedidoId, rating)
+            cargarPedidos() // refresca la lista
+        }
+    }
+
+    fun cancelarPedido(pedidoId: Int) {
+        viewModelScope.launch {
+            repo.cancelarPedido(pedidoId)
+            cargarPedidos()
+        }
+    }
 }

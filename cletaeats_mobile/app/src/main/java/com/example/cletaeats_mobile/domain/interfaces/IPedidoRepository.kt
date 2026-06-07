@@ -16,4 +16,9 @@ interface IPedidoRepository {
     suspend fun obtenerPedidosRepartidor(): Result<List<Pedido>>
     suspend fun marcarEntregado(pedidoId: Int): Result<Unit>
     suspend fun obtenerFactura(pedidoId: Int): Result<FacturaData>
+
+    suspend fun calificarRepartidor(pedidoId: Int, rating: Int): Result<Unit>
+
+    suspend fun cancelarPedido(pedidoId: Int): Result<Unit>
+
 }

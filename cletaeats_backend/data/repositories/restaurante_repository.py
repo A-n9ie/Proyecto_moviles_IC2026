@@ -66,6 +66,12 @@ class RestauranteRepository:
                 ESTADO=1
             ))
             return result.inserted_primary_key[0]
+        
+    def buscar_por_cedula(self, cedula: str) -> bool:
+      with engine.connect() as conn:
+        return conn.execute(
+            select(t_rest.c.ID).where(t_rest.c.CEDULA_JURIDICA == cedula)
+        ).first() is not None
 
     def actualizar_campos(self, id_rest: int, data: dict) -> bool:
         allowed = {
@@ -84,6 +90,8 @@ class RestauranteRepository:
                 update(t_rest).where(t_rest.c.ID == id_rest).values(**values)
             )
             return result.rowcount > 0
+
+
 
     @staticmethod
     def _map(row) -> Restaurante:

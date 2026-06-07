@@ -65,6 +65,9 @@ class ProductoBody(BaseModel):
     descripcion: str = ""
     estado: Optional[int] = None
 
+class AmonestacionBody(BaseModel):
+    motivo: str = ""
+
 # ── Clientes ──────────────────────────────────────────────────────────
 @router.get("/clientes")
 def listar_clientes(_=Depends(require_admin), repos=Depends(get_repos)):
@@ -97,6 +100,8 @@ def listar_restaurantes(_=Depends(require_admin), repos=Depends(get_repos)):
 
 @router.post("/restaurantes", status_code=201)
 def crear_restaurante(body: RestauranteBody, _=Depends(require_admin), repos=Depends(get_repos)):
+    if repos["restaurante"].buscar_por_cedula(body.cedula_juridica):
+        raise HTTPException(status_code=409, detail="Ya existe un restaurante con esa cédula jurídica")
     nuevo_id = repos["restaurante"].crear(body.model_dump(exclude_none=True))
     if body.categoria_ids:
         repos["categoria"].asignar_a_restaurante(nuevo_id, body.categoria_ids)
@@ -182,3 +187,35 @@ async def upload_imagen(file: UploadFile = File(...), _=Depends(require_admin)):
     with open(ruta, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     return {"url": f"/uploads/{nombre}"}
+
+# Amonestaciones a repartidores ─────────────────────────────────────────
+@router.post("/repartidores/{id}/amonestacion")
+def agregar_amonestacion(id: int, body: AmonestacionBody, _=Depends(require_admin), repos=Depends(get_repos)):
+    rep = repos["repartidor"].obtener_por_id(id)
+    if not rep:
+        raise HTTPException(status_code=404, detail="Repartidor no encontrado")
+    if rep.amonestaciones >= 4:
+        raise HTTPException(status_code=400, detail="El repartidor ya está suspendido")
+
+    nuevas = rep.amonestaciones + 1
+    data = {"amonestaciones": nuevas}
+    if nuevas >= 4:
+        data["estado"] = 0  # suspensión automática, también actualiza USUARIO via actualizar_campos
+
+    repos["repartidor"].actualizar_campos(id, data)
+    return {
+        "amonestaciones": nuevas,
+        "suspendido": nuevas >= 4,
+        "mensaje": "Repartidor suspendido" if nuevas >= 4 else "Amonestación registrada"
+    }
+
+# ── Reportes ───────────────────────────────────────────────────────────
+@router.get("/reportes")
+def obtener_reportes(_=Depends(require_admin), repos=Depends(get_repos)):
+    return {
+        "restaurante_mas_pedidos":   repos["pedido"].restaurante_mas_pedidos(),
+        "restaurante_menos_pedidos": repos["pedido"].restaurante_menos_pedidos(),
+        "monto_por_restaurante":     repos["pedido"].monto_por_restaurante(),
+        "cliente_top":               repos["pedido"].cliente_top(),
+        "hora_pico":                 repos["pedido"].hora_pico(),
+    }

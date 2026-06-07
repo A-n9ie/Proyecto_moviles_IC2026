@@ -16,6 +16,7 @@ import ClientesPage from '../../pages/clientes/ClientesPage'
 import RepartidoresPage from '../../pages/repartidores/RepartidoresPage'
 import RestaurantesPage from '../../pages/restaurantes/RestaurantesPage'
 import CombosPage from '../../pages/combos/CombosPage'
+import ReportesPage from '../../pages/reportes/ReportesPage'
 
 const AppRouter = () => {
     return (
@@ -60,6 +61,11 @@ const AppRouter = () => {
                 <Route
                     path="/combos"
                     element={<CombosPage />}
+                />
+
+                <Route
+                    path="/reportes"
+                    element={<ReportesPage />}
                 />
             </Route>
 

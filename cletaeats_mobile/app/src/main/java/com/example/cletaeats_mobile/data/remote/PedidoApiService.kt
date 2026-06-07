@@ -61,6 +61,8 @@ data class PedidoListResponse(
     @SerializedName("restaurante_longitud") val restauranteLongitud: Double? = null,
 )
 
+data class RatingRequest(val rating: Int)
+
 interface IPedidoApi {
     @POST("cliente/pedidos")
     suspend fun crearPedido(
@@ -89,4 +91,20 @@ interface IPedidoApi {
         @Header("Authorization") token: String,
         @Path("id") pedidoId: Int
     ): Response<FacturaResponse>
+
+    @POST("cliente/pedidos/{id}/rating")
+    suspend fun calificarRepartidor(
+        @Header("Authorization") token: String,
+        @Path("id") pedidoId: Int,
+        @Body body: RatingRequest
+    ): Response<Unit>
+
+    @PUT("cliente/pedidos/{id}/cancelar")
+    suspend fun cancelarPedido(
+        @Header("Authorization") token: String,
+        @Path("id") pedidoId: Int
+    ): Response<Unit>
+
+
+
 }
