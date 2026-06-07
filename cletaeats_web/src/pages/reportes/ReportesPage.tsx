@@ -20,7 +20,7 @@ const ReportesPage = () => {
 
     return (
         <div>
-            <PageHeader title="Reportes" />
+            <PageHeader title="Reportes" subtitle="Estadísticas generales del sistema" />
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', padding: '1.5rem' }}>
 
