@@ -104,53 +104,61 @@ class PedidoRepository:
             )
             return result.rowcount > 0
 
-    def obtener_factura(self, pedido_id: int) -> Optional[dict]:
-        with engine.connect() as conn:
-            row = conn.execute(
-                select(
-                    t_pedido.c.ID,
-                    t_pedido.c.ESTADO,
-                    t_pedido.c.DISTANCIA_KM,
-                    t_pedido.c.FECHA_CREACION,
-                    t_cliente.c.NOMBRE.label("CLIENTE_NOMBRE"),
-                    t_rest.c.NOMBRE.label("RESTAURANTE_NOMBRE"),
-                    t_rep.c.NOMBRE.label("REPARTIDOR_NOMBRE"),
-                    t_rep.c.COSTO_KM_HABIL
-                )
-                .join(t_cliente, t_pedido.c.CLIENTE_ID     == t_cliente.c.ID)
-                .join(t_rest,    t_pedido.c.RESTAURANTE_ID == t_rest.c.ID)
-                .outerjoin(t_rep, t_pedido.c.REPARTIDOR_ID == t_rep.c.ID)
-                .where(t_pedido.c.ID == pedido_id)
-            ).mappings().first()
-            if not row:
-                return None
+def obtener_factura(self, pedido_id: int) -> Optional[dict]:
+    with engine.connect() as conn:
+        row = conn.execute(
+            select(
+                t_pedido.c.ID,
+                t_pedido.c.ESTADO,
+                t_pedido.c.DISTANCIA_KM,
+                t_pedido.c.FECHA_CREACION,
+                t_cliente.c.NOMBRE.label("CLIENTE_NOMBRE"),
+                t_rest.c.NOMBRE.label("RESTAURANTE_NOMBRE"),
+                t_rep.c.NOMBRE.label("REPARTIDOR_NOMBRE"),
+                t_rep.c.COSTO_KM_HABIL
+            )
+            .join(t_cliente, t_pedido.c.CLIENTE_ID     == t_cliente.c.ID)
+            .join(t_rest,    t_pedido.c.RESTAURANTE_ID == t_rest.c.ID)
+            .outerjoin(t_rep, t_pedido.c.REPARTIDOR_ID == t_rep.c.ID)
+            .where(t_pedido.c.ID == pedido_id)
+        ).mappings().first()
+        if not row:
+            return None
 
-            items = conn.execute(
-                select(
-                    t_detalle.c.CANTIDAD,
-                    t_detalle.c.PRECIO_UNITARIO,
-                    t_combo.c.NOMBRE.label("COMBO_NOMBRE"),
-                    t_combo.c.NUMERO_COMBO
-                )
-                .join(t_combo, t_detalle.c.COMBO_ID == t_combo.c.ID)
-                .where(t_detalle.c.PEDIDO_ID == pedido_id)
-            ).mappings().all()
+        items = conn.execute(
+            select(
+                t_detalle.c.CANTIDAD,
+                t_detalle.c.PRECIO_UNITARIO,
+                t_combo.c.NOMBRE.label("COMBO_NOMBRE"),
+                t_combo.c.NUMERO_COMBO
+            )
+            .join(t_combo, t_detalle.c.COMBO_ID == t_combo.c.ID)
+            .where(t_detalle.c.PEDIDO_ID == pedido_id)
+        ).mappings().all()
 
-            subtotal = sum(i["CANTIDAD"] * i["PRECIO_UNITARIO"] for i in items)
-            costo_km = (row["COSTO_KM_HABIL"] or 1000) * row["DISTANCIA_KM"]
-            return {
-                "id_pedido":          row["ID"],
-                "estado":             row["ESTADO"],
-                "cliente":            row["CLIENTE_NOMBRE"],
-                "restaurante":        row["RESTAURANTE_NOMBRE"],
-                "repartidor":         row["REPARTIDOR_NOMBRE"],
-                "fecha_creacion":     row["FECHA_CREACION"],
-                "distancia_km":       row["DISTANCIA_KM"],
-                "items":              [dict(i) for i in items],
-                "subtotal":           subtotal,
-                "costo_envio":        costo_km,
-                "total":              subtotal + costo_km
-            }
+        subtotal = sum(i["CANTIDAD"] * i["PRECIO_UNITARIO"] for i in items)
+        costo_km = (row["COSTO_KM_HABIL"] or 1000) * row["DISTANCIA_KM"]
+        return {
+            "id_pedido":      row["ID"],
+            "estado":         row["ESTADO"],
+            "cliente":        row["CLIENTE_NOMBRE"],
+            "restaurante":    row["RESTAURANTE_NOMBRE"],
+            "repartidor":     row["REPARTIDOR_NOMBRE"],
+            "fecha_creacion": row["FECHA_CREACION"],
+            "distancia_km":   row["DISTANCIA_KM"],
+            "items": [
+                {
+                    "combo_nombre":    i["COMBO_NOMBRE"],
+                    "numero_combo":    i["NUMERO_COMBO"],
+                    "cantidad":        i["CANTIDAD"],
+                    "precio_unitario": i["PRECIO_UNITARIO"]
+                }
+                for i in items
+            ],
+            "subtotal":    subtotal,
+            "costo_envio": costo_km,
+            "total":       subtotal + costo_km
+        }
 
     def actualizar_estado(self, id_rep: int, estado: int) -> bool:
         return self.actualizar_campos(id_rep, {"estado": estado})
