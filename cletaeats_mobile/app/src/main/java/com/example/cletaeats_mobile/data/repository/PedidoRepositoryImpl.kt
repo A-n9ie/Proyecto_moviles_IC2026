@@ -122,9 +122,9 @@ private fun FacturaResponse.toFacturaData() =
         restauranteNombre = restauranteNombre,
         clienteNombre     = clienteNombre,
         repartidorNombre  = repartidorNombre,
-        items             = items.map {
+        items = items.map {
             ItemFactura(it.comboNombre, it.numeroCombo, it.cantidad,
-                        it.precioUnitario, it.subtotalItem)
+                it.precioUnitario, it.subtotalItem ?: 0.0)
         },
         subtotal        = subtotal,
         distanciaKm     = distanciaKm,
