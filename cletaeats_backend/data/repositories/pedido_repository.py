@@ -195,6 +195,7 @@ class PedidoRepository:
                     t_rest.c.NOMBRE,
                     func.sum(t_detalle.c.CANTIDAD * t_detalle.c.PRECIO_UNITARIO).label("MONTO_TOTAL")
                 )
+                .select_from(t_pedido)
                 .join(t_detalle, t_detalle.c.PEDIDO_ID == t_pedido.c.ID)
                 .join(t_rest, t_pedido.c.RESTAURANTE_ID == t_rest.c.ID)
                 .group_by(t_rest.c.ID)
