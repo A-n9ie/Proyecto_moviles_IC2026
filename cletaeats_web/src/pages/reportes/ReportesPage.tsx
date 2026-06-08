@@ -23,50 +23,50 @@ const ReportesPage = () => {
         <div>
             <PageHeader title="Reportes" subtitle="Estadísticas generales del sistema" />
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', padding: '1.5rem' }}>
+            <div className="reportes-grid">
 
-                <div className="card">
+                <div className="reporte-card">
                     <h3>🏆 Restaurante con más pedidos</h3>
-                    <p><strong>{data.restaurante_mas_pedidos.nombre}</strong></p>
-                    <p>{data.restaurante_mas_pedidos.total} pedidos</p>
+                    <p className="reporte-valor"><strong>{data.restaurante_mas_pedidos.nombre}</strong></p>
+                    <p className="reporte-sub">{data.restaurante_mas_pedidos.total} pedidos</p>
                 </div>
 
-                <div className="card">
+                <div className="reporte-card">
                     <h3>📉 Restaurante con menos pedidos</h3>
-                    <p><strong>{data.restaurante_menos_pedidos.nombre}</strong></p>
-                    <p>{data.restaurante_menos_pedidos.total} pedidos</p>
+                    <p className="reporte-valor"><strong>{data.restaurante_menos_pedidos.nombre}</strong></p>
+                    <p className="reporte-sub">{data.restaurante_menos_pedidos.total} pedidos</p>
                 </div>
 
-                <div className="card" style={{ gridColumn: 'span 2' }}>
+                <div className="reporte-card full">
                     <h3>💰 Monto total por restaurante</h3>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '0.5rem' }}>
+                    <table className="reportes-table">
                         <thead>
                             <tr>
-                                <th style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '1px solid var(--border)' }}>Restaurante</th>
-                                <th style={{ textAlign: 'right', padding: '0.5rem', borderBottom: '1px solid var(--border)' }}>Monto</th>
+                                <th>Restaurante</th>
+                                <th>Monto</th>
                             </tr>
                         </thead>
                         <tbody>
                             {data.monto_por_restaurante.map((r: any) => (
                                 <tr key={r.nombre}>
-                                    <td style={{ padding: '0.5rem' }}>{r.nombre}</td>
-                                    <td style={{ padding: '0.5rem', textAlign: 'right' }}>₡{r.monto_total?.toLocaleString()}</td>
+                                    <td>{r.nombre}</td>
+                                    <td>₡{r.monto_total?.toLocaleString()}</td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
 
-                <div className="card">
+                <div className="reporte-card">
                     <h3>👤 Cliente top</h3>
-                    <p><strong>{data.cliente_top.nombre}</strong></p>
-                    <p>{data.cliente_top.total} pedidos</p>
+                    <p className="reporte-valor"><strong>{data.cliente_top.nombre}</strong></p>
+                    <p className="reporte-sub">{data.cliente_top.total} pedidos</p>
                 </div>
 
-                <div className="card">
+                <div className="reporte-card">
                     <h3>⏰ Hora pico</h3>
-                    <p><strong>{data.hora_pico.hora}:00 hrs</strong></p>
-                    <p>{data.hora_pico.total} pedidos en esa hora</p>
+                    <p className="reporte-valor"><strong>{data.hora_pico.hora}:00 hrs</strong></p>
+                    <p className="reporte-sub">{data.hora_pico.total} pedidos en esa hora</p>
                 </div>
 
             </div>
