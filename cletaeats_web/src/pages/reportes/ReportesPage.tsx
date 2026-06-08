@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import PageHeader from '../../components/ui/pageHeader/PageHeader'
 import Spinner from '../../components/common/loaders/Spinner'
 import { axiosClient } from '../../services/api/axiosClient'
+import './reportesPage.css'
 
 const ReportesPage = () => {
     const [data, setData] = useState<any>(null)
