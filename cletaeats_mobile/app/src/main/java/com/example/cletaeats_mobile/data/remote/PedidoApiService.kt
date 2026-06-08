@@ -28,7 +28,7 @@ data class ItemFacturaResponse(
     @SerializedName("numero_combo")    val numeroCombo: Int,
     val cantidad: Int,
     @SerializedName("precio_unitario") val precioUnitario: Double,
-    @SerializedName("subtotal_item")   val subtotalItem: Double
+    @SerializedName("subtotal_item") val subtotalItem: Double? = null
 )
 
 data class FacturaResponse(
