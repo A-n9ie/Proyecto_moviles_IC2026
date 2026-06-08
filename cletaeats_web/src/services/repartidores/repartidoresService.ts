@@ -29,4 +29,8 @@ export const repartidoresService = {
             estado: estadoActual === 1 ? 0 : 1,
         })
     },
+    agregarAmonestacion: async (id: number, motivo: string): Promise<{ amonestaciones: number; suspendido: boolean; mensaje: string }> => {
+        const r = await axiosClient.post(`/admin/repartidores/${id}/amonestacion`, { motivo })
+        return r.data
+    },
 }

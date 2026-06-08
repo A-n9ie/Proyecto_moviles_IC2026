@@ -4,6 +4,7 @@ import { queryKeys } from '../lib/react-query/queryKeys'
 import { notificationService } from '../services/ui/notificationService'
 import { confirmService } from '../services/ui/confirmService'
 import type { Repartidor, RepartidorRequest } from '../types/repartidores'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 const hooks = createEntityHooks<Repartidor, RepartidorRequest>(
     queryKeys.repartidores,
@@ -15,7 +16,24 @@ export const useRepartidores = () => {
     const createMut = hooks.useCreate()
     const updateMut = hooks.useUpdate()
     const removeMut = hooks.useRemove()
+    const queryClient = useQueryClient()
 
+    const amonestacionMut = useMutation({
+        mutationFn: ({ id, motivo }: { id: number; motivo: string }) =>
+            repartidoresService.agregarAmonestacion(id, motivo),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.repartidores }),
+    })
+
+    const handleAmonestacion = async (repartidor: Repartidor) => {
+        const motivo = window.prompt(`Motivo de la amonestación para "${repartidor.nombre}":`)
+        if (motivo === null) return   // canceló
+        try {
+            const result = await amonestacionMut.mutateAsync({ id: repartidor.id, motivo })
+            notificationService.success(result.mensaje)
+        } catch (e: any) {
+            notificationService.error(e?.message ?? 'Error al registrar amonestación')
+        }
+    }
     const handleSubmit = async (data: RepartidorRequest, repartidor?: Repartidor | null) => {
         try {
             if (repartidor) {
@@ -66,6 +84,7 @@ export const useRepartidores = () => {
         handleSubmit,
         handleToggleEstado,
         handleDelete,
+        handleAmonestacion,
         creating:     createMut.isPending,
         updating:     updateMut.isPending,
     }

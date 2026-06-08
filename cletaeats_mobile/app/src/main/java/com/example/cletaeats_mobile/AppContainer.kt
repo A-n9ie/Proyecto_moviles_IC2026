@@ -31,7 +31,10 @@ import com.example.cletaeats_mobile.data.sync.SyncManager
 import com.example.cletaeats_mobile.domain.interfaces.IRestauranteRepository
 
 import com.example.cletaeats_mobile.data.remote.IPerfilApi
+import com.example.cletaeats_mobile.data.repository.ComboCloudRepositoryImpl
+import com.example.cletaeats_mobile.data.repository.ComboLocalRepositoryImpl
 import com.example.cletaeats_mobile.data.repository.PerfilRepositoryImpl
+import com.example.cletaeats_mobile.domain.interfaces.IComboRepository
 import com.example.cletaeats_mobile.viewmodel.PerfilViewModel
 
 /**
@@ -70,9 +73,17 @@ object AppContainer {
                 CletaEatsDatabase.getInstance(appContext))
             DataMode.CLOUD        -> RestauranteCloudRepositoryImpl()
         }
-    private val comboRepository by lazy {
-        ComboRepositoryImpl(RetrofitClient.create<IComboApi>(), sessionManager)
-    }
+    private fun buildComboRepository(): IComboRepository =
+        when (sessionManager.getDataMode()) {
+            DataMode.API_REMOTA   -> ComboRepositoryImpl(RetrofitClient.create<IComboApi>(), sessionManager)
+            DataMode.LOCAL_SQLITE -> ComboLocalRepositoryImpl(
+                CletaEatsDatabase.getInstance(
+                    appContext
+                ).comboDao()
+            )
+            DataMode.CLOUD        -> ComboCloudRepositoryImpl()
+        }
+    fun comboViewModel() = ComboViewModel(buildComboRepository())
     private val pedidoRepository by lazy {
         PedidoRepositoryImpl(RetrofitClient.create<IPedidoApi>(), sessionManager)
     }
@@ -94,7 +105,6 @@ object AppContainer {
         buildRestauranteRepository(),
         sessionManager.getDataMode()
     )
-    fun comboViewModel()           = ComboViewModel(comboRepository)
     fun pedidosClienteViewModel() = PedidosClienteViewModel(pedidoRepository)
     fun pedidosRepartidorViewModel() = PedidosRepartidorViewModel(pedidoRepository)
     fun perfilViewModel() = PerfilViewModel(perfilRepo, sessionManager)

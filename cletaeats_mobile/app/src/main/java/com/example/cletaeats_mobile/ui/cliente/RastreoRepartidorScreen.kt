@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.cletaeats.ui.theme.*
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
@@ -81,12 +82,25 @@ fun RastreoRepartidorScreen(
 
             if (posicionRepartidor == null) {
                 Column(
-                    modifier = Modifier.align(Alignment.Center),
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     CircularProgressIndicator(color = CletaNaranja)
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("Esperando ubicación del repartidor...", color = CletaBlanco)
+                    Text(
+                        "Esperando ubicación del repartidor...",
+                        color = CletaBlanco,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "El repartidor debe tener el pedido EN_CAMINO y permisos de ubicación activos.",
+                        color = CletaTextoSecundario,
+                        fontSize = 12.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
                 }
             }
         }

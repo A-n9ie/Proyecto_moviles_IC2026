@@ -19,6 +19,8 @@ import com.example.cletaeats_mobile.domain.model.Pedido
 import com.example.cletaeats.ui.theme.*
 import com.example.cletaeats_mobile.viewmodel.PedidosClienteViewModel
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,6 +30,7 @@ fun MisPedidosScreen(
     onRastrear: (Int) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val pedidosFiltrados by viewModel.pedidosFiltrados.collectAsState()
 
     LaunchedEffect(Unit) { viewModel.cargarPedidos() }
 
@@ -80,17 +83,52 @@ fun MisPedidosScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // ── Chips de filtro ──────────────────────────────────────
                     item {
-                        Text("${uiState.pedidos.size} pedido(s)",
-                            color = CletaBlanco, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        val filtros = listOf(
+                            null to "Todos",
+                            0    to "Creado",
+                            2    to "En camino",
+                            3    to "Entregado",
+                            4    to "Cancelado"
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            filtros.forEach { (estado, label) ->
+                                FilterChip(
+                                    selected  = uiState.filtroEstado == estado,
+                                    onClick   = { viewModel.setFiltro(estado) },
+                                    label     = { Text(label, fontSize = 12.sp) },
+                                    colors    = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor    = CletaNaranja,
+                                        selectedLabelColor        = CletaBlanco,
+                                        containerColor            = CletaGrisMedio,
+                                        labelColor                = CletaTextoSecundario
+                                    )
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    // ── Conteo ───────────────────────────────────────────────
+                    item {
+                        Text(
+                            "${pedidosFiltrados.size} pedido(s)",
+                            color = CletaBlanco, fontWeight = FontWeight.Bold, fontSize = 16.sp
+                        )
                         Spacer(Modifier.height(4.dp))
                     }
-                    items(uiState.pedidos) { pedido ->
+                    // ── Lista filtrada ────────────────────────────────────────
+                    items(pedidosFiltrados) { pedido ->
                         PedidoClienteCard(
-                            pedido = pedido,
+                            pedido     = pedido,
                             onRastrear = { onRastrear(pedido.id) },
                             onCalificar = { rating -> viewModel.calificarRepartidor(pedido.id, rating) },
-                            onCancelar = { viewModel.cancelarPedido(pedido.id) }
+                            onCancelar  = { viewModel.cancelarPedido(pedido.id) }
                         )
                     }
                 }

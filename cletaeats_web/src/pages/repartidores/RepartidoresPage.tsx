@@ -28,7 +28,9 @@ const RepartidoresPage = () => {
         loading,
         handleSubmit,
         handleToggleEstado,
-        handleDelete } = useRepartidores()
+        handleDelete,
+        handleAmonestacion
+    } = useRepartidores()
 
     const [
         isModalOpen,
@@ -147,6 +149,13 @@ const RepartidoresPage = () => {
                                     }
                                 >
                                     Eliminar
+                                </Button>
+
+                                <Button
+                                    variant="warning"
+                                    onClick={() => handleAmonestacion(r)}
+                                >
+                                    ⚠ Amonestar ({r.amonestaciones}/4)
                                 </Button>
                             </div>
                         ),

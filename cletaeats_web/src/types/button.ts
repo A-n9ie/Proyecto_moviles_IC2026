@@ -5,5 +5,5 @@ export interface ButtonProps {
     onClick?: () => void
     type?: 'button' | 'submit'
     disabled?: boolean
-    variant?: 'primary' | 'danger' | 'secondary' | 'success'
+    variant?: 'primary' | 'danger' | 'secondary' | 'success' | 'warning'
 }

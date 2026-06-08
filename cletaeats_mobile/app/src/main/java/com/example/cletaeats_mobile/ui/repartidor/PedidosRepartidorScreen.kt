@@ -1,9 +1,11 @@
 package com.example.cletaeats_mobile.ui.repartidor
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -36,6 +38,8 @@ fun PedidosRepartidorScreen(
     val authVM      = remember { AppContainer.authViewModel() }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope       = rememberCoroutineScope()
+
+    val pedidosFiltrados by viewModel.pedidosFiltrados.collectAsState()
 
     val context = LocalContext.current
     val locationService = remember { RepartidorLocationService(context) }
@@ -133,19 +137,51 @@ fun PedidosRepartidorScreen(
                             contentPadding      = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
+                            // ── Chips de filtro ──────────────────────────────────
+                            item {
+                                val filtros = listOf(
+                                    null to "Todos",
+                                    0    to "Creado",
+                                    1    to "Preparando",
+                                    2    to "En camino",
+                                    3    to "Entregado"
+                                )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    filtros.forEach { (estado, label) ->
+                                        FilterChip(
+                                            selected = uiState.filtroEstado == estado,
+                                            onClick  = { viewModel.setFiltro(estado) },
+                                            label    = { Text(label, fontSize = 12.sp) },
+                                            colors   = FilterChipDefaults.filterChipColors(
+                                                selectedContainerColor = CletaNaranja,
+                                                selectedLabelColor     = CletaBlanco,
+                                                containerColor         = CletaGrisMedio,
+                                                labelColor             = CletaTextoSecundario
+                                            )
+                                        )
+                                    }
+                                }
+                                Spacer(Modifier.height(8.dp))
+                            }
                             item {
                                 Text(
-                                    "${uiState.pedidos.size} pedido(s) activo(s)",
-                                    color      = CletaBlanco,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize   = 16.sp
+                                    "${pedidosFiltrados.size} pedido(s) activo(s)",
+                                    color = CletaBlanco, fontWeight = FontWeight.Bold, fontSize = 16.sp
                                 )
                                 Spacer(Modifier.height(4.dp))
                             }
-                            items(uiState.pedidos) { pedido ->
+                            items(pedidosFiltrados) { pedido ->
                                 PedidoRepartidorCard(
-                                    pedido         = pedido,
-                                    onMarcarEntregado = { viewModel.marcarEntregado(pedido.id) },
+                                    pedido            = pedido,
+                                    onMarcarEntregado = {
+                                        viewModel.marcarEntregado(pedido.id)
+                                        locationService.limpiarUbicacion(pedido.id)  // ← aquí sí tienes acceso
+                                    },
                                     onVerMapa = { onVerMapa(pedido.id) }
                                 )
                             }
