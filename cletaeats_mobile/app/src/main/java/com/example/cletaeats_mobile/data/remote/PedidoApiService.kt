@@ -34,13 +34,13 @@ data class ItemFacturaResponse(
 data class FacturaResponse(
     @SerializedName("pedido_id")          val pedidoId: Int,
     val estado: Int,
-    @SerializedName("restaurante_nombre") val restauranteNombre: String,
-    @SerializedName("cliente_nombre")     val clienteNombre: String,
-    @SerializedName("repartidor_nombre")  val repartidorNombre: String,
+    @SerializedName("restaurante") val restauranteNombre: String,
+    @SerializedName("cliente") val clienteNombre: String,
+    @SerializedName("repartidor") val repartidorNombre: String,
     val items: List<ItemFacturaResponse>,
     val subtotal: Double,
     @SerializedName("distancia_km")       val distanciaKm: Double,
-    @SerializedName("costo_transporte")   val costoTransporte: Double,
+    @SerializedName("costo_envio") val costoTransporte: Double,
     val iva: Double,
     val total: Double,
     @SerializedName("fecha_creacion")     val fechaCreacion: String?
