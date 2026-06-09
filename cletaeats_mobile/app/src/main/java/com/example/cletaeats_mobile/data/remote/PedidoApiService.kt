@@ -51,7 +51,7 @@ data class PedidoListResponse(
     val estado: Int,
     @SerializedName("estado_texto")       val estadoTexto: String,
     @SerializedName("restaurante_nombre") val restauranteNombre: String,
-    @SerializedName("tipo_comida")        val tipoComida: String,
+    @SerializedName("tipo_comida")        val tipoComida: String = "",
     @SerializedName("cliente_nombre")     val clienteNombre: String = "",
     @SerializedName("distancia_km")       val distanciaKm: Double,
     @SerializedName("fecha_creacion")     val fechaCreacion: String,

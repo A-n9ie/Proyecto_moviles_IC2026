@@ -180,7 +180,7 @@ fun PedidosRepartidorScreen(
                                     pedido            = pedido,
                                     onMarcarEntregado = {
                                         viewModel.marcarEntregado(pedido.id)
-                                        locationService.limpiarUbicacion(pedido.id)  // ← aquí sí tienes acceso
+                                        locationService.limpiarUbicacion(pedido.id)
                                     },
                                     onVerMapa = { onVerMapa(pedido.id) }
                                 )
