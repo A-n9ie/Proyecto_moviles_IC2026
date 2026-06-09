@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.example.cletaeats_mobile.data.notifications.PedidoNotificador
 
 data class PedidosClienteUiState(
     val isLoading: Boolean      = false,
@@ -20,17 +21,29 @@ data class PedidosClienteUiState(
     val filtroEstado: Int?        = null
 )
 
-class PedidosClienteViewModel(private val repo: IPedidoRepository) : ViewModel() {
+class PedidosClienteViewModel(
+    private val repo: IPedidoRepository,
+    private val notificador: PedidoNotificador? = null) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PedidosClienteUiState())
     val uiState: StateFlow<PedidosClienteUiState> = _uiState.asStateFlow()
 
     fun cargarPedidos() {
-        _uiState.value = PedidosClienteUiState(isLoading = true)
+        _uiState.value = _uiState.value.copy(isLoading = true)
         viewModelScope.launch {
             when (val result = repo.obtenerPedidosCliente()) {
-                is Result.Success -> _uiState.value = PedidosClienteUiState(pedidos = result.data)
-                is Result.Error   -> _uiState.value = PedidosClienteUiState(errorMsg = result.message)
+                is Result.Success -> {
+                    notificador?.procesar(result.data)
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        pedidos = result.data,
+                        errorMsg = null
+                    )
+                }
+                is Result.Error -> _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMsg = result.message
+                )
             }
         }
     }

@@ -178,9 +178,11 @@ fun PedidosRepartidorScreen(
                             items(pedidosFiltrados) { pedido ->
                                 PedidoRepartidorCard(
                                     pedido            = pedido,
+                                    onAceptar         = { viewModel.marcarPreparando(pedido.id) },
+                                    onSalirEntregar   = { viewModel.marcarEnCamino(pedido.id) },
                                     onMarcarEntregado = {
                                         viewModel.marcarEntregado(pedido.id)
-                                        locationService.limpiarUbicacion(pedido.id)  // ← aquí sí tienes acceso
+                                        locationService.limpiarUbicacion(pedido.id)
                                     },
                                     onVerMapa = { onVerMapa(pedido.id) }
                                 )
@@ -197,6 +199,8 @@ fun PedidosRepartidorScreen(
 @Composable
 private fun PedidoRepartidorCard(
     pedido:            Pedido,
+    onAceptar:         () -> Unit,
+    onSalirEntregar:   () -> Unit,
     onMarcarEntregado: () -> Unit,
     onVerMapa:         () -> Unit
 ) {
@@ -273,30 +277,60 @@ private fun PedidoRepartidorCard(
 
             Spacer(Modifier.height(14.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Botón mapa
-                OutlinedButton(
-                    onClick  = onVerMapa,
-                    modifier = Modifier.weight(1f),
-                    shape    = RoundedCornerShape(10.dp),
-                    colors   = ButtonDefaults.outlinedButtonColors(contentColor = CletaNaranja),
-                    border   = ButtonDefaults.outlinedButtonBorder
-                ) {
-                    Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Ver ruta", fontWeight = FontWeight.SemiBold)
+            // Botón de acción según el estado actual del pedido.
+            // El flujo es estricto: CREADO → EN_PREPARACION → EN_CAMINO → ENTREGADO
+            when (pedido.estado) {
+                0 -> {
+                    // CREADO: el repartidor acepta el pedido
+                    Button(
+                        onClick  = onAceptar,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape    = RoundedCornerShape(10.dp),
+                        colors   = ButtonDefaults.buttonColors(containerColor = CletaNaranja)
+                    ) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Aceptar pedido", fontWeight = FontWeight.SemiBold)
+                    }
                 }
-
-                // Botón entregar
-                Button(
-                    onClick  = onMarcarEntregado,
-                    modifier = Modifier.weight(1f),
-                    shape    = RoundedCornerShape(10.dp),
-                    colors   = ButtonDefaults.buttonColors(containerColor = CletaExito)
-                ) {
-                    Icon(Icons.Default.LocalShipping, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Entregar", fontWeight = FontWeight.SemiBold)
+                1 -> {
+                    // EN_PREPARACION: el repartidor sale a entregar
+                    Button(
+                        onClick  = onSalirEntregar,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape    = RoundedCornerShape(10.dp),
+                        colors   = ButtonDefaults.buttonColors(containerColor = CletaNaranjaClaro)
+                    ) {
+                        Icon(Icons.Default.DeliveryDining, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Salir a entregar", fontWeight = FontWeight.SemiBold)
+                    }
+                }
+                2 -> {
+                    // EN_CAMINO: ver ruta + marcar entregado
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick  = onVerMapa,
+                            modifier = Modifier.weight(1f),
+                            shape    = RoundedCornerShape(10.dp),
+                            colors   = ButtonDefaults.outlinedButtonColors(contentColor = CletaNaranja),
+                            border   = ButtonDefaults.outlinedButtonBorder
+                        ) {
+                            Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Ver ruta", fontWeight = FontWeight.SemiBold)
+                        }
+                        Button(
+                            onClick  = onMarcarEntregado,
+                            modifier = Modifier.weight(1f),
+                            shape    = RoundedCornerShape(10.dp),
+                            colors   = ButtonDefaults.buttonColors(containerColor = CletaExito)
+                        ) {
+                            Icon(Icons.Default.LocalShipping, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Entregar", fontWeight = FontWeight.SemiBold)
+                        }
+                    }
                 }
             }
         }

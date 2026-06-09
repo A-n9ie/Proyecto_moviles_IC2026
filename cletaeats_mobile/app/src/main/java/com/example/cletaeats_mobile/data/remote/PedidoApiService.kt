@@ -80,6 +80,18 @@ interface IPedidoApi {
         @Header("Authorization") token: String
     ): Response<List<PedidoListResponse>>
 
+    @PUT("repartidor/pedidos/{id}/preparar")
+    suspend fun marcarPreparando(
+        @Header("Authorization") token: String,
+        @Path("id") pedidoId: Int
+    ): Response<Unit>
+
+    @PUT("repartidor/pedidos/{id}/en-camino")
+    suspend fun marcarEnCamino(
+        @Header("Authorization") token: String,
+        @Path("id") pedidoId: Int
+    ): Response<Unit>
+
     @PUT("repartidor/pedidos/{id}/entregar")
     suspend fun marcarEntregado(
         @Header("Authorization") token: String,

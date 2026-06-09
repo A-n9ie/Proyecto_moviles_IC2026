@@ -64,15 +64,15 @@ class PedidoRepository:
                     t_pedido.c.FECHA_CREACION,
                     t_pedido.c.DISTANCIA_KM,
                     t_rest.c.NOMBRE.label("RESTAURANTE_NOMBRE"),
-                    t_rest.c.LATITUD.label("RESTAURANTE_LATITUD"),    # ← nuevo
-                    t_rest.c.LONGITUD.label("RESTAURANTE_LONGITUD"),  # ← nuevo
+                    t_rest.c.LATITUD.label("RESTAURANTE_LATITUD"),    # ← nuevo, para el mapa
+                    t_rest.c.LONGITUD.label("RESTAURANTE_LONGITUD"),  # ← nuevo, para el mapa
                     t_cliente.c.NOMBRE.label("CLIENTE_NOMBRE"),
                     t_cliente.c.DIRECCION.label("CLIENTE_DIRECCION")
                 )
                 .join(t_rest,    t_pedido.c.RESTAURANTE_ID == t_rest.c.ID)
                 .join(t_cliente, t_pedido.c.CLIENTE_ID     == t_cliente.c.ID)
                 .where(t_pedido.c.REPARTIDOR_ID == repartidor_id)
-                .where(t_pedido.c.ESTADO.in_([1, 2]))
+                .where(t_pedido.c.ESTADO.in_([0, 1, 2]))  # incluye el estado 0 = CREADO, así el repartidor ve el pedido apenas se le asigna (antes solo veía estados 1 y 2, por eso nunca le aparecía un pedido nuevo)
                 .order_by(t_pedido.c.FECHA_CREACION)
             ).mappings().all()
             return [to_lower_dict(r) for r in rows]
@@ -159,9 +159,6 @@ class PedidoRepository:
                 "costo_envio": costo_km,
                 "total":       subtotal + costo_km
             }
-
-    def actualizar_estado(self, id_rep: int, estado: int) -> bool:
-        return self.actualizar_campos(id_rep, {"estado": estado})
 
     def restaurante_mas_pedidos(self) -> dict:
         from sqlalchemy import func

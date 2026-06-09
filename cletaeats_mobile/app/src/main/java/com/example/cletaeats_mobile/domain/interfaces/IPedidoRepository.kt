@@ -13,8 +13,15 @@ interface IPedidoRepository {
     ): Result<FacturaData>
 
     suspend fun obtenerPedidosCliente(): Result<List<Pedido>>
+
     suspend fun obtenerPedidosRepartidor(): Result<List<Pedido>>
+
+    suspend fun marcarPreparando(pedidoId: Int): Result<Unit>
+
+    suspend fun marcarEnCamino(pedidoId: Int): Result<Unit>
+
     suspend fun marcarEntregado(pedidoId: Int): Result<Unit>
+
     suspend fun obtenerFactura(pedidoId: Int): Result<FacturaData>
 
     suspend fun calificarRepartidor(pedidoId: Int, rating: Int): Result<Unit>

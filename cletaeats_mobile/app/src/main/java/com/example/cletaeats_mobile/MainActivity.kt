@@ -1,9 +1,12 @@
 package com.example.cletaeats_mobile
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.navigation.compose.rememberNavController
 import com.example.cletaeats_mobile.ui.navigation.AppNavigation
 import com.example.cletaeats_mobile.ui.navigation.AppRoutes
@@ -11,10 +14,26 @@ import com.example.cletaeats.ui.theme.CletaEatsTheme
 
 class MainActivity : ComponentActivity() {
 
+    // Launcher para pedir el permiso de notificaciones (Android 13+)
+    private val permisoNotificaciones = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { concedido ->
+        Log.d("PERMISO", "Notificaciones concedidas: $concedido")
+    }
+
+    private fun pedirPermisoNotificaciones() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permisoNotificaciones.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
     // ── Lifecycle completo (requerido por el lab) ─────────────────
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("LIFECYCLE", "MainActivity → onCreate")
+
+        // Solicitar permiso de notificaciones al iniciar
+        pedirPermisoNotificaciones()
 
         val session = AppContainer.getSessionManager()
 

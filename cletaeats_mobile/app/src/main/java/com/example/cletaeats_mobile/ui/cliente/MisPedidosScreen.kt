@@ -21,6 +21,8 @@ import com.example.cletaeats_mobile.viewmodel.PedidosClienteViewModel
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,7 +34,14 @@ fun MisPedidosScreen(
     val uiState by viewModel.uiState.collectAsState()
     val pedidosFiltrados by viewModel.pedidosFiltrados.collectAsState()
 
-    LaunchedEffect(Unit) { viewModel.cargarPedidos() }
+    // Polling: recarga pedidos cada 15s mientras la pantalla esté visible.
+    // El notificador detecta cambios de estado y dispara las notificaciones.
+    LaunchedEffect(Unit) {
+        while (isActive) {
+            viewModel.cargarPedidos()
+            delay(15_000L)
+        }
+    }
 
     Scaffold(
         topBar = {

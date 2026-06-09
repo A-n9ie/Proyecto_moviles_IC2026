@@ -37,6 +37,9 @@ import com.example.cletaeats_mobile.data.repository.PerfilRepositoryImpl
 import com.example.cletaeats_mobile.domain.interfaces.IComboRepository
 import com.example.cletaeats_mobile.viewmodel.PerfilViewModel
 
+import com.example.cletaeats_mobile.data.notifications.NotificationHelper
+import com.example.cletaeats_mobile.data.notifications.PedidoNotificador
+
 /**
  * DI manual. PATRÓN MVC:
  *   Model      = data classes + repositorios
@@ -64,6 +67,8 @@ object AppContainer {
         }
     val tarjetaViewModel: TarjetaViewModel by lazy { TarjetaViewModel(tarjetaRepo) }
     val syncManager: SyncManager by lazy { SyncManager(appContext) }
+    // Helper de notificaciones (singleton: un solo canal para toda la app)
+    private val notificationHelper by lazy { NotificationHelper(appContext) }
     // ── Repositorios (lazy) ──────────────────────────────────────
     private fun buildRestauranteRepository(): IRestauranteRepository =
         when (sessionManager.getDataMode()) {
@@ -105,8 +110,16 @@ object AppContainer {
         buildRestauranteRepository(),
         sessionManager.getDataMode()
     )
-    fun pedidosClienteViewModel() = PedidosClienteViewModel(pedidoRepository)
-    fun pedidosRepartidorViewModel() = PedidosRepartidorViewModel(pedidoRepository)
+
+    fun pedidosClienteViewModel() = PedidosClienteViewModel(
+        pedidoRepository,
+        PedidoNotificador(notificationHelper, rol = "CLIENTE")
+    )
+    fun pedidosRepartidorViewModel() = PedidosRepartidorViewModel(
+        pedidoRepository,
+        PedidoNotificador(notificationHelper, rol = "REPARTIDOR")
+    )
+
     fun perfilViewModel() = PerfilViewModel(perfilRepo, sessionManager)
     fun logout() {
         sessionManager.clearSession()
