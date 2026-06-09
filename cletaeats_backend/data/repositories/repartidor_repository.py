@@ -82,7 +82,11 @@ class RepartidorRepository:
             return False
         with engine.begin() as conn:
             # Si viene estado, también actualizar USUARIO
-            if "estado" in data:
+            result = conn.execute(
+            update(t_rep).where(t_rep.c.ID == id_rep).values(**values)
+            )
+            # Solo suspender la cuenta de usuario si acumula 4 amonestaciones
+            if "amonestaciones" in data and data["amonestaciones"] >= 4:
                 row = conn.execute(
                     select(t_rep.c.USUARIO_ID).where(t_rep.c.ID == id_rep)
                 ).first()
@@ -90,11 +94,8 @@ class RepartidorRepository:
                     conn.execute(
                         update(t_usuario)
                         .where(t_usuario.c.ID == row[0])
-                        .values(ESTADO=data["estado"])
+                        .values(ESTADO=0)
                     )
-            result = conn.execute(
-                update(t_rep).where(t_rep.c.ID == id_rep).values(**values)
-            )
             return result.rowcount > 0
 
     @staticmethod

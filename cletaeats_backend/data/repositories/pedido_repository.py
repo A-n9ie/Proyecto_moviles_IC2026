@@ -1,6 +1,6 @@
 # data/repositories/pedido_repository.py
 from typing import Optional
-from sqlalchemy import select, insert, update
+from sqlalchemy import select, insert, update, func
 from data.database.db_connection import engine
 from data.database.tables import (
     pedido as t_pedido, detalle_pedido as t_detalle,
@@ -9,6 +9,9 @@ from data.database.tables import (
 )
 from core.entities.pedido import Pedido
 from data.utils.mapper_utils import to_lower_dict
+
+
+_ESTADO_TEXTO = {0: "CREADO", 1: "PREPARANDO", 2: "EN_CAMINO", 3: "ENTREGADO", 4: "CANCELADO"}
 
 class PedidoRepository:
 
@@ -39,6 +42,7 @@ class PedidoRepository:
             ).mappings().first()
             return self._map(row) if row else None
 
+
     def listar_por_cliente(self, cliente_id: int) -> list:
         with engine.connect() as conn:
             rows = conn.execute(
@@ -46,14 +50,43 @@ class PedidoRepository:
                     t_pedido.c.ID,
                     t_pedido.c.ESTADO,
                     t_pedido.c.FECHA_CREACION,
+                    t_pedido.c.FECHA_ENTREGA,
                     t_pedido.c.DISTANCIA_KM,
-                    t_rest.c.NOMBRE.label("RESTAURANTE_NOMBRE")
+                    t_rest.c.NOMBRE.label("RESTAURANTE_NOMBRE"),
+                    t_rest.c.LATITUD.label("RESTAURANTE_LATITUD"),
+                    t_rest.c.LONGITUD.label("RESTAURANTE_LONGITUD")
                 )
                 .join(t_rest, t_pedido.c.RESTAURANTE_ID == t_rest.c.ID)
                 .where(t_pedido.c.CLIENTE_ID == cliente_id)
                 .order_by(t_pedido.c.FECHA_CREACION.desc())
             ).mappings().all()
-            return [to_lower_dict(r) for r in rows]
+
+            # Contar items por pedido
+            pedido_ids = [r["ID"] for r in rows]
+            conteos = {}
+            if pedido_ids:
+                cnt_rows = conn.execute(
+                    select(
+                        t_detalle.c.PEDIDO_ID,
+                        func.sum(t_detalle.c.CANTIDAD).label("ITEMS_COUNT")
+                    )
+                    .where(t_detalle.c.PEDIDO_ID.in_(pedido_ids))
+                    .group_by(t_detalle.c.PEDIDO_ID)
+                ).mappings().all()
+                conteos = {r["PEDIDO_ID"]: int(r["ITEMS_COUNT"]) for r in cnt_rows}
+
+            result = []
+            for r in rows:
+                d = to_lower_dict(r)
+                d["estado_texto"]        = _ESTADO_TEXTO.get(d["estado"], "DESCONOCIDO")
+                d["tipo_comida"]         = ""
+                d["cliente_nombre"]      = ""
+                d["items_count"]         = conteos.get(d["id"], 0)
+                d["fecha_entrega"]       = d.get("fecha_entrega") or ""
+                d["restaurante_latitud"] = d.get("restaurante_latitud")
+                d["restaurante_longitud"]= d.get("restaurante_longitud")
+                result.append(d)
+            return result
 
     def listar_por_repartidor(self, repartidor_id: int) -> list:
         with engine.connect() as conn:
@@ -75,9 +108,17 @@ class PedidoRepository:
                 .where(t_pedido.c.ESTADO.in_([0, 1, 2]))  # incluye el estado 0 = CREADO, así el repartidor ve el pedido apenas se le asigna (antes solo veía estados 1 y 2, por eso nunca le aparecía un pedido nuevo)
                 .order_by(t_pedido.c.FECHA_CREACION)
             ).mappings().all()
-            return [to_lower_dict(r) for r in rows]
+            result = []
+            for r in rows:
+                d = to_lower_dict(r)
+                d["estado_texto"] = _ESTADO_TEXTO.get(d["estado"], "DESCONOCIDO")
+                d["tipo_comida"]  = ""
+                d["items_count"]  = 0   # repartidor no necesita conteo de items
+                result.append(d)
+            return result
 
     def listar_todos(self) -> list:
+        from sqlalchemy import func
         with engine.connect() as conn:
             rows = conn.execute(
                 select(
@@ -86,13 +127,28 @@ class PedidoRepository:
                     t_pedido.c.FECHA_CREACION,
                     t_pedido.c.DISTANCIA_KM,
                     t_cliente.c.NOMBRE.label("CLIENTE_NOMBRE"),
-                    t_rest.c.NOMBRE.label("RESTAURANTE_NOMBRE")
+                    t_rest.c.NOMBRE.label("RESTAURANTE_NOMBRE"),
+                    func.coalesce(
+                        func.sum(t_detalle.c.CANTIDAD), 0
+                    ).label("ITEMS_COUNT")
                 )
                 .join(t_cliente, t_pedido.c.CLIENTE_ID     == t_cliente.c.ID)
                 .join(t_rest,    t_pedido.c.RESTAURANTE_ID == t_rest.c.ID)
+                .outerjoin(t_detalle, t_detalle.c.PEDIDO_ID == t_pedido.c.ID)
+                .group_by(
+                    t_pedido.c.ID, t_pedido.c.ESTADO,
+                    t_pedido.c.FECHA_CREACION, t_pedido.c.DISTANCIA_KM,
+                    t_cliente.c.NOMBRE, t_rest.c.NOMBRE
+                )
                 .order_by(t_pedido.c.FECHA_CREACION.desc())
             ).mappings().all()
-            return [to_lower_dict(r) for r in rows]
+
+            result = []
+            for r in rows:
+                d = to_lower_dict(r)
+                d["estado_texto"] = _ESTADO_TEXTO.get(d["estado"], "DESCONOCIDO")
+                result.append(d)
+            return result
 
     def actualizar_estado(self, pedido_id: int, estado: int, fecha_entrega: str = None) -> bool:
         values = {"ESTADO": estado}
