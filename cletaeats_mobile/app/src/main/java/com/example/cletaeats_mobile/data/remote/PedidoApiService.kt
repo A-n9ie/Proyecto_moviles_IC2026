@@ -80,6 +80,11 @@ interface IPedidoApi {
         @Header("Authorization") token: String
     ): Response<List<PedidoListResponse>>
 
+    @GET("repartidor/historial")
+    suspend fun obtenerHistorialRepartidor(
+        @Header("Authorization") token: String
+    ): Response<List<PedidoListResponse>>
+
     @PUT("repartidor/pedidos/{id}/preparar")
     suspend fun marcarPreparando(
         @Header("Authorization") token: String,

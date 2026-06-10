@@ -40,6 +40,8 @@ import com.example.cletaeats_mobile.viewmodel.PerfilViewModel
 import com.example.cletaeats_mobile.data.notifications.NotificationHelper
 import com.example.cletaeats_mobile.data.notifications.PedidoNotificador
 
+import com.example.cletaeats_mobile.viewmodel.HistorialRepartidorViewModel
+
 /**
  * DI manual. PATRÓN MVC:
  *   Model      = data classes + repositorios
@@ -119,6 +121,8 @@ object AppContainer {
         pedidoRepository,
         PedidoNotificador(notificationHelper, rol = "REPARTIDOR")
     )
+
+    fun historialRepartidorViewModel() = HistorialRepartidorViewModel(pedidoRepository)
 
     fun perfilViewModel() = PerfilViewModel(perfilRepo, sessionManager)
     fun logout() {

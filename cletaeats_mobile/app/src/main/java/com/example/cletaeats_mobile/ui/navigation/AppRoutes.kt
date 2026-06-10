@@ -13,6 +13,7 @@ object AppRoutes {
     const val MIS_PEDIDOS        = "mis_pedidos"
     const val MAPA_RESTAURANTES  = "mapa_restaurantes"
     const val PEDIDOS_REPARTIDOR = "pedidos_repartidor"
+    const val HISTORIAL_REPARTIDOR = "historial_repartidor"
     const val SELECCION_MODO     = "seleccion_modo"
     const val PERFIL             = "perfil"
     const val MAPA_SEGUIMIENTO   = "mapa_seguimiento/{pedidoId}"

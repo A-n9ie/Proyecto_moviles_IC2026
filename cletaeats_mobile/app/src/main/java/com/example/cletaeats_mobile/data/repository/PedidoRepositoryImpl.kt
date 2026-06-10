@@ -71,6 +71,15 @@ class PedidoRepositoryImpl(
             } catch (e: Exception) { Result.Error("Sin conexión al servidor") }
         }
 
+    override suspend fun obtenerHistorialRepartidor(): Result<List<Pedido>> =
+        withContext(Dispatchers.IO) {
+            try {
+                val resp = api.obtenerHistorialRepartidor(token)
+                if (resp.isSuccessful) Result.Success(resp.body()!!.map { it.toPedido() })
+                else Result.Error("Error al cargar historial (${resp.code()})")
+            } catch (e: Exception) { Result.Error("Sin conexión al servidor") }
+        }
+
     override suspend fun marcarPreparando(pedidoId: Int): Result<Unit> =
         withContext(Dispatchers.IO) {
             try {

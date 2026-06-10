@@ -31,7 +31,8 @@ import kotlinx.coroutines.isActive
 fun PedidosRepartidorScreen(
     viewModel: PedidosRepartidorViewModel,
     onLogout:  () -> Unit,
-    onVerMapa: (Int) -> Unit
+    onVerMapa: (Int) -> Unit,
+    onVerHistorial: () -> Unit
 ) {
     val uiState     by viewModel.uiState.collectAsState()
     val session     = AppContainer.getSessionManager()
@@ -69,6 +70,10 @@ fun PedidosRepartidorScreen(
             DrawerRepartidor(
                 nombre         = session.getNombre(),
                 email          = session.getEmail(),
+                onHistorial    = {
+                    scope.launch { drawerState.close() }
+                    onVerHistorial()
+                },
                 onCerrarSesion = {
                     scope.launch {
                         drawerState.close()
@@ -342,6 +347,7 @@ private fun PedidoRepartidorCard(
 private fun DrawerRepartidor(
     nombre:        String,
     email:         String,
+    onHistorial:   () -> Unit,
     onCerrarSesion: () -> Unit
 ) {
     ModalDrawerSheet(drawerContainerColor = CletaGrisMedio) {
@@ -384,7 +390,7 @@ private fun DrawerRepartidor(
             },
             label    = { Text("Historial de entregas", color = CletaBlanco) },
             selected = false,
-            onClick  = { /* TODO fase siguiente: reportes */ },
+            onClick  = onHistorial,
             colors   = NavigationDrawerItemDefaults.colors(
                 unselectedContainerColor = CletaGrisMedio
             )
