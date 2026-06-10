@@ -74,5 +74,5 @@ def marcar_entregado(id_pedido: int, sesion: dict = Depends(get_current_user)):
     ok = PedidoRepository().actualizar_estado(id_pedido, 3, fecha_entrega)
     if not ok:
         raise HTTPException(status_code=400, detail="No se pudo actualizar")
-    RepartidorRepository().actualizar_estado(rep.id, 1)  # repartidor vuelve a disponible
+    RepartidorRepository().actualizar_campos(rep.id, {"estado": 1})  # repartidor vuelve a disponible
     return {"mensaje": "Pedido marcado como entregado", "estado": 3}

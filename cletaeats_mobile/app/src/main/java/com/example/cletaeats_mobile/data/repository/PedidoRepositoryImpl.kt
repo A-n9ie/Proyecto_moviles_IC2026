@@ -75,7 +75,7 @@ class PedidoRepositoryImpl(
         withContext(Dispatchers.IO) {
             try {
                 val resp = api.marcarPreparando(token, pedidoId)
-                if (resp.code() == 200) Result.Success(Unit)
+                if (resp.isSuccessful) Result.Success(Unit)
                 else Result.Error("No se pudo aceptar el pedido")
             } catch (e: Exception) { Result.Error("Sin conexión al servidor") }
         }
@@ -84,7 +84,7 @@ class PedidoRepositoryImpl(
         withContext(Dispatchers.IO) {
             try {
                 val resp = api.marcarEnCamino(token, pedidoId)
-                if (resp.code() == 200) Result.Success(Unit)
+                if (resp.isSuccessful) Result.Success(Unit)
                 else Result.Error("No se pudo marcar en camino")
             } catch (e: Exception) { Result.Error("Sin conexión al servidor") }
         }
@@ -93,7 +93,7 @@ class PedidoRepositoryImpl(
         withContext(Dispatchers.IO) {
             try {
                 val resp = api.marcarEntregado(token, pedidoId)
-                if (resp.code() == 200) Result.Success(Unit)
+                if (resp.isSuccessful) Result.Success(Unit)
                 else Result.Error("No se pudo marcar como entregado")
             } catch (e: Exception) { Result.Error("Sin conexión al servidor") }
         }
