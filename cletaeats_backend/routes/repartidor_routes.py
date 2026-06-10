@@ -30,6 +30,13 @@ def mis_pedidos_repartidor(sesion: dict = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Repartidor no encontrado")
     return PedidoRepository().listar_por_repartidor(rep.id)
 
+@router.get("/historial")
+def historial_entregas(sesion: dict = Depends(get_current_user)):
+    """Historial de pedidos ENTREGADOS del repartidor logueado."""
+    rep = RepartidorRepository().encontrar_por_usuario_id(sesion["id_usuario"])
+    if not rep:
+        raise HTTPException(status_code=404, detail="Repartidor no encontrado")
+    return PedidoRepository().listar_entregados_por_repartidor(rep.id)
 
 @router.put("/pedidos/{id_pedido}/preparar")
 def marcar_preparando(id_pedido: int, sesion: dict = Depends(get_current_user)):

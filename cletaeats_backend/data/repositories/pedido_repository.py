@@ -116,6 +116,37 @@ class PedidoRepository:
                 d["items_count"]  = 0   # repartidor no necesita conteo de items
                 result.append(d)
             return result
+    
+    #filtra ESTADO == 3 (entregados) y ordena por FECHA_ENTREGA descendente (lo más reciente arriba). Trae la distancia de cada pedido, que es lo que vamos a usar para calcular km totales y ganancias en la app.  
+    def listar_entregados_por_repartidor(self, repartidor_id: int) -> list:
+        """Historial de entregas: pedidos en estado ENTREGADO (3) de un repartidor."""
+        with engine.connect() as conn:
+            rows = conn.execute(
+                select(
+                    t_pedido.c.ID,
+                    t_pedido.c.ESTADO,
+                    t_pedido.c.FECHA_CREACION,
+                    t_pedido.c.FECHA_ENTREGA,
+                    t_pedido.c.DISTANCIA_KM,
+                    t_rest.c.NOMBRE.label("RESTAURANTE_NOMBRE"),
+                    t_cliente.c.NOMBRE.label("CLIENTE_NOMBRE"),
+                    t_cliente.c.DIRECCION.label("CLIENTE_DIRECCION")
+                )
+                .join(t_rest,    t_pedido.c.RESTAURANTE_ID == t_rest.c.ID)
+                .join(t_cliente, t_pedido.c.CLIENTE_ID     == t_cliente.c.ID)
+                .where(t_pedido.c.REPARTIDOR_ID == repartidor_id)
+                .where(t_pedido.c.ESTADO == 3)
+                .order_by(t_pedido.c.FECHA_ENTREGA.desc())
+            ).mappings().all()
+            result = []
+            for r in rows:
+                d = to_lower_dict(r)
+                d["estado_texto"]  = _ESTADO_TEXTO.get(d["estado"], "DESCONOCIDO")
+                d["tipo_comida"]   = ""
+                d["items_count"]   = 0
+                d["fecha_entrega"] = d.get("fecha_entrega") or ""
+                result.append(d)
+            return result
 
     def listar_todos(self) -> list:
         from sqlalchemy import func
