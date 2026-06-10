@@ -25,8 +25,6 @@ if (error.response?.status === 401 && !isLoginRequest) {
 }
 
         const message =
-    error.response?.data?.error ??
-    error.response?.data?.message ??
     error.response?.data?.detail ??
     (error.response?.status === 401 ? 'Correo o contraseña incorrectos' : 'Error de servidor')
         return Promise.reject(new Error(message))
