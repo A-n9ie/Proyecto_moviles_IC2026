@@ -6,14 +6,14 @@ interface Props {
     children: React.ReactNode
 }
 
-const ProtectedRoute = ({
-                            children,
-                        }: Props) => {
-    const { isAuthenticated } = useAuth()
+const ProtectedRoute = ({ children }: Props) => {
+    const { isAuthenticated, initializing } = useAuth()
 
-    if (!isAuthenticated) {
-        return <Navigate to="/login" replace />
-    }
+if (initializing) return null
+
+if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+}
 
     return children
 }

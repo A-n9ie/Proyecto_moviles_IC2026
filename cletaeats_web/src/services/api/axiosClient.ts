@@ -17,11 +17,13 @@ axiosClient.interceptors.request.use((config) => {
 axiosClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
-            tokenStorage.remove()
-            localStorage.removeItem('cletaeats_user')
-            window.location.href = '/login'
-        }
+        const isLoginRequest = error.config?.url?.includes('/auth/login')
+if (error.response?.status === 401 && !isLoginRequest) {
+    tokenStorage.remove()
+    localStorage.removeItem('cletaeats_user')
+    window.location.href = '/login'
+}
+
         const message =
             error.response?.data?.error ??
             error.response?.data?.message ??

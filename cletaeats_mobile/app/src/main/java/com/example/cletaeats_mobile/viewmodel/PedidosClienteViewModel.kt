@@ -32,11 +32,18 @@ class PedidosClienteViewModel(
         _uiState.value = _uiState.value.copy(isLoading = true)
         viewModelScope.launch {
             when (val result = repo.obtenerPedidosCliente()) {
+                // DESPUÉS
                 is Result.Success -> {
                     notificador?.procesar(result.data)
+                    val calificadosIds = _uiState.value.pedidos
+                        .filter { it.calificado }
+                        .map { it.id }
+                        .toSet()
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        pedidos = result.data,
+                        pedidos = result.data.map {
+                            if (it.id in calificadosIds) it.copy(calificado = true) else it
+                        },
                         errorMsg = null
                     )
                 }
@@ -59,10 +66,16 @@ class PedidosClienteViewModel(
         _uiState.value = _uiState.value.copy(filtroEstado = estado)
     }
 
+
     fun calificarRepartidor(pedidoId: Int, rating: Int) {
         viewModelScope.launch {
             repo.calificarRepartidor(pedidoId, rating)
-            cargarPedidos() // refresca la lista
+            // Marca localmente ANTES de refrescar
+            _uiState.value = _uiState.value.copy(
+                pedidos = _uiState.value.pedidos.map {
+                    if (it.id == pedidoId) it.copy(calificado = true) else it
+                }
+            )
         }
     }
 

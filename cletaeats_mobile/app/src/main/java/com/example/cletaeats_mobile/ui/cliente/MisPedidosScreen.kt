@@ -212,7 +212,7 @@ private fun PedidoClienteCard(
 
             if (pedido.estado == 3) {
                 var rating by remember { mutableStateOf(0) }
-                var enviado by remember { mutableStateOf(false) }
+                val enviado = pedido.calificado
 
                 Spacer(Modifier.height(10.dp))
                 Text("Calificar repartidor:", color = CletaBlanco, fontSize = 13.sp)
@@ -224,7 +224,6 @@ private fun PedidoClienteCard(
                                 if (!enviado) {
                                     rating = estrella
                                     onCalificar(estrella)
-                                    enviado = true
                                 }
                             },
                             modifier = Modifier.size(36.dp)
