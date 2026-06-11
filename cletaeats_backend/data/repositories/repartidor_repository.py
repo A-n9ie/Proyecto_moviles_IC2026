@@ -82,23 +82,26 @@ class RepartidorRepository:
             "rating":         t_rep.c.RATING,
         }
         values = {allowed[k].key: v for k, v in data.items() if k in allowed}
-        if not values:
-            return False
+        tiene_estado = "estado" in data  
+        if not values and not tiene_estado:
+            return False                  # solo retorna si no hay NADA que hacer
         with engine.begin() as conn:
-            result = conn.execute(
-                update(t_rep).where(t_rep.c.ID == id_rep).values(**values)
-            )
-            # Suspender cuenta si acumula 4 amonestaciones
-            if "amonestaciones" in data and data["amonestaciones"] >= 4:
-                row = conn.execute(
-                    select(t_rep.c.USUARIO_ID).where(t_rep.c.ID == id_rep)
-                ).first()
-                if row:
-                    conn.execute(
-                        update(t_usuario).where(t_usuario.c.ID == row[0]).values(ESTADO=0)
-                    )
-            # Bloqueo/desbloqueo manual desde admin (campo "estado_cuenta")
-            if "estado" in data:
+            affected = 0
+            if values:
+                result = conn.execute(
+                    update(t_rep).where(t_rep.c.ID == id_rep).values(**values)
+                )
+                affected = result.rowcount
+                # Suspender cuenta si acumula 4 amonestaciones
+                if "amonestaciones" in data and data["amonestaciones"] >= 4:
+                    row = conn.execute(
+                        select(t_rep.c.USUARIO_ID).where(t_rep.c.ID == id_rep)
+                    ).first()
+                    if row:
+                        conn.execute(
+                            update(t_usuario).where(t_usuario.c.ID == row[0]).values(ESTADO=0)
+                        )
+            if tiene_estado:
                 row = conn.execute(
                     select(t_rep.c.USUARIO_ID).where(t_rep.c.ID == id_rep)
                 ).first()
@@ -107,7 +110,9 @@ class RepartidorRepository:
                         update(t_usuario).where(t_usuario.c.ID == row[0])
                         .values(ESTADO=data["estado"])
                     )
-            return result.rowcount > 0
+                    affected = 1   # confirma que algo se hizo
+            return affected > 0
+    
 
     @staticmethod
     def _map(row) -> Repartidor:

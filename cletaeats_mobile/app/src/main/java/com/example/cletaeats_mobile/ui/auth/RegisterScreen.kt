@@ -216,18 +216,16 @@ private fun FormularioCliente(
                 onCambio()
             },
             label = "Venc. (MM/YY)", icono = Icons.Default.DateRange,
+            modifier = Modifier.weight(1.6f),
             error = fechaVencError, tipo = KeyboardType.Number,
         )
-        Spacer(Modifier.height(10.dp))
-
         CampoConIcono(
             valor = cvvReg,
             onValor = { if (it.length <= 4 && it.all { c -> c.isDigit() }) { cvvReg = it; onCambio() } },
             label = "CVV", icono = Icons.Default.Lock,
+            modifier = Modifier.weight(1f),
             error = cvvRegError, tipo = KeyboardType.Number,
         )
-        Spacer(Modifier.height(10.dp))
-
     }
 
     Spacer(Modifier.height(24.dp))
@@ -346,6 +344,7 @@ private fun CampoConIcono(
     onValor:    (String) -> Unit,
     label:      String,
     icono: ImageVector,
+    modifier:   Modifier         = Modifier.fillMaxWidth(),
     error:      String?          = null,
     tipo:       KeyboardType     = KeyboardType.Text,
     esPassword: Boolean          = false
@@ -356,6 +355,7 @@ private fun CampoConIcono(
         label          = label,
         isPassword     = esPassword,
         error          = error,
+        modifier       = modifier,
         keyboardOptions = KeyboardOptions(
             keyboardType = tipo,
             imeAction    = ImeAction.Next

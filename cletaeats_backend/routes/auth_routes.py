@@ -72,7 +72,7 @@ def login(body: LoginRequest):
 
 @router.post("/registro/cliente", status_code=201)
 def registro_cliente(body: RegistroClienteRequest):
-    ok, datos, error = _auth_uc.registro_cliente(
+    ok, datos, error = _auth_uc.registro_cliente(   # sin tarjeta=""
         email=body.email,
         password=body.password,
         confirmar_password=body.confirmar_password,
@@ -80,9 +80,11 @@ def registro_cliente(body: RegistroClienteRequest):
         nombre=body.nombre,
         direccion=body.direccion,
         telefono=body.telefono,
-        tarjeta="",
     )
-    if ok and body.numero_tarjeta:
+    if not ok:                          # verificar error PRIMERO
+        raise HTTPException(status_code=400, detail=error)
+
+    if body.numero_tarjeta:             # crear tarjeta solo si registro ok
         TarjetaClienteRepository().crear({
             "cliente_id":        datos["id_perfil"],
             "numero":            body.numero_tarjeta,
@@ -91,9 +93,6 @@ def registro_cliente(body: RegistroClienteRequest):
             "cvv":               body.cvv_tarjeta,
             "es_principal":      1
         })
-        
-    if not ok:
-        raise HTTPException(status_code=400, detail=error)
 
     token = crear_token(**datos)
     return {"token": token, **datos}
