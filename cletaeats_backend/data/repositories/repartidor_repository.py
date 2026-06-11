@@ -43,15 +43,15 @@ class RepartidorRepository:
             ).first() is not None
 
     def obtener_primero_disponible(self) -> Optional[Repartidor]:
-        with engine.connect() as conn:
-            row = conn.execute(
-                select(t_rep)
-                .where(t_rep.c.ESTADO == 1)
-                .where(t_rep.c.AMONESTACIONES < 4)
-                .order_by(t_rep.c.ID)
-                .limit(1)
-            ).mappings().first()
-            return self._map(row) if row else None
+            with engine.connect() as conn:
+                row = conn.execute(
+                    select(t_rep)
+                    .where(t_rep.c.DISPONIBLE == 1)      # ← antes ESTADO (esta es la columna que fue renombrada)
+                    .where(t_rep.c.AMONESTACIONES < 4)
+                    .order_by(t_rep.c.ID)
+                    .limit(1)
+                ).mappings().first()
+                return self._map(row) if row else None
 
     def listar_todos(self) -> list:
         with engine.connect() as conn:
@@ -75,24 +75,30 @@ class RepartidorRepository:
             return [to_lower_dict(r) for r in rows]
 
     def actualizar_campos(self, id_rep: int, data: dict) -> bool:
-        allowed = {
-            "nombre":         t_rep.c.NOMBRE,
-            "disponible":     t_rep.c.DISPONIBLE,
-            "amonestaciones": t_rep.c.AMONESTACIONES,
-            "rating":         t_rep.c.RATING,
-        }
-        values = {allowed[k].key: v for k, v in data.items() if k in allowed}
-        tiene_estado = "estado" in data  
-        if not values and not tiene_estado:
-            return False                  # solo retorna si no hay NADA que hacer
-        with engine.begin() as conn:
-            affected = 0
-            if values:
+            """
+            Actualiza campos del REPARTIDOR.
+            Claves válidas: nombre, disponible, amonestaciones, rating.
+
+            Nota de diseño: aquí NO se toca USUARIO.ESTADO (activo/suspendido).
+            La disponibilidad del repartidor (DISPONIBLE: 1=libre, 0=ocupado) es
+            un concepto operativo distinto del estado administrativo de la cuenta.
+            La única excepción es la suspensión automática por 4 amonestaciones,
+            que sí es una consecuencia administrativa.
+            """
+            allowed = {
+                "nombre":         t_rep.c.NOMBRE,
+                "disponible":     t_rep.c.DISPONIBLE,
+                "amonestaciones": t_rep.c.AMONESTACIONES,
+                "rating":         t_rep.c.RATING,
+            }
+            values = {allowed[k].key: v for k, v in data.items() if k in allowed}
+            if not values:
+                return False
+            with engine.begin() as conn:
                 result = conn.execute(
                     update(t_rep).where(t_rep.c.ID == id_rep).values(**values)
                 )
-                affected = result.rowcount
-                # Suspender cuenta si acumula 4 amonestaciones
+                # Suspender la cuenta automáticamente si acumula 4 amonestaciones
                 if "amonestaciones" in data and data["amonestaciones"] >= 4:
                     row = conn.execute(
                         select(t_rep.c.USUARIO_ID).where(t_rep.c.ID == id_rep)
@@ -101,18 +107,26 @@ class RepartidorRepository:
                         conn.execute(
                             update(t_usuario).where(t_usuario.c.ID == row[0]).values(ESTADO=0)
                         )
-            if tiene_estado:
-                row = conn.execute(
-                    select(t_rep.c.USUARIO_ID).where(t_rep.c.ID == id_rep)
-                ).first()
-                if row:
-                    conn.execute(
-                        update(t_usuario).where(t_usuario.c.ID == row[0])
-                        .values(ESTADO=data["estado"])
-                    )
-                    affected = 1   # confirma que algo se hizo
-            return affected > 0
-    
+                return result.rowcount > 0
+
+    def actualizar_disponibilidad(self, id_rep: int, disponible: int) -> bool:
+            """
+            Marca al repartidor como libre (1) u ocupado (0).
+            Concepto operativo: cambia con cada pedido asignado/entregado.
+            """
+            with engine.begin() as conn:
+                result = conn.execute(
+                    update(t_rep).where(t_rep.c.ID == id_rep)
+                                 .values(DISPONIBLE=disponible)
+                )
+                return result.rowcount > 0
+    def actualizar_estado(self, id_repartidor: int, disponible: int) -> bool:
+            """
+            Compatibilidad con la interfaz IRepartidorRepository y las rutas que
+            ya la llaman. Internamente es un alias de actualizar_disponibilidad,
+            porque el "estado" operativo del repartidor ES su disponibilidad.
+            """
+            return self.actualizar_disponibilidad(id_repartidor, disponible)
 
     @staticmethod
     def _map(row) -> Repartidor:

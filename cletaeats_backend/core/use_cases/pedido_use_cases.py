@@ -95,8 +95,8 @@ class PedidoUseCases:
         )
         try:
             pedido = self._pedidos.crear_con_detalles(pedido, items_procesados)
-            # Marcar repartidor como ocupado
-            self._repartidores.actualizar_campos(repartidor.id, {"estado": 0})
+            # Marcar repartidor como ocupado (disponible=0)
+            self._repartidores.actualizar_disponibilidad(repartidor.id, 0)
             # Generar y retornar factura
             factura = self._pedidos.obtener_factura(pedido.id)
             return True, factura, None
@@ -128,5 +128,5 @@ class PedidoUseCases:
         fecha_entrega = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         ok = self._pedidos.actualizar_estado(id_pedido, 3, fecha_entrega)
         if ok:
-            self._repartidores.actualizar_campos(id_repartidor, {"estado": 1})  # vuelve a disponible  # vuelve a disponible
+            self._repartidores.actualizar_disponibilidad(id_repartidor, 1)  # vuelve a disponible
         return ok, None if ok else "No se pudo actualizar el pedido"

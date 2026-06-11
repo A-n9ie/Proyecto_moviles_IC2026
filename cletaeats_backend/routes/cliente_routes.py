@@ -232,7 +232,7 @@ def cancelar_pedido(id_pedido: int, sesion: dict = Depends(get_current_user)):
     ok = PedidoRepository().actualizar_estado(id_pedido, 4)
     if not ok:
         raise HTTPException(status_code=400, detail="No se pudo cancelar el pedido")
-    # Liberar repartidor si estaba asignado
+    # Liberar repartidor si estaba asignado (vuelve a disponible)
     if pedido.repartidor_id:
-        RepartidorRepository().actualizar_estado(pedido.repartidor_id, 1)
+        RepartidorRepository().actualizar_disponibilidad(pedido.repartidor_id, 1)
     return {"mensaje": "Pedido cancelado"}
