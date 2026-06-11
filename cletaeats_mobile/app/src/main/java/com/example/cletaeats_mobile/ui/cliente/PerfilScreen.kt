@@ -322,8 +322,8 @@ fun PerfilScreen(
     // ── Diálogo: Agregar tarjeta ───────────────────────────────────
     if (mostrarDialogoTarjeta) {
         DialogAgregarTarjeta(
-            onAgregar = { numero, alias, esPrincipal ->
-                tarjetaViewModel.agregarTarjeta(numero, alias, esPrincipal)
+            onAgregar = { numero, alias, fechaVenc, cvv, esPrincipal ->
+                tarjetaViewModel.agregarTarjeta(numero, alias, fechaVenc, cvv, esPrincipal)
                 mostrarDialogoTarjeta = false
             },
             onDismiss = { mostrarDialogoTarjeta = false }
@@ -525,13 +525,15 @@ private fun TarjetaCard(tarjeta: Tarjeta, onEliminar: () -> Unit) {
 
 @Composable
 private fun DialogAgregarTarjeta(
-    onAgregar: (numero: String, alias: String, esPrincipal: Boolean) -> Unit,
+    onAgregar: (numero: String, alias: String, fechaVenc: String, cvv: String, esPrincipal: Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var numero      by remember { mutableStateOf("") }
-    var alias       by remember { mutableStateOf("") }
-    var esPrincipal by remember { mutableStateOf(false) }
-    var errorLocal  by remember { mutableStateOf("") }
+    var numero        by remember { mutableStateOf("") }
+    var alias         by remember { mutableStateOf("") }
+    var fechaVenc     by remember { mutableStateOf("") }
+    var cvv           by remember { mutableStateOf("") }
+    var esPrincipal   by remember { mutableStateOf(false) }
+    var errorLocal    by remember { mutableStateOf("") }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -615,6 +617,51 @@ private fun DialogAgregarTarjeta(
                 )
                 Spacer(Modifier.height(8.dp))
 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Fecha MM/YY
+                    OutlinedTextField(
+                        value = fechaVenc,
+                        onValueChange = { input ->
+                            // Solo dígitos y /, máximo 5 caracteres MM/YY
+                            val digits = input.filter { it.isDigit() }.take(4)
+                            fechaVenc = if (digits.length >= 3) {
+                                "${digits.take(2)}/${digits.drop(2)}"
+                            } else digits
+                        },
+                        label = { Text("Vencimiento (MM/YY)", color = CletaTextoSecundario) },
+                        leadingIcon = { Icon(Icons.Default.DateRange, null, tint = CletaNaranja) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = CletaBlanco, unfocusedTextColor = CletaBlanco,
+                            focusedBorderColor = CletaNaranja, unfocusedBorderColor = CletaGrisClaro,
+                            cursorColor = CletaNaranja
+                        )
+                    )
+                    // CVV
+                    OutlinedTextField(
+                        value = cvv,
+                        onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) cvv = it },
+                        label = { Text("CVV", color = CletaTextoSecundario) },
+                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = CletaNaranja) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(0.5f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = CletaBlanco, unfocusedTextColor = CletaBlanco,
+                            focusedBorderColor = CletaNaranja, unfocusedBorderColor = CletaGrisClaro,
+                            cursorColor = CletaNaranja
+                        )
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+
                 // Switch: marcar como principal
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -652,11 +699,12 @@ private fun DialogAgregarTarjeta(
 
                     Button(
                         onClick = {
-                            if (numero.length < 16) {
-                                errorLocal = "El número debe tener 16 dígitos"
-                                return@Button
+                            when {
+                                numero.length < 16 -> { errorLocal = "El número debe tener 16 dígitos"; return@Button }
+                                fechaVenc.length < 5 -> { errorLocal = "Fecha de vencimiento inválida (MM/YY)"; return@Button }
+                                cvv.length < 3 -> { errorLocal = "CVV debe tener 3 o 4 dígitos"; return@Button }
                             }
-                            onAgregar(numero, alias.trim(), esPrincipal)
+                            onAgregar(numero, alias.trim(), fechaVenc, cvv, esPrincipal)
                         },
                         modifier = Modifier.weight(1f),
                         shape    = RoundedCornerShape(12.dp),

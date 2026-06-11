@@ -50,21 +50,22 @@ export const useRepartidores = () => {
     }
 
     const handleToggleEstado = async (repartidor: Repartidor) => {
-        const accion = repartidor.estado === 1 ? 'desactivar' : 'activar'
+        const estaActivo = repartidor.estado === 1
         const ok = await confirmService.confirm(
-            `¿Querés ${accion} a "${repartidor.nombre}"?`,
+            `¿Querés ${estaActivo ? 'bloquear' : 'desbloquear'} la cuenta de "${repartidor.nombre}"?`
         )
         if (!ok) return
         try {
             await updateMut.mutateAsync({
                 id: repartidor.id,
-                body: { estado: repartidor.estado === 1 ? 0 : 1 } as any,
+                body: { estado: estaActivo ? 0 : 1 } as any,
             })
-            notificationService.success(`Repartidor ${accion === 'activar' ? 'activado' : 'desactivado'}`)
+            notificationService.success(`Cuenta ${estaActivo ? 'bloqueada' : 'desbloqueada'}`)
         } catch (e: any) {
-            notificationService.error(e?.message ?? 'Error cambiando estado')
+            notificationService.error(e?.message ?? 'Error cambiando estado de cuenta')
         }
     }
+
 
     const handleDelete = async (repartidor: Repartidor) => {
         const ok = await confirmService.delete(repartidor.nombre)

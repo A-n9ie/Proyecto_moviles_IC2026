@@ -34,13 +34,13 @@ repartidor = Table("REPARTIDOR", metadata,
     Column("DIRECCION",             Text,    nullable=False),
     Column("TELEFONO",              Text,    nullable=False, unique=True),
     Column("TARJETA",               Text,    nullable=False),
-    Column("ESTADO",                Integer, nullable=False, default=1),
+    Column("DISPONIBLE", Integer, nullable=False, default=1),
     Column("KM_RECORRIDOS_DIARIOS", Float,   nullable=False, default=0),
     Column("COSTO_KM_HABIL",        Float,   nullable=False, default=1000),
     Column("COSTO_KM_FERIADO",      Float,   nullable=False, default=1500),
     Column("AMONESTACIONES",        Integer, nullable=False, default=0),
     Column("RATING", Float, nullable=False, default=0.0),
-    CheckConstraint("ESTADO IN (0,1)",                     name="ck_repartidor_estado"),
+    CheckConstraint("DISPONIBLE IN (0,1)",                     name="ck_repartidor_disponible"),
     CheckConstraint("AMONESTACIONES >= 0 AND AMONESTACIONES <= 4", name="ck_repartidor_amones"),
     
 )
@@ -99,9 +99,11 @@ combo_producto = Table("COMBO_PRODUCTO", metadata,
 tarjeta_cliente = Table("TARJETA_CLIENTE", metadata,
     Column("ID",          Integer, primary_key=True, autoincrement=True),
     Column("CLIENTE_ID",  Integer, ForeignKey("CLIENTE.ID", ondelete="CASCADE"), nullable=False),
-    Column("NUMERO",      Text,    nullable=False),
-    Column("ALIAS",       Text),
-    Column("ES_PRINCIPAL",Integer, nullable=False, default=0),
+    Column("NUMERO",             Text,    nullable=False),
+    Column("ALIAS",              Text),
+    Column("FECHA_VENCIMIENTO",  Text),       # MM/YY
+    Column("CVV",                Text),       # 3-4 dígitos (solo en tránsito, no persistir en prod)
+    Column("ES_PRINCIPAL",       Integer, nullable=False, default=0),
     CheckConstraint("ES_PRINCIPAL IN (0,1)", name="ck_tarjeta_principal"),
 )
 

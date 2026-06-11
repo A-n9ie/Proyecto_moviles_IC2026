@@ -21,6 +21,8 @@ router = APIRouter()
 class TarjetaBody(BaseModel):
     numero: str
     alias: str = ""
+    fecha_vencimiento: str = ""
+    cvv: str = ""
     es_principal: int = 0
 
 class ItemPedido(BaseModel):
@@ -54,10 +56,12 @@ def agregar_tarjeta(body: TarjetaBody, sesion: dict = Depends(get_current_user))
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     nuevo_id = TarjetaClienteRepository().crear({
-        "cliente_id":   cliente.id,
-        "numero":       body.numero,
-        "alias":        body.alias,
-        "es_principal": body.es_principal
+        "cliente_id":        cliente.id,
+        "numero":            body.numero,
+        "alias":             body.alias,
+        "fecha_vencimiento": body.fecha_vencimiento,
+        "cvv":               body.cvv,
+        "es_principal":      body.es_principal
     })
     return {"id": nuevo_id, "mensaje": "Tarjeta agregada"}
 

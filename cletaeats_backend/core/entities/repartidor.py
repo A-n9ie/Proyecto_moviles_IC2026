@@ -3,7 +3,7 @@
 class Repartidor:
     """
     Perfil de usuario con rol REPARTIDOR.
-    ESTADO: 1 = disponible, 0 = ocupado.
+    DISPONIBLE: 1 = si, 0 = ocupado.
     AMONESTACIONES: 0-3 activo, 4 = fuera de la empresa.
     """
     def __init__(
@@ -16,7 +16,7 @@ class Repartidor:
         direccion: str = "",
         telefono: str = "",
         tarjeta: str = "",
-        estado: int = 1,
+        disponible: int = 1,
         km_recorridos_diarios: float = 0.0,
         costo_km_habil: float = 1000.0,
         costo_km_feriado: float = 1500.0,
@@ -30,7 +30,7 @@ class Repartidor:
         self.direccion             = direccion
         self.telefono              = telefono
         self.tarjeta               = tarjeta
-        self.estado                = estado
+        self.disponible            = disponible
         self.km_recorridos_diarios = km_recorridos_diarios
         self.costo_km_habil        = costo_km_habil
         self.costo_km_feriado      = costo_km_feriado
@@ -42,7 +42,7 @@ class Repartidor:
     def set_amonestaciones(self, v: int): self.amonestaciones = v
 
     def esta_disponible(self) -> bool:
-        return self.estado == 1 and self.amonestaciones < 4
+        return self.disponible == 1 and self.amonestaciones < 4
 
     def __str__(self):
         return f"Repartidor(id={self.id}, nombre={self.nombre})"

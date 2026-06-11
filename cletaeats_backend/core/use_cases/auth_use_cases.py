@@ -61,7 +61,6 @@ class AuthUseCases:
         nombre: str,
         direccion: str,
         telefono: str,
-        tarjeta: str = ""
     ) -> Tuple[bool, Optional[dict], Optional[str]]:
 
         email    = (email or "").strip().lower()
@@ -94,14 +93,6 @@ class AuthUseCases:
             direccion=direccion,
             telefono=telefono
         ))
-
-        if tarjeta.strip():
-            self._tarjetas.crear(TarjetaCliente(
-                cliente_id=cliente.id,
-                numero=tarjeta,
-                alias="Principal",
-                es_principal=1
-            ))
 
         datos = {
             "id_usuario": usuario.id,

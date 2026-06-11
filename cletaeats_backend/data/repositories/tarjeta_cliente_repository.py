@@ -27,6 +27,8 @@ class TarjetaClienteRepository:
                 CLIENTE_ID=data["cliente_id"],
                 NUMERO=data["numero"],
                 ALIAS=data.get("alias", ""),
+                FECHA_VENCIMIENTO=data.get("fecha_vencimiento", ""),
+                CVV=data.get("cvv", ""),
                 ES_PRINCIPAL=data.get("es_principal", 0)
             ))
             return result.inserted_primary_key[0]

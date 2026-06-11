@@ -62,39 +62,50 @@ class RepartidorRepository:
                     t_rep.c.CORREO,
                     t_rep.c.TELEFONO,
                     t_rep.c.CEDULA,
-                    t_rep.c.ESTADO,
+                    t_rep.c.DISPONIBLE,
                     t_rep.c.KM_RECORRIDOS_DIARIOS,
-                    t_rep.c.AMONESTACIONES
-                ).order_by(t_rep.c.ID)
+                    t_rep.c.AMONESTACIONES,
+                    t_rep.c.USUARIO_ID,
+                    t_usuario.c.ESTADO.label("ESTADO")
+                )
+                .join(t_usuario, t_rep.c.USUARIO_ID == t_usuario.c.ID)
+                .order_by(t_rep.c.ID)
             ).mappings().all()
 
             return [to_lower_dict(r) for r in rows]
 
     def actualizar_campos(self, id_rep: int, data: dict) -> bool:
         allowed = {
-            "nombre": t_rep.c.NOMBRE,
-            "estado": t_rep.c.ESTADO,
+            "nombre":         t_rep.c.NOMBRE,
+            "disponible":     t_rep.c.DISPONIBLE,
             "amonestaciones": t_rep.c.AMONESTACIONES,
-            "rating": t_rep.c.RATING,
+            "rating":         t_rep.c.RATING,
         }
         values = {allowed[k].key: v for k, v in data.items() if k in allowed}
         if not values:
             return False
         with engine.begin() as conn:
-            # Si viene estado, también actualizar USUARIO
             result = conn.execute(
-            update(t_rep).where(t_rep.c.ID == id_rep).values(**values)
+                update(t_rep).where(t_rep.c.ID == id_rep).values(**values)
             )
-            # Solo suspender la cuenta de usuario si acumula 4 amonestaciones
+            # Suspender cuenta si acumula 4 amonestaciones
             if "amonestaciones" in data and data["amonestaciones"] >= 4:
                 row = conn.execute(
                     select(t_rep.c.USUARIO_ID).where(t_rep.c.ID == id_rep)
                 ).first()
                 if row:
                     conn.execute(
-                        update(t_usuario)
-                        .where(t_usuario.c.ID == row[0])
-                        .values(ESTADO=0)
+                        update(t_usuario).where(t_usuario.c.ID == row[0]).values(ESTADO=0)
+                    )
+            # Bloqueo/desbloqueo manual desde admin (campo "estado_cuenta")
+            if "estado" in data:
+                row = conn.execute(
+                    select(t_rep.c.USUARIO_ID).where(t_rep.c.ID == id_rep)
+                ).first()
+                if row:
+                    conn.execute(
+                        update(t_usuario).where(t_usuario.c.ID == row[0])
+                        .values(ESTADO=data["estado"])
                     )
             return result.rowcount > 0
 
@@ -109,7 +120,7 @@ class RepartidorRepository:
             direccion=row["DIRECCION"],
             telefono=row["TELEFONO"],
             tarjeta=row["TARJETA"],
-            estado=row["ESTADO"],
+            disponible=row["DISPONIBLE"],
             km_recorridos_diarios=row["KM_RECORRIDOS_DIARIOS"],
             costo_km_habil=row["COSTO_KM_HABIL"],
             costo_km_feriado=row["COSTO_KM_FERIADO"],

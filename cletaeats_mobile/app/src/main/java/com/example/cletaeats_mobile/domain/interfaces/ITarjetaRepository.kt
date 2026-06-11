@@ -5,6 +5,12 @@ import com.example.cletaeats_mobile.domain.model.Tarjeta
 
 interface ITarjetaRepository {
     suspend fun listarTarjetas(): Result<List<Tarjeta>>
-    suspend fun agregarTarjeta(numero: String, alias: String, esPrincipal: Boolean): Result<Int>
+    suspend fun agregarTarjeta(
+        numero: String,
+        alias: String,
+        fechaVencimiento: String = "",
+        cvv: String = "",
+        esPrincipal: Boolean
+    ): Result<Int>
     suspend fun eliminarTarjeta(id: Int): Result<Unit>
 }

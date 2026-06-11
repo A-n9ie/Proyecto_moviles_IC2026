@@ -97,32 +97,29 @@ class AuthRepositoryImpl(
     override suspend fun registroCliente(
         email: String, password: String, confirmarPassword: String,
         cedula: String, nombre: String, direccion: String,
-        telefono: String,
-        tarjeta: String
+        telefono: String, tarjeta: String,
+        fechaVencimiento: String, cvv: String
     ): Result<Usuario> =
         withContext(Dispatchers.IO) {
-        try {
-            val resp = api.registroCliente(
-                RegistroClienteRequest(
-                    email, password, confirmarPassword,
-                    cedula, nombre, direccion, telefono
+            try {
+                val resp = api.registroCliente(
+                    RegistroClienteRequest(
+                        email = email, password = password,
+                        confirmarPassword = confirmarPassword,
+                        cedula = cedula, nombre = nombre,
+                        direccion = direccion, telefono = telefono,
+                        numeroTarjeta = tarjeta,
+                        fechaVencimiento = fechaVencimiento,
+                        cvvTarjeta = cvv
+                    )
                 )
-            )
-            when (resp.code()) {
-                201 -> {
-                    val body = resp.body()!!
-                    session.saveSession(body.token, body.idUsuario, body.email,
-                                        body.rol, body.nombre, body.idPerfil)
-                    if (tarjeta.isNotEmpty()) {
-                        try {
-                            tarjetaApi.agregarTarjeta(
-                                "Bearer ${body.token}",
-                                AgregarTarjetaRequest(tarjeta, "Principal", 1)
-                            )
-                        } catch (_: Exception) { /* no bloquear el registro si falla */ }
-                    }
-                    Result.Success(Usuario(body.idUsuario, body.email, body.rol,
-                                           body.nombre, body.idPerfil, body.token))
+                when (resp.code()) {
+                    201 -> {
+                        val body = resp.body()!!
+                        session.saveSession(body.token, body.idUsuario, body.email,
+                            body.rol, body.nombre, body.idPerfil)
+                        Result.Success(Usuario(body.idUsuario, body.email, body.rol,
+                            body.nombre, body.idPerfil, body.token))
                 }
                 400 -> {
                     val errorMsg = resp.errorBody()?.string()

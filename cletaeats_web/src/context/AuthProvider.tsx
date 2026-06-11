@@ -1,6 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
-
-
+import { useMemo, useState } from 'react'
 
 import type { ReactNode } from 'react'
 
@@ -21,24 +19,25 @@ interface Props {
 export const AuthProvider = ({
                                  children,
                              }: Props) => {
-    const [token, setToken] = useState<string | null>(
-        tokenStorage.get(),
-    )
 
-    const [user, setUser] = useState<User | null>(() => {
-        const storedUser =
-            localStorage.getItem('cletaeats_user')
-
-        return storedUser
-            ? JSON.parse(storedUser)
-            : null
+    const [token, setToken] = useState<string | null>(() => {
+        return tokenStorage.get()
     })
 
-    const [initializing, setInitializing] = useState(true)
+    const [user, setUser] = useState<User | null>(() => {
+        const storedUser = localStorage.getItem('cletaeats_user')
+        const savedToken = tokenStorage.get()
+        if (!storedUser || !savedToken) return null
+        try {
+            return JSON.parse(storedUser)
+        } catch {
+            tokenStorage.remove()
+            localStorage.removeItem('cletaeats_user')
+            return null
+        }
+    })
 
-useEffect(() => {
-    setInitializing(false)
-}, [])
+    const [initializing] = useState(false)
 
     const login = async (
         email: string,

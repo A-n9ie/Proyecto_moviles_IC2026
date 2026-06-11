@@ -408,8 +408,14 @@ private fun MetodoPagoCard(
     if (mostrarWallet) {
         WalletDialog(
             onDismiss = { mostrarWallet = false },
-            onGuardar = { numero, alias, esPrincipal ->
-                tarjetaViewModel.agregarTarjeta(numero, alias, esPrincipal)
+            onGuardar = { numero, alias, fechaVencimiento, cvv, esPrincipal ->
+                tarjetaViewModel.agregarTarjeta(
+                    numero,
+                    alias,
+                    fechaVencimiento,
+                    cvv,
+                    esPrincipal
+                )
                 mostrarWallet = false
             }
         )
@@ -421,11 +427,19 @@ private fun MetodoPagoCard(
 @Composable
 private fun WalletDialog(
     onDismiss: () -> Unit,
-    onGuardar: (numero: String, alias: String, esPrincipal: Boolean) -> Unit
+    onGuardar: (
+        numero: String,
+        alias: String,
+        fechaVencimiento: String,
+        cvv: String,
+        esPrincipal: Boolean
+    ) -> Unit
 ) {
-    var numero     by remember { mutableStateOf("") }
-    var alias      by remember { mutableStateOf("") }
-    var principal  by remember { mutableStateOf(false) }
+    var numero by remember { mutableStateOf("") }
+    var alias by remember { mutableStateOf("") }
+    var fechaVencimiento by remember { mutableStateOf("") }
+    var cvv by remember { mutableStateOf("") }
+    var principal by remember { mutableStateOf(false) }
 
     val numeroError = when {
         numero.isEmpty()    -> null
@@ -608,7 +622,15 @@ private fun WalletDialog(
                         Text("Cancelar")
                     }
                     Button(
-                        onClick  = { onGuardar(numero, alias, principal) },
+                        onClick = {
+                            onGuardar(
+                                numero,
+                                alias,
+                                fechaVencimiento,
+                                cvv,
+                                principal
+                            )
+                        },
                         enabled  = numero.length >= 8 && numeroError == null,
                         modifier = Modifier.weight(1f),
                         colors   = ButtonDefaults.buttonColors(containerColor = CletaNaranja)

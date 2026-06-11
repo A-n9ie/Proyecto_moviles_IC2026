@@ -6,17 +6,22 @@ import retrofit2.http.*
 
 data class TarjetaResponse(
     val id:           Int,
-    @SerializedName("cliente_id")   val clienteId:   Int,
+    @SerializedName("cliente_id")       val clienteId:        Int,
     val numero:       String,
     val alias:        String = "",
-    @SerializedName("es_principal") val esPrincipal: Int = 0
+    @SerializedName("fecha_vencimiento") val fechaVencimiento: String = "",
+    val cvv:          String = "",
+    @SerializedName("es_principal")     val esPrincipal:      Int = 0
 )
 
 data class AgregarTarjetaRequest(
     val numero:       String,
-    val alias:        String  = "",
-    @SerializedName("es_principal") val esPrincipal: Int = 0
+    val alias:        String = "",
+    @SerializedName("fecha_vencimiento") val fechaVencimiento: String = "",
+    val cvv:          String = "",
+    @SerializedName("es_principal")      val esPrincipal:      Int    = 0
 )
+
 
 interface ITarjetaApi {
     @GET("cliente/tarjetas")

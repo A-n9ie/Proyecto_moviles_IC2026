@@ -37,6 +37,9 @@ class RegistroClienteRequest(BaseModel):
     nombre:             str
     direccion:          str
     telefono:           str
+    numero_tarjeta:     str  = ""
+    fecha_vencimiento:  str  = ""
+    cvv_tarjeta:        str  = ""
 
 class RegistroRepartidorRequest(BaseModel):
     email:              str
@@ -79,6 +82,16 @@ def registro_cliente(body: RegistroClienteRequest):
         telefono=body.telefono,
         tarjeta="",
     )
+    if ok and body.numero_tarjeta:
+        TarjetaClienteRepository().crear({
+            "cliente_id":        datos["id_perfil"],
+            "numero":            body.numero_tarjeta,
+            "alias":             "Tarjeta principal",
+            "fecha_vencimiento": body.fecha_vencimiento,
+            "cvv":               body.cvv_tarjeta,
+            "es_principal":      1
+        })
+        
     if not ok:
         raise HTTPException(status_code=400, detail=error)
 

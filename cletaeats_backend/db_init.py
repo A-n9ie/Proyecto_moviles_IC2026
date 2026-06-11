@@ -123,7 +123,7 @@ with engine.begin() as conn:
         DIRECCION="Heredia, San Francisco",
         TELEFONO="8888-0002",
         TARJETA="4111111111111112",
-        ESTADO=1,
+        DISPONIBLE=1,
         KM_RECORRIDOS_DIARIOS=0,
         AMONESTACIONES=0
     ))
