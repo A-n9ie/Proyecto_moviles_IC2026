@@ -40,6 +40,9 @@ class PerfilBody(BaseModel):
     telefono:  str
     direccion: str
 
+class ImagenPerfilBody(BaseModel):
+    imagen_url: str
+
 class RatingBody(BaseModel):
     rating: int  # 1 a 5
 
@@ -159,6 +162,15 @@ def actualizar_perfil(body: PerfilBody, sesion: dict = Depends(get_current_user)
             )
         )
     return {"mensaje": "Perfil actualizado correctamente"}
+
+@router.put("/perfil/imagen")
+def actualizar_imagen_perfil(body: ImagenPerfilBody, sesion: dict = Depends(get_current_user)):
+    repo = ClienteRepository()
+    cliente = repo.encontrar_por_usuario_id(sesion["id_usuario"])
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    repo.actualizar_imagen_url(cliente.id, body.imagen_url)
+    return {"mensaje": "Imagen actualizada"}
 
 @router.post("/pedidos/{id_pedido}/rating")
 def calificar_repartidor(id_pedido: int, body: RatingBody, sesion: dict = Depends(get_current_user)):

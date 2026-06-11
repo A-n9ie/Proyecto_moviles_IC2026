@@ -67,6 +67,13 @@ class ClienteRepository:
             )
             return result.rowcount > 0
 
+    def actualizar_imagen_url(self, cliente_id: int, url: str) -> bool:
+        with engine.begin() as conn:
+            result = conn.execute(
+                update(t_cliente).where(t_cliente.c.ID == cliente_id).values(IMAGEN_URL=url)
+            )
+            return result.rowcount > 0
+
     @staticmethod
     def _map(row) -> Cliente:
         return Cliente(

@@ -17,6 +17,7 @@ data class PerfilUiState(
     val direccion:  String  = "",
     val email:      String  = "",
     val cedula:     String  = "",   // solo lectura, no editable
+    val imagenUrl: String = "",
     val guardadoOk: Boolean = false,
     val errorMsg:   String? = null
 )
@@ -39,7 +40,8 @@ class PerfilViewModel(
                     telefono  = result.data.telefono,
                     direccion = result.data.direccion,
                     email     = session.getEmail(),
-                    cedula    = result.data.cedula
+                    cedula    = result.data.cedula,
+                    imagenUrl = result.data.imagenUrl
                 )
                 is Result.Error -> _uiState.value = PerfilUiState(
                     email    = session.getEmail(),

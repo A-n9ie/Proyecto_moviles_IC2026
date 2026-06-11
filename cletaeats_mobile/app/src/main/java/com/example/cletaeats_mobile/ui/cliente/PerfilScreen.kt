@@ -15,11 +15,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import coil.compose.AsyncImage
 import com.example.cletaeats.ui.theme.*
 import com.example.cletaeats_mobile.domain.model.Tarjeta
 import com.example.cletaeats_mobile.ui.utils.toCRC
@@ -89,7 +91,7 @@ fun PerfilScreen(
 
             // ── Avatar + nombre de bienvenida ──────────────────────
             item {
-                AvatarHeader(nombre = perfilState.nombre, email = perfilState.email)
+                AvatarHeader(nombre = perfilState.nombre, email = perfilState.email, imagenUrl = perfilState.imagenUrl)
             }
 
             // ── Banner de éxito ────────────────────────────────────
@@ -367,7 +369,8 @@ fun PerfilScreen(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun AvatarHeader(nombre: String, email: String) {
+private fun AvatarHeader(nombre: String, email: String,
+                         imagenUrl: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -376,17 +379,26 @@ private fun AvatarHeader(nombre: String, email: String) {
     ) {
         Box(
             modifier = Modifier
-                .size(64.dp)
+                .size(80.dp)
                 .clip(CircleShape)
-                .background(CletaNaranja),
+                .background(CletaGrisClaro),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text       = nombre.firstOrNull()?.uppercase() ?: "?",
-                color      = CletaBlanco,
-                fontSize   = 28.sp,
-                fontWeight = FontWeight.ExtraBold
-            )
+            if (imagenUrl.isNotBlank()) {
+                AsyncImage(
+                    model = imagenUrl,
+                    contentDescription = "Foto de perfil",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Icon(
+                    Icons.Default.AccountCircle,
+                    contentDescription = null,
+                    tint = CletaNaranja,
+                    modifier = Modifier.size(60.dp)
+                )
+            }
         }
         Spacer(Modifier.width(16.dp))
         Column {

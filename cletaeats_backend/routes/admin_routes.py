@@ -96,17 +96,6 @@ def actualizar_repartidor(id: int, body: RepartidorBody, _=Depends(require_admin
         raise HTTPException(status_code=404, detail="Repartidor no encontrado")
     return {"mensaje": "Repartidor actualizado"}
 
-@router.put("/repartidores/{id}/bloquear")
-def bloquear_repartidor(id: int, body: BloquearRepartidorBody, _=Depends(require_admin), repos=Depends(get_repos)):
-    rep = repos["repartidor"].obtener_por_id(id)
-    if not rep:
-        raise HTTPException(status_code=404, detail="Repartidor no encontrado")
-    ok = repos["usuario"].actualizar_estado(rep.usuario_id, 0 if body.bloqueado == 1 else 1)
-    if not ok:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return {"mensaje": "Estado de cuenta actualizado"}
-
-
 # ── Restaurantes ──────────────────────────────────────────────────────
 @router.get("/restaurantes")
 def listar_restaurantes(_=Depends(require_admin), repos=Depends(get_repos)):
