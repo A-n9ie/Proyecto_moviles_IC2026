@@ -19,7 +19,7 @@ const Modal = ({
             onClick={onClose}
         >
             <div
-                className="w-[480px] rounded-2xl border border-[var(--gris-borde)] bg-[var(--gris-medio)] p-7"
+                className="w-[520px] max-h-[90vh] overflow-y-auto rounded-2xl border border-[var(--gris-borde)] bg-[var(--gris-medio)] p-7"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="mb-5 flex items-center justify-between">

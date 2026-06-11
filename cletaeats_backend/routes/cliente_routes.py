@@ -1,5 +1,5 @@
 # routes/cliente_routes.py
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 from middleware.auth_middleware import get_current_user
 from data.repositories.tarjeta_cliente_repository import TarjetaClienteRepository
@@ -67,6 +67,24 @@ def agregar_tarjeta(body: TarjetaBody, sesion: dict = Depends(get_current_user))
         "es_principal":      body.es_principal
     })
     return {"id": nuevo_id, "mensaje": "Tarjeta agregada"}
+
+@router.put("/tarjetas/{id}")
+def actualizar_tarjeta(id: int, body: TarjetaBody, sesion: dict = Depends(get_current_user)):
+    cliente = ClienteRepository().encontrar_por_usuario_id(sesion["id_usuario"])
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    repo = TarjetaClienteRepository()
+    tarjeta = repo.obtener_por_id(id)  # necesitas este método si no existe
+    if not tarjeta or tarjeta["CLIENTE_ID"] != cliente.id:
+        raise HTTPException(status_code=403, detail="Tarjeta no pertenece al cliente")
+    repo.actualizar({
+        "id":               id,
+        "alias":            body.alias,
+        "fecha_vencimiento": body.fecha_vencimiento,
+        "cvv":              body.cvv,
+        "es_principal":     body.es_principal
+    })
+    return {"mensaje": "Tarjeta actualizada"}
 
 @router.delete("/tarjetas/{id}")
 def eliminar_tarjeta(id: int, sesion: dict = Depends(get_current_user)):
@@ -171,6 +189,19 @@ def actualizar_imagen_perfil(body: ImagenPerfilBody, sesion: dict = Depends(get_
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     repo.actualizar_imagen_url(cliente.id, body.imagen_url)
     return {"mensaje": "Imagen actualizada"}
+
+@router.post("/upload-imagen")
+def upload_imagen_cliente(file: UploadFile = File(...), sesion: dict = Depends(get_current_user)):
+    # Mismo código que admin/upload-imagen
+    import uuid, os
+    from fastapi import UploadFile, File
+    ext = file.filename.rsplit(".", 1)[-1] if "." in file.filename else "jpg"
+    nombre = f"{uuid.uuid4().hex}.{ext}"
+    ruta = os.path.join("data", "uploads", nombre)
+    os.makedirs(os.path.dirname(ruta), exist_ok=True)
+    with open(ruta, "wb") as f:
+        f.write(file.file.read())
+    return {"url": f"/uploads/{nombre}"}
 
 @router.post("/pedidos/{id_pedido}/rating")
 def calificar_repartidor(id_pedido: int, body: RatingBody, sesion: dict = Depends(get_current_user)):

@@ -86,6 +86,20 @@ class PerfilViewModel(
         }
     }
 
+    fun subirFotoPerfil(context: android.content.Context, uri: android.net.Uri) {
+        _uiState.value = _uiState.value.copy(isLoading = true, errorMsg = null)
+        viewModelScope.launch {
+            when (val result = repo.subirFotoPerfil(context, uri)) {
+                is Result.Success -> _uiState.value = _uiState.value.copy(
+                    isLoading = false, imagenUrl = result.data, guardadoOk = true
+                )
+                is Result.Error -> _uiState.value = _uiState.value.copy(
+                    isLoading = false, errorMsg = result.message
+                )
+            }
+        }
+    }
+
     fun limpiarEstado() {
         _uiState.value = _uiState.value.copy(guardadoOk = false, errorMsg = null)
     }

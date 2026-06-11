@@ -28,6 +28,7 @@ import com.example.cletaeats_mobile.ui.cliente.PerfilScreen
 import com.example.cletaeats_mobile.ui.repartidor.MapaSeguimientoScreen
 
 import com.example.cletaeats_mobile.ui.repartidor.HistorialRepartidorScreen
+import com.example.cletaeats_mobile.ui.repartidor.PerfilRepartidorScreen
 
 @Composable
 fun AppNavigation(
@@ -183,6 +184,14 @@ fun AppNavigation(
         }
 
         // ── Repartidor ───────────────────────────────────────────
+        composable(AppRoutes.PERFIL_REPARTIDOR) { backStackEntry ->
+            val viewModel = remember(backStackEntry) { AppContainer.perfilRepartidorViewModel() }
+            PerfilRepartidorScreen(
+                viewModel = viewModel,
+                onVolver  = { navController.popBackStack() }
+            )
+        }
+
         composable(AppRoutes.PEDIDOS_REPARTIDOR) {
             backStackEntry ->
             val viewModel = remember(backStackEntry) { AppContainer.pedidosRepartidorViewModel() }
@@ -194,6 +203,7 @@ fun AppNavigation(
                     }
                 },
                 onVerMapa      = { pedidoId -> navController.navigate(AppRoutes.mapaSeguimientoRuta(pedidoId)) },
+                onVerPerfil    = { navController.navigate(AppRoutes.PERFIL_REPARTIDOR) },
                 onVerHistorial = { navController.navigate(AppRoutes.HISTORIAL_REPARTIDOR) }
             )
         }
