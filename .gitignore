@@ -1,0 +1,36 @@
+# ===== Python (backend) =====
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.venv/
+venv/
+env/
+*.db
+*.sqlite
+*.sqlite3
+
+# ===== IDE / Android Studio / IntelliJ =====
+.idea/
+*.iml
+
+# ===== Gradle / Android build =====
+.gradle/
+build/
+**/build/
+
+# ===== Secretos (NO subir) =====
+local.properties
+**/google-services.json
+*.jks
+*.keystore
+!debug.keystore
+
+# ===== Node / Web =====
+node_modules/
+dist/
+.env
+
+# ===== Sistema operativo =====
+.DS_Store
+Thumbs.db
