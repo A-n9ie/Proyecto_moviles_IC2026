@@ -19,7 +19,10 @@ data class RegistroClienteRequest(
     val cedula: String,
     val nombre: String,
     val direccion: String,
-    val telefono: String
+    val telefono: String,
+    @SerializedName("numero_tarjeta")    val numeroTarjeta:    String = "",
+    @SerializedName("fecha_vencimiento") val fechaVencimiento: String = "",
+    @SerializedName("cvv_tarjeta")       val cvvTarjeta:       String = ""
 )
 
 data class RegistroRepartidorRequest(

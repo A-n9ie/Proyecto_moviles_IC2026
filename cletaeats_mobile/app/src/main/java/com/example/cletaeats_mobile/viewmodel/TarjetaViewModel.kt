@@ -45,7 +45,8 @@ class TarjetaViewModel(private val repo: ITarjetaRepository) : ViewModel() {
         _uiState.value = _uiState.value.copy(tarjetaSeleccionada = tarjeta)
     }
 
-    fun agregarTarjeta(numero: String, alias: String, esPrincipal: Boolean) {
+    fun agregarTarjeta(numero: String, alias: String, fechaVencimiento: String = "", cvv: String = "", esPrincipal: Boolean
+    ) {
         if (numero.isBlank()) return
         if (_uiState.value.tarjetas.size >= 5) {
             _uiState.value = _uiState.value.copy(errorMsg = "Límite de 5 tarjetas alcanzado. Eliminá una para agregar otra.")
@@ -53,15 +54,20 @@ class TarjetaViewModel(private val repo: ITarjetaRepository) : ViewModel() {
         }
         _uiState.value = _uiState.value.copy(isLoading = true, errorMsg = null)
         viewModelScope.launch {
-            when (val result = repo.agregarTarjeta(numero, alias, esPrincipal)) {
-                is Result.Success -> cargarTarjetas()  // recargar lista
+            when (val result = repo.agregarTarjeta(numero, alias, fechaVencimiento, cvv, esPrincipal)) {
+                is Result.Success -> cargarTarjetas()
                 is Result.Error   -> _uiState.value = _uiState.value.copy(
                     isLoading = false, errorMsg = result.message
                 )
             }
         }
     }
-
+    fun actualizarTarjeta(id: Int, alias: String, fechaVencimiento: String, cvv: String, esPrincipal: Boolean) {
+        viewModelScope.launch {
+            repo.actualizarTarjeta(id, alias, fechaVencimiento, cvv, esPrincipal)
+            cargarTarjetas()
+        }
+    }
     fun eliminarTarjeta(id: Int) {
         viewModelScope.launch {
             repo.eliminarTarjeta(id)

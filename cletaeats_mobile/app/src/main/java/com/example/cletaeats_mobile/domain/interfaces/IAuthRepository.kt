@@ -10,7 +10,8 @@ interface IAuthRepository {
     suspend fun registroCliente(
         email: String, password: String, confirmarPassword: String,
         cedula: String, nombre: String, direccion: String,
-        telefono: String, tarjeta: String
+        telefono: String, tarjeta: String,
+        fechaVencimiento: String = "", cvv: String = ""
     ): Result<Usuario>
 
     suspend fun registroRepartidor(

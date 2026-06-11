@@ -6,17 +6,22 @@ import retrofit2.http.*
 
 data class TarjetaResponse(
     val id:           Int,
-    @SerializedName("cliente_id")   val clienteId:   Int,
+    @SerializedName("cliente_id")       val clienteId:        Int,
     val numero:       String,
     val alias:        String = "",
-    @SerializedName("es_principal") val esPrincipal: Int = 0
+    @SerializedName("fecha_vencimiento") val fechaVencimiento: String = "",
+    val cvv:          String = "",
+    @SerializedName("es_principal")     val esPrincipal:      Int = 0
 )
 
 data class AgregarTarjetaRequest(
     val numero:       String,
-    val alias:        String  = "",
-    @SerializedName("es_principal") val esPrincipal: Int = 0
+    val alias:        String = "",
+    @SerializedName("fecha_vencimiento") val fechaVencimiento: String = "",
+    val cvv:          String = "",
+    @SerializedName("es_principal")      val esPrincipal:      Int    = 0
 )
+
 
 interface ITarjetaApi {
     @GET("cliente/tarjetas")
@@ -27,6 +32,13 @@ interface ITarjetaApi {
     @POST("cliente/tarjetas")
     suspend fun agregarTarjeta(
         @Header("Authorization") token: String,
+        @Body body: AgregarTarjetaRequest
+    ): Response<Map<String, Any>>
+
+    @PUT("cliente/tarjetas/{id}")
+    suspend fun actualizarTarjeta(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
         @Body body: AgregarTarjetaRequest
     ): Response<Map<String, Any>>
 

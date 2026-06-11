@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -39,9 +40,12 @@ fun RestaurantesScreen(
     onVerMapa:          () -> Unit = {}
 ){
     val uiState  by viewModel.uiState.collectAsState()
+
+    val perfilVM = remember { AppContainer.perfilViewModel() }
+    val perfilState by perfilVM.uiState.collectAsState()
+
     val session  = AppContainer.getSessionManager()
     val authVM   = remember { AppContainer.authViewModel() }
-
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope       = rememberCoroutineScope()
 
@@ -51,11 +55,32 @@ fun RestaurantesScreen(
         drawerState   = drawerState,
         drawerContent = {
             DrawerContent(
-                nombre          = session.getNombre(),
-                email           = session.getEmail(),
-                onMisPedidos    = { scope.launch { drawerState.close(); onMisPedidos() } },
-                onVerMapa       = { scope.launch { drawerState.close(); onVerMapa() } },
-                onCerrarSesion  = {
+                nombre = session.getNombre(),
+                email = session.getEmail(),
+                imagenUrl = perfilState.imagenUrl,
+
+                onVerPerfil = {
+                    scope.launch {
+                        drawerState.close()
+                        onVerPerfil()
+                    }
+                },
+
+                onMisPedidos = {
+                    scope.launch {
+                        drawerState.close()
+                        onMisPedidos()
+                    }
+                },
+
+                onVerMapa = {
+                    scope.launch {
+                        drawerState.close()
+                        onVerMapa()
+                    }
+                },
+
+                onCerrarSesion = {
                     scope.launch {
                         drawerState.close()
                         authVM.logout()
@@ -271,10 +296,12 @@ private fun RestauranteCard(restaurante: Restaurante, onClickCard: () -> Unit) {
 private fun DrawerContent(
     nombre: String,
     email: String,
+    imagenUrl: String = "",
+    onVerPerfil: () -> Unit,
     onMisPedidos: () -> Unit,
     onVerMapa: () -> Unit,
     onCerrarSesion: () -> Unit
-) {
+){
     ModalDrawerSheet(
         drawerContainerColor = CletaGrisMedio
     ) {
@@ -285,12 +312,29 @@ private fun DrawerContent(
                 .padding(vertical = 32.dp, horizontal = 20.dp)
         ) {
             Column {
-                Icon(
-                    Icons.Default.AccountCircle,
-                    contentDescription = null,
-                    tint     = CletaBlanco,
-                    modifier = Modifier.size(56.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(CletaBlanco.copy(alpha = 0.3f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (imagenUrl.isNotBlank()) {
+                        AsyncImage(
+                            model = imagenUrl,
+                            contentDescription = "Avatar",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.AccountCircle,
+                            contentDescription = null,
+                            tint = CletaBlanco,
+                            modifier = Modifier.size(48.dp)
+                        )
+                    }
+                }
                 Spacer(Modifier.height(8.dp))
                 Text(nombre, color = CletaBlanco, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 Text(email,  color = CletaBlanco.copy(alpha = 0.8f), fontSize = 13.sp)
@@ -310,6 +354,27 @@ private fun DrawerContent(
         }
 
         Spacer(Modifier.height(8.dp))
+
+        NavigationDrawerItem(
+            icon = {
+                Icon(
+                    Icons.Default.Person,
+                    contentDescription = null,
+                    tint = CletaNaranja
+                )
+            },
+            label = {
+                Text(
+                    "Mi perfil",
+                    color = CletaBlanco
+                )
+            },
+            selected = false,
+            onClick = onVerPerfil,
+            colors = NavigationDrawerItemDefaults.colors(
+                unselectedContainerColor = CletaGrisMedio
+            )
+        )
 
         NavigationDrawerItem(
             icon     = { Icon(Icons.Default.Receipt, contentDescription = null, tint = CletaNaranja) },

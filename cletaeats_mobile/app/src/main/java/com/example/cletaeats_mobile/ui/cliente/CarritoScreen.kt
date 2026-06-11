@@ -408,8 +408,14 @@ private fun MetodoPagoCard(
     if (mostrarWallet) {
         WalletDialog(
             onDismiss = { mostrarWallet = false },
-            onGuardar = { numero, alias, esPrincipal ->
-                tarjetaViewModel.agregarTarjeta(numero, alias, esPrincipal)
+            onGuardar = { numero, alias, fechaVencimiento, cvv, esPrincipal ->
+                tarjetaViewModel.agregarTarjeta(
+                    numero,
+                    alias,
+                    fechaVencimiento,
+                    cvv,
+                    esPrincipal
+                )
                 mostrarWallet = false
             }
         )
@@ -421,11 +427,19 @@ private fun MetodoPagoCard(
 @Composable
 private fun WalletDialog(
     onDismiss: () -> Unit,
-    onGuardar: (numero: String, alias: String, esPrincipal: Boolean) -> Unit
+    onGuardar: (
+        numero: String,
+        alias: String,
+        fechaVencimiento: String,
+        cvv: String,
+        esPrincipal: Boolean
+    ) -> Unit
 ) {
-    var numero     by remember { mutableStateOf("") }
-    var alias      by remember { mutableStateOf("") }
-    var principal  by remember { mutableStateOf(false) }
+    var numero by remember { mutableStateOf("") }
+    var alias by remember { mutableStateOf("") }
+    var fechaVencimiento by remember { mutableStateOf("") }
+    var cvv by remember { mutableStateOf("") }
+    var principal by remember { mutableStateOf(false) }
 
     val numeroError = when {
         numero.isEmpty()    -> null
@@ -569,6 +583,46 @@ private fun WalletDialog(
 
                 Spacer(Modifier.height(12.dp))
 
+// ── Fila fecha + CVV ────────────────────────────────────────
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedTextField(
+                        value = fechaVencimiento,
+                        onValueChange = { input ->
+                            val digits = input.filter { it.isDigit() }.take(4)
+                            fechaVencimiento = if (digits.length >= 3) "${digits.take(2)}/${digits.drop(2)}" else digits
+                        },
+                        label = { Text("Venc. (MM/YY)") },
+                        leadingIcon = { Icon(Icons.Default.DateRange, null, tint = CletaNaranja) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = CletaBlanco, unfocusedTextColor = CletaBlanco,
+                            focusedBorderColor = CletaNaranja, unfocusedBorderColor = CletaGrisClaro,
+                            cursorColor = CletaNaranja
+                        )
+                    )
+                    OutlinedTextField(
+                        value = cvv,
+                        onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) cvv = it },
+                        label = { Text("CVV") },
+                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = CletaNaranja) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(0.6f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = CletaBlanco, unfocusedTextColor = CletaBlanco,
+                            focusedBorderColor = CletaNaranja, unfocusedBorderColor = CletaGrisClaro,
+                            cursorColor = CletaNaranja
+                        )
+                    )
+                }
+
                 // ── Toggle principal ───────────────────────────────
                 Row(
                     modifier          = Modifier.fillMaxWidth(),
@@ -608,8 +662,16 @@ private fun WalletDialog(
                         Text("Cancelar")
                     }
                     Button(
-                        onClick  = { onGuardar(numero, alias, principal) },
-                        enabled  = numero.length >= 8 && numeroError == null,
+                        onClick = {
+                            onGuardar(
+                                numero,
+                                alias,
+                                fechaVencimiento,
+                                cvv,
+                                principal
+                            )
+                        },
+                        enabled = numero.length >= 8 && numeroError == null && fechaVencimiento.length == 5 && cvv.length >= 3,
                         modifier = Modifier.weight(1f),
                         colors   = ButtonDefaults.buttonColors(containerColor = CletaNaranja)
                     ) {

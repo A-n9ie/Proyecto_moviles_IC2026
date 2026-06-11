@@ -51,18 +51,18 @@ class AuthViewModel(private val repo: IAuthRepository) : ViewModel() {
     fun registroCliente(
         email: String, password: String, confirmarPassword: String,
         cedula: String, nombre: String, direccion: String,
-        telefono: String, tarjeta: String
+        telefono: String, tarjeta: String,
+        fechaVencimiento: String = "", cvv: String = ""
     ) {
         _uiState.value = AuthUiState(isLoading = true)
         viewModelScope.launch {
             when (val result = repo.registroCliente(
                 email, password, confirmarPassword,
-                cedula, nombre, direccion, telefono, tarjeta
+                cedula, nombre, direccion, telefono, tarjeta,
+                fechaVencimiento, cvv
             )) {
                 is Result.Success -> _uiState.value = AuthUiState(
-                    isLoggedIn = true,
-                    rol        = result.data.rol,
-                    nombre     = result.data.nombre
+                    isLoggedIn = true, rol = result.data.rol, nombre = result.data.nombre
                 )
                 is Result.Error -> _uiState.value = AuthUiState(errorMsg = result.message)
             }

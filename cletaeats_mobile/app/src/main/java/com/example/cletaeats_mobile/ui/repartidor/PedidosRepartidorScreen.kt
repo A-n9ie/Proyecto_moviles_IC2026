@@ -32,6 +32,7 @@ fun PedidosRepartidorScreen(
     viewModel: PedidosRepartidorViewModel,
     onLogout:  () -> Unit,
     onVerMapa: (Int) -> Unit,
+    onVerPerfil: () -> Unit,
     onVerHistorial: () -> Unit
 ) {
     val uiState     by viewModel.uiState.collectAsState()
@@ -70,6 +71,10 @@ fun PedidosRepartidorScreen(
             DrawerRepartidor(
                 nombre         = session.getNombre(),
                 email          = session.getEmail(),
+                onPerfil       = {
+                    scope.launch { drawerState.close() }
+                    onVerPerfil()
+                },
                 onHistorial    = {
                     scope.launch { drawerState.close() }
                     onVerHistorial()
@@ -347,6 +352,7 @@ private fun PedidoRepartidorCard(
 private fun DrawerRepartidor(
     nombre:        String,
     email:         String,
+    onPerfil:      () -> Unit,
     onHistorial:   () -> Unit,
     onCerrarSesion: () -> Unit
 ) {
@@ -383,6 +389,18 @@ private fun DrawerRepartidor(
         }
 
         Spacer(Modifier.height(8.dp))
+
+        NavigationDrawerItem(
+            icon     = {
+                Icon(Icons.Default.Person, contentDescription = null, tint = CletaNaranja)
+            },
+            label    = { Text("Mi Perfil", color = CletaBlanco) },
+            selected = false,
+            onClick  = onPerfil,
+            colors   = NavigationDrawerItemDefaults.colors(
+                unselectedContainerColor = CletaGrisMedio
+            )
+        )
 
         NavigationDrawerItem(
             icon     = {

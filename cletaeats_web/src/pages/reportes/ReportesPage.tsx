@@ -37,6 +37,18 @@ const ReportesPage = () => {
                     <p className="reporte-sub">{data.restaurante_menos_pedidos.total} pedidos</p>
                 </div>
 
+                <div className="reporte-card">
+                    <h3>👤 Cliente top</h3>
+                    <p className="reporte-valor"><strong>{data.cliente_top.nombre}</strong></p>
+                    <p className="reporte-sub">{data.cliente_top.total} pedidos</p>
+                </div>
+
+                <div className="reporte-card">
+                    <h3>⏰ Hora pico</h3>
+                    <p className="reporte-valor"><strong>{data.hora_pico.hora}:00 hrs</strong></p>
+                    <p className="reporte-sub">{data.hora_pico.total} pedidos en esa hora</p>
+                </div>
+
                 <div className="reporte-card full">
                     <h3>💰 Monto total por restaurante</h3>
                     <table className="reportes-table">
@@ -55,18 +67,6 @@ const ReportesPage = () => {
                             ))}
                         </tbody>
                     </table>
-                </div>
-
-                <div className="reporte-card">
-                    <h3>👤 Cliente top</h3>
-                    <p className="reporte-valor"><strong>{data.cliente_top.nombre}</strong></p>
-                    <p className="reporte-sub">{data.cliente_top.total} pedidos</p>
-                </div>
-
-                <div className="reporte-card">
-                    <h3>⏰ Hora pico</h3>
-                    <p className="reporte-valor"><strong>{data.hora_pico.hora}:00 hrs</strong></p>
-                    <p className="reporte-sub">{data.hora_pico.total} pedidos en esa hora</p>
                 </div>
 
             </div>

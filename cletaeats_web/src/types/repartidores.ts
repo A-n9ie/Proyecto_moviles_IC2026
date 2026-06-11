@@ -5,7 +5,8 @@ export interface Repartidor {
     correo: string
     telefono: string
     cedula: string
-    estado: number         // 1=disponible, 0=ocupado
+    disponible: number      // 1=puede recibir pedidos, 0=ocupado
+    estado: number   // USUARIO.ESTADO: 1=puede iniciar sesión, 0=bloqueado
     km_recorridos_diarios: number
     amonestaciones: number
 }

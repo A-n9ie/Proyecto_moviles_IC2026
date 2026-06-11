@@ -1,7 +1,4 @@
-import {
-    useMemo,
-    useState,
-} from 'react'
+import { useMemo, useState } from 'react'
 
 import type { ReactNode } from 'react'
 
@@ -22,18 +19,25 @@ interface Props {
 export const AuthProvider = ({
                                  children,
                              }: Props) => {
-    const [token, setToken] = useState<string | null>(
-        tokenStorage.get(),
-    )
+
+    const [token, setToken] = useState<string | null>(() => {
+        return tokenStorage.get()
+    })
 
     const [user, setUser] = useState<User | null>(() => {
-        const storedUser =
-            localStorage.getItem('cletaeats_user')
-
-        return storedUser
-            ? JSON.parse(storedUser)
-            : null
+        const storedUser = localStorage.getItem('cletaeats_user')
+        const savedToken = tokenStorage.get()
+        if (!storedUser || !savedToken) return null
+        try {
+            return JSON.parse(storedUser)
+        } catch {
+            tokenStorage.remove()
+            localStorage.removeItem('cletaeats_user')
+            return null
+        }
     })
+
+    const [initializing] = useState(false)
 
     const login = async (
         email: string,
@@ -81,15 +85,14 @@ export const AuthProvider = ({
 
     const value = useMemo<AuthContextType>(
         () => ({
-            user,
-            token,
-            isAuthenticated: !!token,
-
-            login,
-
-            logout,
-        }),
-        [user, token],
+    user,
+    token,
+    isAuthenticated: !!token,
+    initializing,
+    login,
+    logout,
+}),
+       [user, token, initializing],
     )
 
     return (

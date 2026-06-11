@@ -95,18 +95,17 @@ const RepartidoresPage = () => {
                     },
 
                     {
+                        key: 'disponible',
+                        title: 'Disponible',
+                        render: (r: Repartidor) => (
+                            <StatusBadge status={r.disponible === 1 ? "Activo" : "Ocupado"} />
+                        ),
+                    },
+                    {
                         key: 'estado',
-
-                        title: 'Estado',
-
-                        render: (
-                            repartidor: Repartidor,
-                        ) => (
-                            <StatusBadge
-                                status={
-                                    repartidor.estado ? "Activo" : "Inactivo"
-                                }
-                            />
+                        title: 'Cuenta',
+                        render: (r: Repartidor) => (
+                            <StatusBadge status={r.estado === 1 ? "Activa" : "Bloqueado"} />
                         ),
                     },
 
@@ -128,18 +127,10 @@ const RepartidoresPage = () => {
                                 </Button>
 
                                 <Button
-                                    variant={
-                                        r.estado === 1
-                                            ? 'danger'
-                                            : 'success'
-                                    }
-                                    onClick={() =>
-                                        handleToggleEstado(r)
-                                    }
+                                    variant={r.estado === 1 ? 'danger' : 'success'}
+                                    onClick={() => handleToggleEstado(r)}
                                 >
-                                    {r.estado === 1
-                                        ? 'Desactivar'
-                                        : 'Activar'}
+                                    {r.estado === 1 ? 'Bloquear' : 'Desbloquear'}
                                 </Button>
 
                                 <Button

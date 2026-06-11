@@ -4,5 +4,6 @@ data class PerfilData(
     val nombre:    String = "",
     val telefono:  String = "",
     val direccion: String = "",
-    val cedula:    String = ""   // solo lectura, no se edita
+    val cedula:    String = "",   // solo lectura, no se edita
+    val imagenUrl: String = ""
 )

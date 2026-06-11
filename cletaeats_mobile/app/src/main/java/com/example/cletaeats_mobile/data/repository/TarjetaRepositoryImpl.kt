@@ -20,8 +20,15 @@ class TarjetaRepositoryImpl(
                 val resp = api.listarTarjetas("Bearer ${session.getToken()}")
                 if (resp.isSuccessful) {
                     Result.Success(resp.body()!!.map {
-                        Tarjeta(it.id, it.clienteId, it.numero, it.alias, it.esPrincipal)
+                        Tarjeta(
+                            id = it.id, clienteId = it.clienteId,
+                            numero = it.numero, alias = it.alias,
+                            fechaVencimiento = it.fechaVencimiento,
+                            cvv = it.cvv,
+                            esPrincipal = it.esPrincipal
+                        )
                     })
+
                 } else {
                     Result.Error("Error al cargar tarjetas (${resp.code()})")
                 }
@@ -31,13 +38,15 @@ class TarjetaRepositoryImpl(
         }
 
     override suspend fun agregarTarjeta(
-        numero: String, alias: String, esPrincipal: Boolean
+        numero: String, alias: String,
+        fechaVencimiento: String, cvv: String,
+        esPrincipal: Boolean
     ): Result<Int> =
         withContext(Dispatchers.IO) {
             try {
                 val resp = api.agregarTarjeta(
                     "Bearer ${session.getToken()}",
-                    AgregarTarjetaRequest(numero, alias, if (esPrincipal) 1 else 0)
+                    AgregarTarjetaRequest(numero, alias, fechaVencimiento, cvv, if (esPrincipal) 1 else 0)
                 )
                 if (resp.isSuccessful) {
                     val id = (resp.body()?.get("id") as? Double)?.toInt() ?: 0
@@ -45,6 +54,26 @@ class TarjetaRepositoryImpl(
                 } else {
                     Result.Error("No se pudo agregar la tarjeta (${resp.code()})")
                 }
+            } catch (e: Exception) {
+                Result.Error(e.message ?: "Error desconocido")
+            }
+        }
+
+    override suspend fun actualizarTarjeta(id: Int, alias: String, fechaVencimiento: String, cvv: String, esPrincipal: Boolean): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            try {
+                val resp = api.actualizarTarjeta(
+                    "Bearer ${session.getToken()}", id,
+                    AgregarTarjetaRequest(
+                        numero = "",  // no se modifica
+                        alias = alias,
+                        fechaVencimiento = fechaVencimiento,
+                        cvv = cvv,
+                        esPrincipal = if (esPrincipal) 1 else 0
+                    )
+                )
+                if (resp.isSuccessful) Result.Success(Unit)
+                else Result.Error("No se pudo actualizar (${resp.code()})")
             } catch (e: Exception) {
                 Result.Error(e.message ?: "Error desconocido")
             }

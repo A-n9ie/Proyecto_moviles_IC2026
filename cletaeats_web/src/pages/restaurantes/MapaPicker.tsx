@@ -43,7 +43,7 @@ const MapaPicker = ({
         <>
             <div
                 style={{
-                    height: 220,
+                    height: 200,
                     borderRadius: 12,
                     overflow: 'hidden',
                     marginBottom: 8

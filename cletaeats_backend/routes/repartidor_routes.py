@@ -4,9 +4,17 @@ from fastapi import APIRouter, Depends, HTTPException
 from middleware.auth_middleware import get_current_user
 from data.repositories.pedido_repository import PedidoRepository
 from data.repositories.repartidor_repository import RepartidorRepository
+from pydantic import BaseModel
 
 router = APIRouter()
 
+class TarjetaRepartidorBody(BaseModel):
+    tarjeta: str   # número de tarjeta de pago del repartidor
+
+class PerfilRepartidorBody(BaseModel):
+    nombre:    str
+    telefono:  str
+    direccion: str
 
 def _validar_pedido_del_repartidor(id_pedido: int, sesion: dict):
     """Helper: valida que el repartidor exista y que el pedido le pertenezca.
@@ -83,3 +91,62 @@ def marcar_entregado(id_pedido: int, sesion: dict = Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="No se pudo actualizar")
     RepartidorRepository().actualizar_campos(rep.id, {"estado": 1})  # repartidor vuelve a disponible
     return {"mensaje": "Pedido marcado como entregado", "estado": 3}
+
+@router.get("/perfil")
+def obtener_perfil_repartidor(sesion: dict = Depends(get_current_user)):
+    rep = RepartidorRepository().encontrar_por_usuario_id(sesion["id_usuario"])
+    if not rep:
+        raise HTTPException(status_code=404, detail="Repartidor no encontrado")
+    return {
+        "id":        rep.id,
+        "nombre":    rep.nombre,
+        "telefono":  rep.telefono,
+        "direccion": rep.direccion,
+        "correo":    rep.correo,
+        "cedula":    rep.cedula,
+        "tarjeta":   rep.tarjeta,
+        "rating":    rep.rating,
+        "km_recorridos_diarios": rep.km_recorridos_diarios,
+        "amonestaciones": rep.amonestaciones,
+    }
+
+@router.put("/perfil")
+def actualizar_perfil_repartidor(
+    body: PerfilRepartidorBody,
+    sesion: dict = Depends(get_current_user)
+):
+    from sqlalchemy import update
+    from data.database.db_connection import engine
+    from data.database.tables import repartidor as t_rep
+    rep = RepartidorRepository().encontrar_por_usuario_id(sesion["id_usuario"])
+    if not rep:
+        raise HTTPException(status_code=404, detail="Repartidor no encontrado")
+    with engine.begin() as conn:
+        conn.execute(
+            update(t_rep).where(t_rep.c.ID == rep.id).values(
+                NOMBRE    = body.nombre.strip(),
+                TELEFONO  = body.telefono.strip(),
+                DIRECCION = body.direccion.strip()
+            )
+        )
+    return {"mensaje": "Perfil actualizado"}
+
+@router.put("/perfil/tarjeta")
+def actualizar_tarjeta_repartidor(
+    body: TarjetaRepartidorBody,
+    sesion: dict = Depends(get_current_user)
+):
+    from sqlalchemy import update
+    from data.database.db_connection import engine
+    from data.database.tables import repartidor as t_rep
+    if not body.tarjeta.strip():
+        raise HTTPException(status_code=400, detail="La tarjeta no puede estar vacía")
+    rep = RepartidorRepository().encontrar_por_usuario_id(sesion["id_usuario"])
+    if not rep:
+        raise HTTPException(status_code=404, detail="Repartidor no encontrado")
+    with engine.begin() as conn:
+        conn.execute(
+            update(t_rep).where(t_rep.c.ID == rep.id)
+                         .values(TARJETA=body.tarjeta.strip())
+        )
+    return {"mensaje": "Tarjeta actualizada"}

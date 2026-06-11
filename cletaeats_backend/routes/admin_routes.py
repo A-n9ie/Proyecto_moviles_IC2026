@@ -10,6 +10,7 @@ from data.repositories.combo_repository import ComboRepository
 from data.repositories.categoria_repository import CategoriaRepository
 from data.repositories.producto_repository import ProductoRepository
 from data.repositories.pedido_repository import PedidoRepository
+from data.repositories.usuario_repository import UsuarioRepository
 from fastapi import File, UploadFile
 import uuid, os, shutil
 
@@ -26,6 +27,7 @@ def get_repos():
         "categoria":   CategoriaRepository(),
         "producto":    ProductoRepository(),
         "pedido":      PedidoRepository(),
+        "usuario":     UsuarioRepository(),
     }
 
 # ── Pydantic models ───────────────────────────────────────────────────
@@ -49,9 +51,10 @@ class ComboBody(BaseModel):
     producto_ids: Optional[List[int]] = None
 
 class RepartidorBody(BaseModel):
-    nombre: Optional[str] = None
-    estado: Optional[int] = None
-    amonestaciones: Optional[int] = None
+    nombre:        Optional[str] = None
+    disponible:    Optional[int] = None   
+    amonestaciones:Optional[int] = None
+    estado: Optional[int] = None  # nuevo: 1=activo, 0=bloqueado login
 
 class ClienteEstadoBody(BaseModel):
     estado: int

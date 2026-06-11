@@ -24,9 +24,9 @@ export const repartidoresService = {
     remove: async (id: number): Promise<void> => {
         await axiosClient.delete(`/admin/repartidores/${id}`)
     },
-    toggleEstado: async (id: number, estadoActual: number): Promise<void> => {
+    toggleEstado: async (id: number, estadoCuentaActual: number): Promise<void> => {
         await axiosClient.put(`/admin/repartidores/${id}`, {
-            estado: estadoActual === 1 ? 0 : 1,
+            estado_cuenta: estadoCuentaActual === 1 ? 0 : 1,
         })
     },
     agregarAmonestacion: async (id: number, motivo: string): Promise<{ amonestaciones: number; suspendido: boolean; mensaje: string }> => {

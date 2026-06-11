@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -103,10 +104,10 @@ fun RegisterScreen(
             if (tabSeleccionado == 0) {
                 FormularioCliente(
                     isLoading = uiState.isLoading,
-                    onRegistrar = { email, pass, confirmPass, cedula, nombre, direccion, tel, tarjeta ->
+                    onRegistrar = { email, pass, confirmPass, cedula, nombre, direccion, tel, tarjeta, fechaVenc, cvv ->
                         viewModel.registroCliente(
                             email, pass, confirmPass,
-                            cedula, nombre, direccion, tel, tarjeta
+                            cedula, nombre, direccion, tel, tarjeta, fechaVenc, cvv
                         )
                     },
                     onCambio = { viewModel.clearError() }
@@ -133,7 +134,9 @@ fun RegisterScreen(
 @Composable
 private fun FormularioCliente(
     isLoading:   Boolean,
-    onRegistrar: (String, String, String, String, String, String, String, String) -> Unit,
+    onRegistrar: (email: String, pass: String, confirmPass: String, cedula: String,
+                  nombre: String, direccion: String, tel: String, tarjeta: String,
+                  fechaVenc: String, cvv: String) -> Unit,
     onCambio:    () -> Unit
 ) {
     var email       by remember { mutableStateOf("") }
@@ -144,6 +147,8 @@ private fun FormularioCliente(
     var direccion   by remember { mutableStateOf("") }
     var telefono    by remember { mutableStateOf("") }
     var tarjeta     by remember { mutableStateOf("") }
+    var fechaVenc   by remember { mutableStateOf("") }
+    var cvvReg      by remember { mutableStateOf("") }
 
     // ── Validaciones dinámicas ────────────────────────────────────
     val emailError    = if (email.isNotEmpty() && !email.contains("@")) "Correo inválido" else null
@@ -151,13 +156,17 @@ private fun FormularioCliente(
     val confirmError  = if (confirmPass.isNotEmpty() && confirmPass != password) "Las contraseñas no coinciden" else null
     val cedulaError   = if (cedula.isNotEmpty() && cedula.length < 9) "Cédula inválida" else null
     val telefonoError = if (telefono.isNotEmpty() && telefono.length < 8) "Teléfono inválido" else null
-    val tarjetaError  = if (tarjeta.isNotEmpty() && tarjeta.length < 4) "Debe tener 4 dígitos" else null
+    val tarjetaError  = if (tarjeta.isNotEmpty() && tarjeta.length < 16) "Debe tener 16 dígitos" else null
+    val fechaVencError = if (fechaVenc.isNotEmpty() && fechaVenc.length < 5) "Formato MM/YY" else null
+    val cvvRegError   = if (cvvReg.isNotEmpty() && cvvReg.length < 3) "Mínimo 3 dígitos" else null
 
     val formValido = email.isNotEmpty() && password.isNotEmpty()
             && confirmPass.isNotEmpty() && cedula.isNotEmpty()
             && nombre.isNotEmpty() && direccion.isNotEmpty()
             && telefono.isNotEmpty() && tarjeta.isNotEmpty()
-            && listOf(emailError, passError, confirmError, cedulaError, telefonoError, tarjetaError).all { it == null }
+            && fechaVenc.isNotEmpty() && cvvReg.isNotEmpty()
+            && listOf(emailError, passError, confirmError, cedulaError, telefonoError,
+        tarjetaError, fechaVencError, cvvRegError).all { it == null }
 
     CampoConIcono(valor = email, onValor = { email = it; onCambio() },
         label = "Correo electrónico", icono = Icons.Default.Email,
@@ -192,15 +201,41 @@ private fun FormularioCliente(
         error = telefonoError, tipo = KeyboardType.Phone)
 
     Spacer(Modifier.height(10.dp))
-    CampoConIcono(valor = tarjeta, onValor = { tarjeta = it; onCambio() },
-        label = "Número de tarjeta (4 dígitos)", icono = Icons.Default.CreditCard,
+    CampoConIcono(valor = tarjeta, onValor = { if (it.length <= 16 && it.all { c -> c.isDigit() }) { tarjeta = it; onCambio() } },
+        label = "Número de tarjeta (16 dígitos)", icono = Icons.Default.CreditCard,
         error = tarjetaError, tipo = KeyboardType.Number)
+
+    Spacer(Modifier.height(10.dp))
+    // Fila con fecha y CVV
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        CampoConIcono(
+            valor = fechaVenc,
+            onValor = { input ->
+                val digits = input.filter { it.isDigit() }.take(4)
+                fechaVenc = if (digits.length >= 3) "${digits.take(2)}/${digits.drop(2)}" else digits
+                onCambio()
+            },
+            label = "Venc. (MM/YY)", icono = Icons.Default.DateRange,
+            modifier = Modifier.weight(1.6f),
+            error = fechaVencError, tipo = KeyboardType.Number,
+        )
+        CampoConIcono(
+            valor = cvvReg,
+            onValor = { if (it.length <= 4 && it.all { c -> c.isDigit() }) { cvvReg = it; onCambio() } },
+            label = "CVV", icono = Icons.Default.Lock,
+            modifier = Modifier.weight(1f),
+            error = cvvRegError, tipo = KeyboardType.Number,
+        )
+    }
 
     Spacer(Modifier.height(24.dp))
 
     CletaButton(
         text      = "Crear cuenta",
-        onClick   = { onRegistrar(email, password, confirmPass, cedula, nombre, direccion, telefono, tarjeta) },
+        onClick   = { onRegistrar(email, password,
+            confirmPass, cedula, nombre,
+            direccion, telefono,
+            tarjeta, fechaVenc, cvvReg) },
         isLoading = isLoading,
         enabled   = formValido,
         icon      = Icons.Default.PersonAdd
@@ -308,7 +343,8 @@ private fun CampoConIcono(
     valor:      String,
     onValor:    (String) -> Unit,
     label:      String,
-    icono:      androidx.compose.ui.graphics.vector.ImageVector,
+    icono: ImageVector,
+    modifier:   Modifier         = Modifier.fillMaxWidth(),
     error:      String?          = null,
     tipo:       KeyboardType     = KeyboardType.Text,
     esPassword: Boolean          = false
@@ -319,6 +355,7 @@ private fun CampoConIcono(
         label          = label,
         isPassword     = esPassword,
         error          = error,
+        modifier       = modifier,
         keyboardOptions = KeyboardOptions(
             keyboardType = tipo,
             imeAction    = ImeAction.Next

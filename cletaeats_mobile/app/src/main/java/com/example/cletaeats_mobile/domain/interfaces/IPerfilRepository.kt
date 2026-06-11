@@ -6,4 +6,5 @@ import com.example.cletaeats_mobile.domain.model.PerfilData
 interface IPerfilRepository {
     suspend fun obtenerPerfil(): Result<PerfilData>
     suspend fun actualizarPerfil(nombre: String, telefono: String, direccion: String): Result<Unit>
+    suspend fun subirFotoPerfil(context: android.content.Context, uri: android.net.Uri): Result<String>
 }
