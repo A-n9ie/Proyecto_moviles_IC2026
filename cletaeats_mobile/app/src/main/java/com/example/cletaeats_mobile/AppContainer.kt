@@ -39,8 +39,11 @@ import com.example.cletaeats_mobile.viewmodel.PerfilViewModel
 
 import com.example.cletaeats_mobile.data.notifications.NotificationHelper
 import com.example.cletaeats_mobile.data.notifications.PedidoNotificador
+import com.example.cletaeats_mobile.data.remote.IRepartidorPerfilApi
+import com.example.cletaeats_mobile.data.remote.RetrofitClient.retrofit
 
 import com.example.cletaeats_mobile.viewmodel.HistorialRepartidorViewModel
+import com.example.cletaeats_mobile.viewmodel.PerfilRepartidorViewModel
 
 /**
  * DI manual. PATRÓN MVC:
@@ -68,6 +71,9 @@ object AppContainer {
             return _carritoViewModel!!
         }
     val tarjetaViewModel: TarjetaViewModel by lazy { TarjetaViewModel(tarjetaRepo) }
+    val repartidorPerfilApi: IRepartidorPerfilApi by lazy {
+        retrofit.create(IRepartidorPerfilApi::class.java)
+    }
     val syncManager: SyncManager by lazy { SyncManager(appContext) }
     // Helper de notificaciones (singleton: un solo canal para toda la app)
     private val notificationHelper by lazy { NotificationHelper(appContext) }
@@ -125,6 +131,12 @@ object AppContainer {
     fun historialRepartidorViewModel() = HistorialRepartidorViewModel(pedidoRepository)
 
     fun perfilViewModel() = PerfilViewModel(perfilRepo, sessionManager)
+
+    // Factory del ViewModel
+    fun perfilRepartidorViewModel() = PerfilRepartidorViewModel(
+        api = repartidorPerfilApi,
+        session = getSessionManager()
+    )
     fun logout() {
         sessionManager.clearSession()
         // Resetear carritoViewModel para la próxima sesión

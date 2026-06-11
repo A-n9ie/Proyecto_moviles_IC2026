@@ -35,6 +35,13 @@ interface ITarjetaApi {
         @Body body: AgregarTarjetaRequest
     ): Response<Map<String, Any>>
 
+    @PUT("cliente/tarjetas/{id}")
+    suspend fun actualizarTarjeta(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body body: AgregarTarjetaRequest
+    ): Response<Map<String, Any>>
+
     @DELETE("cliente/tarjetas/{id}")
     suspend fun eliminarTarjeta(
         @Header("Authorization") token: String,

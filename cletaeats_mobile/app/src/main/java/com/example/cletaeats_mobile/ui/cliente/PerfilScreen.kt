@@ -1,7 +1,10 @@
 package com.example.cletaeats_mobile.ui.cliente
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -40,7 +44,12 @@ fun PerfilScreen(
 ) {
     val perfilState  by perfilViewModel.uiState.collectAsState()
     val tarjetaState by tarjetaViewModel.uiState.collectAsState()
-
+    val context = LocalContext.current
+    val imageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { perfilViewModel.subirFotoPerfil(context, it) }
+    }
     // Campos editables locales — se inicializan con los datos actuales
     var nombre    by remember(perfilState.nombre)    { mutableStateOf(perfilState.nombre) }
     var telefono  by remember(perfilState.telefono)  { mutableStateOf(perfilState.telefono) }
@@ -49,6 +58,7 @@ fun PerfilScreen(
     // Estado de diálogos
     var mostrarDialogoTarjeta  by remember { mutableStateOf(false) }
     var mostrarConfirmEliminar by remember { mutableStateOf<Tarjeta?>(null) }
+    var mostrarEditarTarjeta by remember { mutableStateOf<Tarjeta?>(null) }
 
     // Cargar datos al entrar
     LaunchedEffect(Unit) {
@@ -91,7 +101,12 @@ fun PerfilScreen(
 
             // ── Avatar + nombre de bienvenida ──────────────────────
             item {
-                AvatarHeader(nombre = perfilState.nombre, email = perfilState.email, imagenUrl = perfilState.imagenUrl)
+                AvatarHeader(
+                    nombre       = perfilState.nombre,
+                    email        = perfilState.email,
+                    imagenUrl    = perfilState.imagenUrl,
+                    onCambiarFoto = { imageLauncher.launch("image/*") }
+                )
             }
 
             // ── Banner de éxito ────────────────────────────────────
@@ -299,7 +314,8 @@ fun PerfilScreen(
 
             items(tarjetaState.tarjetas) { tarjeta ->
                 TarjetaCard(
-                    tarjeta  = tarjeta,
+                    tarjeta    = tarjeta,
+                    onEditar   = { mostrarEditarTarjeta = tarjeta },
                     onEliminar = { mostrarConfirmEliminar = tarjeta }
                 )
             }
@@ -362,6 +378,16 @@ fun PerfilScreen(
             }
         )
     }
+    mostrarEditarTarjeta?.let { tarjeta ->
+        EditarTarjetaDialog(
+            tarjeta   = tarjeta,
+            onGuardar = { alias, fecha, cvv, esPrincipal ->
+                tarjetaViewModel.actualizarTarjeta(tarjeta.id, alias, fecha, cvv, esPrincipal)
+                mostrarEditarTarjeta = null
+            },
+            onDismiss = { mostrarEditarTarjeta = null }
+        )
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -369,37 +395,66 @@ fun PerfilScreen(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun AvatarHeader(nombre: String, email: String,
-                         imagenUrl: String) {
+private fun AvatarHeader(
+    nombre: String,
+    email: String,
+    imagenUrl: String,
+    onCambiarFoto: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Box externo que envuelve avatar + ícono cámara
         Box(
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .background(CletaGrisClaro),
+            modifier = Modifier.size(80.dp),
             contentAlignment = Alignment.Center
         ) {
-            if (imagenUrl.isNotBlank()) {
-                AsyncImage(
-                    model = imagenUrl,
-                    contentDescription = "Foto de perfil",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
+            // Círculo del avatar
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape)
+                    .background(CletaGrisClaro)
+                    .clickable { onCambiarFoto() },
+                contentAlignment = Alignment.Center
+            ) {
+                if (imagenUrl.isNotBlank()) {
+                    AsyncImage(
+                        model              = imagenUrl,
+                        contentDescription = "Foto de perfil",
+                        modifier           = Modifier.fillMaxSize(),
+                        contentScale       = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.AccountCircle,
+                        contentDescription = null,
+                        tint               = CletaNaranja,
+                        modifier           = Modifier.size(60.dp)
+                    )
+                }
+            }
+            // Ícono cámara en la esquina inferior derecha
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(CletaNaranja),
+                contentAlignment = Alignment.Center
+            ) {
                 Icon(
-                    Icons.Default.AccountCircle,
-                    contentDescription = null,
-                    tint = CletaNaranja,
-                    modifier = Modifier.size(60.dp)
+                    Icons.Default.CameraAlt,
+                    contentDescription = "Cambiar foto",
+                    tint               = CletaBlanco,
+                    modifier           = Modifier.size(14.dp)
                 )
             }
         }
+
         Spacer(Modifier.width(16.dp))
         Column {
             Text(
@@ -463,7 +518,7 @@ private fun CampoEditable(
 }
 
 @Composable
-private fun TarjetaCard(tarjeta: Tarjeta, onEliminar: () -> Unit) {
+private fun TarjetaCard(tarjeta: Tarjeta, onEditar: () -> Unit, onEliminar: () -> Unit){
     Card(
         shape  = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = CletaGrisMedio),
@@ -522,7 +577,14 @@ private fun TarjetaCard(tarjeta: Tarjeta, onEliminar: () -> Unit) {
                     }
                 }
             }
-
+            // editar
+            IconButton(onClick = onEditar) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "Editar tarjeta",
+                    tint = CletaNaranja
+                )
+            }
             // Botón eliminar
             IconButton(onClick = onEliminar) {
                 Icon(
@@ -725,6 +787,163 @@ private fun DialogAgregarTarjeta(
                         Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
                         Text("Agregar")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EditarTarjetaDialog(
+    tarjeta:   Tarjeta,
+    onGuardar: (alias: String, fecha: String, cvv: String, esPrincipal: Boolean) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var alias       by remember { mutableStateOf(tarjeta.alias) }
+    var fechaVenc   by remember { mutableStateOf(tarjeta.fechaVencimiento) }
+    var cvv         by remember { mutableStateOf(tarjeta.cvv) }
+    var esPrincipal by remember { mutableStateOf(tarjeta.esPrincipal == 1) }
+    var errorLocal  by remember { mutableStateOf("") }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape  = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = CletaGrisMedio)
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+
+                Text(
+                    "Editar tarjeta  ···· ${tarjeta.numero.takeLast(4)}",
+                    color      = CletaBlanco,
+                    fontWeight = FontWeight.Bold,
+                    fontSize   = 18.sp
+                )
+                Spacer(Modifier.height(16.dp))
+
+                // Alias
+                OutlinedTextField(
+                    value         = alias,
+                    onValueChange = { if (it.length <= 30) alias = it },
+                    label         = { Text("Alias (ej: Visa personal)", color = CletaTextoSecundario) },
+                    leadingIcon   = { Icon(Icons.Default.Label, null, tint = CletaNaranja) },
+                    singleLine    = true,
+                    modifier      = Modifier.fillMaxWidth(),
+                    shape         = RoundedCornerShape(12.dp),
+                    colors        = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor     = CletaBlanco,
+                        unfocusedTextColor   = CletaBlanco,
+                        focusedBorderColor   = CletaNaranja,
+                        unfocusedBorderColor = CletaGrisClaro,
+                        cursorColor          = CletaNaranja
+                    )
+                )
+                Spacer(Modifier.height(12.dp))
+
+                Row(
+                    modifier              = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Fecha MM/YY
+                    OutlinedTextField(
+                        value         = fechaVenc,
+                        onValueChange = { input ->
+                            val digits = input.filter { it.isDigit() }.take(4)
+                            fechaVenc = if (digits.length >= 3)
+                                "${digits.take(2)}/${digits.drop(2)}"
+                            else digits
+                        },
+                        label           = { Text("Venc. (MM/YY)", color = CletaTextoSecundario) },
+                        leadingIcon     = { Icon(Icons.Default.DateRange, null, tint = CletaNaranja) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine      = true,
+                        modifier        = Modifier.weight(1f),
+                        shape           = RoundedCornerShape(12.dp),
+                        colors          = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor     = CletaBlanco,
+                            unfocusedTextColor   = CletaBlanco,
+                            focusedBorderColor   = CletaNaranja,
+                            unfocusedBorderColor = CletaGrisClaro,
+                            cursorColor          = CletaNaranja
+                        )
+                    )
+                    // CVV
+                    OutlinedTextField(
+                        value         = cvv,
+                        onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) cvv = it },
+                        label         = { Text("CVV", color = CletaTextoSecundario) },
+                        leadingIcon   = { Icon(Icons.Default.Lock, null, tint = CletaNaranja) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine      = true,
+                        modifier        = Modifier.weight(0.5f),
+                        shape           = RoundedCornerShape(12.dp),
+                        colors          = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor     = CletaBlanco,
+                            unfocusedTextColor   = CletaBlanco,
+                            focusedBorderColor   = CletaNaranja,
+                            unfocusedBorderColor = CletaGrisClaro,
+                            cursorColor          = CletaNaranja
+                        )
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+
+                // Switch principal
+                Row(
+                    modifier              = Modifier.fillMaxWidth(),
+                    verticalAlignment     = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Marcar como principal", color = CletaBlanco, fontSize = 14.sp)
+                    Switch(
+                        checked         = esPrincipal,
+                        onCheckedChange = { esPrincipal = it },
+                        colors          = SwitchDefaults.colors(
+                            checkedThumbColor = CletaBlanco,
+                            checkedTrackColor = CletaNaranja
+                        )
+                    )
+                }
+
+                if (errorLocal.isNotBlank()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(errorLocal, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                Row(
+                    modifier              = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick  = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        shape    = RoundedCornerShape(12.dp),
+                        colors   = ButtonDefaults.outlinedButtonColors(contentColor = CletaTextoSecundario)
+                    ) { Text("Cancelar") }
+
+                    Button(
+                        onClick = {
+                            when {
+                                fechaVenc.length < 5 -> {
+                                    errorLocal = "Fecha inválida (MM/YY)"
+                                    return@Button
+                                }
+                                cvv.length < 3 -> {
+                                    errorLocal = "CVV debe tener 3 o 4 dígitos"
+                                    return@Button
+                                }
+                            }
+                            onGuardar(alias.trim(), fechaVenc, cvv, esPrincipal)
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape    = RoundedCornerShape(12.dp),
+                        colors   = ButtonDefaults.buttonColors(containerColor = CletaNaranja)
+                    ) {
+                        Icon(Icons.Default.Save, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Guardar")
                     }
                 }
             }

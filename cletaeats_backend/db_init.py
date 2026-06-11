@@ -283,7 +283,14 @@ with engine.begin() as conn:
                 IMAGEN_URL=img_combo,
             ))
 
-   # DESPUÉS:
+    # ── Admin ─────────────────────────────────────────────────────────────
+    res = conn.execute(insert(usuario).values(
+        EMAIL="admin@cletaeats.com",
+        PASSWORD_HASH=hash_password("admin123"),
+        ROL="ADMIN",
+        ESTADO=1
+    ))
+
     # ── Cliente 1: Juan ───────────────────────────────────────────
     res = conn.execute(insert(usuario).values(
         EMAIL="cliente@test.com",

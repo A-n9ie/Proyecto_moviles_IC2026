@@ -62,7 +62,12 @@ class TarjetaViewModel(private val repo: ITarjetaRepository) : ViewModel() {
             }
         }
     }
-
+    fun actualizarTarjeta(id: Int, alias: String, fechaVencimiento: String, cvv: String, esPrincipal: Boolean) {
+        viewModelScope.launch {
+            repo.actualizarTarjeta(id, alias, fechaVencimiento, cvv, esPrincipal)
+            cargarTarjetas()
+        }
+    }
     fun eliminarTarjeta(id: Int) {
         viewModelScope.launch {
             repo.eliminarTarjeta(id)
