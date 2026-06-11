@@ -1,6 +1,6 @@
 # data/repositories/tarjeta_cliente_repository.py
 from sqlalchemy import select, insert, update, delete
-from cletaeats_backend.core.entities import tarjeta_cliente
+from core.entities import tarjeta_cliente
 from data.database.db_connection import engine
 from data.database.tables import tarjeta_cliente as t_tarjeta
 from data.utils.mapper_utils import to_lower_dict
