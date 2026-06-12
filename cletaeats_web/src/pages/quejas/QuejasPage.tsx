@@ -4,11 +4,11 @@ import Button from '../../components/common/buttons/Button'
 import DataTable from '../../components/common/table/DataTable'
 import StatusBadge from '../../components/common/table/StatusBadge'
 import PageHeader from '../../components/ui/pageHeader/PageHeader'
-import type { Queja, AccionQueja } from '../../types/quejas'
-
 import './quejasPage.css'
 import { quejasService } from '../../services/quejas/quejasService'
-
+import { confirmService } from '../../services/ui/confirmService'
+import { notificationService } from '../../services/ui/notificationService'
+import type { Queja, AccionQueja } from '../../types/quejas'
 
 const FILTROS = [
     { label: 'Todas', value: undefined },
@@ -43,13 +43,21 @@ const QuejasPage = () => {
             accion === 'amonestar'
                 ? `¿Amonestar a ${queja.repartidor_nombre}? Esto suma una amonestación (4 = suspensión).`
                 : `¿Marcar como queja menor? No genera amonestación.`
-        if (!window.confirm(texto)) return
+
+        const confirmado = await confirmService.confirm(texto)
+        if (!confirmado) return
+
         try {
             await quejasService.clasificar(queja.id, accion)
+            notificationService.success(
+                accion === 'amonestar'
+                    ? 'Queja amonestada correctamente.'
+                    : 'Queja marcada como menor.'
+            )
             await cargar()
         } catch (e) {
             console.error('Error clasificando queja', e)
-            alert('No se pudo clasificar la queja.')
+            notificationService.error('No se pudo clasificar la queja.')
         }
     }
 
