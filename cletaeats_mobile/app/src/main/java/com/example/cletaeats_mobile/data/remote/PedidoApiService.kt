@@ -63,6 +63,17 @@ data class PedidoListResponse(
 
 data class RatingRequest(val rating: Int)
 
+data class CrearQuejaRequest(
+    @SerializedName("pedido_id")   val pedidoId: Int,
+    val motivo: String,
+    val descripcion: String = ""
+)
+
+data class CrearQuejaResponse(
+    val mensaje: String,
+    @SerializedName("queja_id") val quejaId: Int
+)
+
 interface IPedidoApi {
     @POST("cliente/pedidos")
     suspend fun crearPedido(
@@ -122,6 +133,10 @@ interface IPedidoApi {
         @Path("id") pedidoId: Int
     ): Response<Unit>
 
-
+    @POST("cliente/quejas")
+    suspend fun crearQueja(
+        @Header("Authorization") token: String,
+        @Body body: CrearQuejaRequest
+    ): Response<CrearQuejaResponse>
 
 }

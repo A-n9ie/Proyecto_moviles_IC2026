@@ -33,17 +33,33 @@ fun MisPedidosScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val pedidosFiltrados by viewModel.pedidosFiltrados.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    // Polling: recarga pedidos cada 15s mientras la pantalla esté visible.
-    // El notificador detecta cambios de estado y dispara las notificaciones.
+    // Mientras haya un diálogo abierto (ej. reportar problema), se pausa el
+    // polling para no recomponer la pantalla y cerrar el diálogo por debajo.
+    var dialogoAbierto by remember { mutableStateOf(false) }
+
+    // Muestra el feedback de la queja (éxito o error) y lo limpia
+    LaunchedEffect(uiState.quejaMsg) {
+        uiState.quejaMsg?.let { msg ->
+            snackbarHostState.showSnackbar(msg)
+            viewModel.limpiarQuejaMsg()
+        }
+    }
+
+    // Polling: recarga pedidos cada 15s mientras la pantalla esté visible,
+    // SALVO que haya un diálogo abierto (no interrumpir al usuario).
     LaunchedEffect(Unit) {
         while (isActive) {
-            viewModel.cargarPedidos()
+            if (!dialogoAbierto) {
+                viewModel.cargarPedidos()
+            }
             delay(15_000L)
         }
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Mis pedidos", color = CletaBlanco, fontWeight = FontWeight.Bold) },
@@ -137,9 +153,13 @@ fun MisPedidosScreen(
                             pedido     = pedido,
                             onRastrear = { onRastrear(pedido.id) },
                             onCalificar = { rating -> viewModel.calificarRepartidor(pedido.id, rating) },
-                            onCancelar  = { viewModel.cancelarPedido(pedido.id) }
+                            onCancelar  = { viewModel.cancelarPedido(pedido.id) },
+                            onReportar  = { motivo, desc -> viewModel.crearQueja(pedido.id, motivo, desc) },
+                            onDialogoChange = { abierto -> dialogoAbierto = abierto }
                         )
                     }
+
+
                 }
             }
         }
@@ -151,7 +171,9 @@ private fun PedidoClienteCard(
     pedido: Pedido,
     onRastrear: () -> Unit,
     onCalificar: (Int) -> Unit,
-    onCancelar: () -> Unit
+    onCancelar: () -> Unit,
+    onReportar: (String, String) -> Unit,
+    onDialogoChange: (Boolean) -> Unit
 ) {
     val estadoColor = when (pedido.estado) {
         3    -> CletaExito
@@ -239,6 +261,40 @@ private fun PedidoClienteCard(
                 if (enviado) {
                     Text("¡Gracias por tu calificación!", color = CletaExito, fontSize = 12.sp)
                 }
+
+                // ── Reportar problema (queja) ─────────────────────────────
+                var mostrarDialogoQueja by remember { mutableStateOf(false) }
+
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = {
+                        mostrarDialogoQueja = true
+                        onDialogoChange(true)   // pausa el polling
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = CletaNaranjaClaro),
+                    border = BorderStroke(1.dp, CletaNaranjaClaro)
+                ) {
+                    Icon(Icons.Default.ReportProblem, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Reportar problema", fontWeight = FontWeight.SemiBold)
+                }
+
+                if (mostrarDialogoQueja) {
+                    DialogoQueja(
+                        onConfirmar = { motivo, desc ->
+                            onReportar(motivo, desc)
+                            mostrarDialogoQueja = false
+                            onDialogoChange(false)   // reanuda el polling
+                        },
+                        onCancelar = {
+                            mostrarDialogoQueja = false
+                            onDialogoChange(false)   // reanuda el polling
+                        }
+                    )
+                }
+
             }
 
             if (pedido.estado == 0) {
@@ -258,4 +314,78 @@ private fun PedidoClienteCard(
 
         }
     }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DialogoQueja(
+    onConfirmar: (String, String) -> Unit,
+    onCancelar: () -> Unit
+) {
+    // motivo interno (valor que espera el backend) y etiqueta visible
+    val motivos = listOf(
+        "amabilidad"   to "Amabilidad",
+        "tiempo"       to "Tiempo de entrega",
+        "presentacion" to "Presentación",
+        "otro"         to "Otro"
+    )
+    var motivoSeleccionado by remember { mutableStateOf(motivos.first().first) }
+    var descripcion by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onCancelar,
+        containerColor = CletaGrisMedio,
+        title = {
+            Text("Reportar problema", color = CletaBlanco, fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column {
+                Text("¿Cuál fue el problema?", color = CletaTextoSecundario, fontSize = 13.sp)
+                Spacer(Modifier.height(8.dp))
+                motivos.forEach { (valor, etiqueta) ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        RadioButton(
+                            selected = motivoSeleccionado == valor,
+                            onClick = { motivoSeleccionado = valor },
+                            colors = RadioButtonDefaults.colors(
+                                selectedColor = CletaNaranja,
+                                unselectedColor = CletaTextoSecundario
+                            )
+                        )
+                        Text(etiqueta, color = CletaBlanco, fontSize = 14.sp)
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = descripcion,
+                    onValueChange = { descripcion = it },
+                    label = { Text("Describí el problema (opcional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 4,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = CletaNaranja,
+                        unfocusedBorderColor = CletaTextoSecundario,
+                        focusedLabelColor = CletaNaranja,
+                        unfocusedLabelColor = CletaTextoSecundario,
+                        focusedTextColor = CletaBlanco,
+                        unfocusedTextColor = CletaBlanco,
+                        cursorColor = CletaNaranja
+                    )
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirmar(motivoSeleccionado, descripcion) }) {
+                Text("Enviar", color = CletaNaranja, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancelar) {
+                Text("Cancelar", color = CletaTextoSecundario)
+            }
+        }
+    )
 }

@@ -15,7 +15,7 @@ import com.example.cletaeats_mobile.domain.model.Pedido
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.example.cletaeats_mobile.data.remote.RatingRequest
-
+import com.example.cletaeats_mobile.data.remote.CrearQuejaRequest
 class PedidoRepositoryImpl(
     private val api:     IPedidoApi,
     private val session: SessionManager
@@ -134,6 +134,16 @@ class PedidoRepositoryImpl(
                 val resp = api.cancelarPedido(token, pedidoId)
                 if (resp.code() == 200) Result.Success(Unit)
                 else Result.Error("No se pudo cancelar el pedido")
+            } catch (e: Exception) { Result.Error("Sin conexión al servidor") }
+        }
+
+    override suspend fun crearQueja(pedidoId: Int, motivo: String, descripcion: String): Result<Int> =
+        withContext(Dispatchers.IO) {
+            try {
+                val resp = api.crearQueja(token, CrearQuejaRequest(pedidoId, motivo, descripcion))
+                val body = resp.body()
+                if (resp.isSuccessful && body != null) Result.Success(body.quejaId)
+                else Result.Error("No se pudo registrar la queja")
             } catch (e: Exception) { Result.Error("Sin conexión al servidor") }
         }
 

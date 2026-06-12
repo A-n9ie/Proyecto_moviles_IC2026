@@ -30,4 +30,6 @@ interface IPedidoRepository {
 
     suspend fun cancelarPedido(pedidoId: Int): Result<Unit>
 
+    suspend fun crearQueja(pedidoId: Int, motivo: String, descripcion: String): Result<Int>
+
 }

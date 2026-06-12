@@ -18,7 +18,8 @@ data class PedidosClienteUiState(
     val isLoading: Boolean      = false,
     val pedidos:   List<Pedido> = emptyList(),
     val errorMsg:  String?      = null,
-    val filtroEstado: Int?        = null
+    val filtroEstado: Int?        = null,
+    val quejaMsg:  String?      = null   // feedback al enviar una queja (éxito o error)
 )
 
 class PedidosClienteViewModel(
@@ -85,4 +86,22 @@ class PedidosClienteViewModel(
             cargarPedidos()
         }
     }
+
+    fun crearQueja(pedidoId: Int, motivo: String, descripcion: String) {
+        viewModelScope.launch {
+            when (repo.crearQueja(pedidoId, motivo, descripcion)) {
+                is Result.Success -> _uiState.value = _uiState.value.copy(
+                    quejaMsg = "Queja enviada. ¡Gracias por tu reporte!"
+                )
+                is Result.Error -> _uiState.value = _uiState.value.copy(
+                    quejaMsg = "No se pudo enviar la queja. Intentá de nuevo."
+                )
+            }
+        }
+    }
+
+    fun limpiarQuejaMsg() {
+        _uiState.value = _uiState.value.copy(quejaMsg = null)
+    }
+
 }
