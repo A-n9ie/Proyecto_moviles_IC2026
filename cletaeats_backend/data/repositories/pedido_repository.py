@@ -225,8 +225,14 @@ class PedidoRepository:
 
             subtotal = sum(i["CANTIDAD"] * i["PRECIO_UNITARIO"] for i in items)
             costo_km = (row["COSTO_KM_HABIL"] or 1000) * row["DISTANCIA_KM"]
+            # IVA del 13% sobre el subtotal (la comida).
+            # Decisión de diseño: el impuesto aplica al producto, no al
+            # servicio de transporte, igual que el desglose de Uber Eats.
+            iva = round(subtotal * 0.13)
+            total = subtotal + costo_km + iva
             return {
-                "id_pedido":      row["ID"],
+                "pedido_id":      row["ID"],   # nombre que espera la app móvil
+                "id_pedido":      row["ID"],   # se mantiene por compatibilidad con la web
                 "estado":         row["ESTADO"],
                 "cliente":        row["CLIENTE_NOMBRE"],
                 "restaurante":    row["RESTAURANTE_NOMBRE"],
@@ -238,13 +244,15 @@ class PedidoRepository:
                         "combo_nombre":    i["COMBO_NOMBRE"],
                         "numero_combo":    i["NUMERO_COMBO"],
                         "cantidad":        i["CANTIDAD"],
-                        "precio_unitario": i["PRECIO_UNITARIO"]
+                        "precio_unitario": i["PRECIO_UNITARIO"],
+                        "subtotal_item":   i["CANTIDAD"] * i["PRECIO_UNITARIO"]  # lo que espera la app
                     }
                     for i in items
                 ],
                 "subtotal":    subtotal,
                 "costo_envio": costo_km,
-                "total":       subtotal + costo_km
+                "iva":         iva,
+                "total":       total
             }
 
     def restaurante_mas_pedidos(self) -> dict:
