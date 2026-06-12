@@ -35,5 +35,10 @@ export const sidebarItems: SidebarItem[] = [
     label: 'Reportes',
     icon: '📈',
     path: '/reportes',
-},
+    },
+    {
+    label: 'Quejas',
+    icon: '⚠️',
+    path: '/quejas',
+    },
 ]

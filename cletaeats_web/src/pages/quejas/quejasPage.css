@@ -1,0 +1,12 @@
+.quejas-filtros {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.quejas-resuelta {
+    color: var(--texto-sec, #888);
+    font-size: 13px;
+    font-style: italic;
+}

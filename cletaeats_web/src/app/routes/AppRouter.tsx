@@ -17,6 +17,7 @@ import RepartidoresPage from '../../pages/repartidores/RepartidoresPage'
 import RestaurantesPage from '../../pages/restaurantes/RestaurantesPage'
 import CombosPage from '../../pages/combos/CombosPage'
 import ReportesPage from '../../pages/reportes/ReportesPage'
+import QuejasPage from '../../pages/quejas/QuejasPage'
 
 const AppRouter = () => {
     return (
@@ -66,6 +67,12 @@ const AppRouter = () => {
                 <Route
                     path="/reportes"
                     element={<ReportesPage />}
+                />
+            </Route>
+
+                <Route
+                     path="/quejas"
+                     element={<QuejasPage />}
                 />
             </Route>
 
