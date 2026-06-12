@@ -321,6 +321,22 @@ class PedidoRepository:
             ).mappings().first()
             return to_lower_dict(row) if row else {}
 
+    def monto_total_global(self) -> dict:
+            """
+            Reporte (k): monto total vendido por TODOS los restaurantes juntos.
+            Suma cantidad * precio_unitario de todas las líneas de pedido.
+            """
+            from sqlalchemy import func
+            with engine.connect() as conn:
+                total = conn.execute(
+                    select(
+                        func.coalesce(
+                            func.sum(t_detalle.c.CANTIDAD * t_detalle.c.PRECIO_UNITARIO),
+                            0
+                        ).label("MONTO_TOTAL")
+                    )
+                ).scalar()
+                return {"monto_total": total or 0}
 
     @staticmethod
     def _map(row) -> Pedido:

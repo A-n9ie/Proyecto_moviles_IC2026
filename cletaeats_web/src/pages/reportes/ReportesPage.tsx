@@ -49,6 +49,12 @@ const ReportesPage = () => {
                     <p className="reporte-sub">{data.hora_pico.total} pedidos en esa hora</p>
                 </div>
 
+                <div className="reporte-card">
+                    <h3>💵 Monto total (todos los restaurantes)</h3>
+                    <p className="reporte-valor"><strong>₡{data.monto_total_global?.monto_total?.toLocaleString()}</strong></p>
+                    <p className="reporte-sub">Ventas totales del sistema</p>
+                </div>
+                
                 <div className="reporte-card full">
                     <h3>💰 Monto total por restaurante</h3>
                     <table className="reportes-table">
