@@ -10,6 +10,8 @@ from data.repositories.pedido_repository import PedidoRepository
 from data.repositories.combo_repository import ComboRepository
 from data.repositories.restaurante_repository import RestauranteRepository
 from data.repositories.repartidor_repository import RepartidorRepository
+from data.repositories.queja_repository import QuejaRepository
+from core.entities.queja import Queja
 from core.use_cases.pedido_use_cases import PedidoUseCases
 from data.database.tables import usuario as t_usuario
 from sqlalchemy import select
@@ -45,6 +47,11 @@ class ImagenPerfilBody(BaseModel):
 
 class RatingBody(BaseModel):
     rating: int  # 1 a 5
+
+class QuejaBody(BaseModel):
+    pedido_id: int
+    motivo: str           # amabilidad, tiempo, presentacion, otro
+    descripcion: str = ""
 
 @router.get("/tarjetas")
 def listar_tarjetas(sesion: dict = Depends(get_current_user)):
@@ -236,3 +243,36 @@ def cancelar_pedido(id_pedido: int, sesion: dict = Depends(get_current_user)):
     if pedido.repartidor_id:
         RepartidorRepository().actualizar_disponibilidad(pedido.repartidor_id, 1)
     return {"mensaje": "Pedido cancelado"}
+
+@router.post("/quejas")
+def crear_queja(body: QuejaBody, sesion: dict = Depends(get_current_user)):
+    """
+    El cliente registra una queja sobre un pedido propio que tenga
+    repartidor asignado. La queja entra en estado PENDIENTE para que
+    el admin la revise.
+    """
+    cliente = ClienteRepository().encontrar_por_usuario_id(sesion["id_usuario"])
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+
+    pedido = PedidoRepository().obtener_por_id(body.pedido_id)
+    if not pedido:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    if pedido.cliente_id != cliente.id:
+        raise HTTPException(status_code=403, detail="Este pedido no te pertenece")
+    if not pedido.repartidor_id:
+        raise HTTPException(status_code=400, detail="El pedido no tiene repartidor asignado")
+
+    motivos_validos = {"amabilidad", "tiempo", "presentacion", "otro"}
+    if body.motivo not in motivos_validos:
+        raise HTTPException(status_code=400, detail="Motivo inválido")
+
+    nueva = Queja(
+        cliente_id=cliente.id,
+        repartidor_id=pedido.repartidor_id,
+        pedido_id=pedido.id,
+        motivo=body.motivo,
+        descripcion=body.descripcion,
+    )
+    creada = QuejaRepository().crear(nueva)
+    return {"mensaje": "Queja registrada", "queja_id": creada.id}

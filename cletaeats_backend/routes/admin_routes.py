@@ -11,6 +11,7 @@ from data.repositories.categoria_repository import CategoriaRepository
 from data.repositories.producto_repository import ProductoRepository
 from data.repositories.pedido_repository import PedidoRepository
 from data.repositories.usuario_repository import UsuarioRepository
+from data.repositories.queja_repository import QuejaRepository
 from fastapi import File, UploadFile
 import uuid, os, shutil
 
@@ -28,6 +29,7 @@ def get_repos():
         "producto":    ProductoRepository(),
         "pedido":      PedidoRepository(),
         "usuario":     UsuarioRepository(),
+        "queja":       QuejaRepository(),
     }
 
 # ── Pydantic models ───────────────────────────────────────────────────
@@ -70,6 +72,9 @@ class ProductoBody(BaseModel):
 
 class AmonestacionBody(BaseModel):
     motivo: str = ""
+
+class ClasificarQuejaBody(BaseModel):
+    accion: str   # "amonestar" o "menor"
 
 # ── Clientes ──────────────────────────────────────────────────────────
 @router.get("/clientes")
@@ -199,18 +204,57 @@ def agregar_amonestacion(id: int, body: AmonestacionBody, _=Depends(require_admi
         raise HTTPException(status_code=404, detail="Repartidor no encontrado")
     if rep.amonestaciones >= 4:
         raise HTTPException(status_code=400, detail="El repartidor ya está suspendido")
-
     nuevas = rep.amonestaciones + 1
-    data = {"amonestaciones": nuevas}
-    if nuevas >= 4:
-        data["estado"] = 0  # suspensión automática, también actualiza USUARIO via actualizar_campos
-
-    repos["repartidor"].actualizar_campos(id, data)
+    # actualizar_campos suspende la cuenta automáticamente cuando amonestaciones >= 4
+    repos["repartidor"].actualizar_campos(id, {"amonestaciones": nuevas})
     return {
         "amonestaciones": nuevas,
         "suspendido": nuevas >= 4,
         "mensaje": "Repartidor suspendido" if nuevas >= 4 else "Amonestación registrada"
     }
+
+
+# ── Quejas (gestión admin) ─────────────────────────────────────────────
+@router.get("/quejas")
+def listar_quejas(estado: Optional[int] = None, _=Depends(require_admin), repos=Depends(get_repos)):
+    """Lista todas las quejas. Filtro opcional por estado (0=pendiente, 1=amonestada, 2=menor)."""
+    return repos["queja"].listar_todas(estado)
+
+@router.patch("/quejas/{id}")
+def clasificar_queja(id: int, body: ClasificarQuejaBody, _=Depends(require_admin), repos=Depends(get_repos)):
+    """
+    El admin clasifica una queja pendiente:
+      - accion="amonestar": marca la queja como AMONESTADA (estado 1) y suma
+        una amonestación al repartidor (que puede suspenderlo si llega a 4).
+      - accion="menor": marca la queja como MENOR (estado 2), sin sancionar.
+    """
+    queja = repos["queja"].obtener_por_id(id)
+    if not queja:
+        raise HTTPException(status_code=404, detail="Queja no encontrada")
+    if queja.estado != 0:
+        raise HTTPException(status_code=400, detail="La queja ya fue clasificada")
+
+    if body.accion == "amonestar":
+        rep = repos["repartidor"].obtener_por_id(queja.repartidor_id)
+        if not rep:
+            raise HTTPException(status_code=404, detail="Repartidor no encontrado")
+        if rep.amonestaciones >= 4:
+            raise HTTPException(status_code=400, detail="El repartidor ya está suspendido")
+        nuevas = rep.amonestaciones + 1
+        repos["repartidor"].actualizar_campos(queja.repartidor_id, {"amonestaciones": nuevas})
+        repos["queja"].actualizar_estado(id, 1)  # AMONESTADA
+        return {
+            "queja_id": id,
+            "estado": "AMONESTADA",
+            "amonestaciones_repartidor": nuevas,
+            "suspendido": nuevas >= 4,
+            "mensaje": "Repartidor suspendido por 4 amonestaciones" if nuevas >= 4 else "Queja amonestada"
+        }
+    elif body.accion == "menor":
+        repos["queja"].actualizar_estado(id, 2)  # MENOR
+        return {"queja_id": id, "estado": "MENOR", "mensaje": "Queja clasificada como menor"}
+    else:
+        raise HTTPException(status_code=400, detail="Acción inválida (use 'amonestar' o 'menor')")
 
 # ── Reportes ───────────────────────────────────────────────────────────
 @router.get("/reportes")
@@ -221,6 +265,7 @@ def obtener_reportes(_=Depends(require_admin), repos=Depends(get_repos)):
         "monto_por_restaurante":     repos["pedido"].monto_por_restaurante(),
         "monto_total_global":        repos["pedido"].monto_total_global(),
         "pedidos_por_cliente":       repos["pedido"].pedidos_por_cliente(),
+        "quejas_por_repartidor":     repos["queja"].quejas_por_repartidor(),
         "cliente_top":               repos["pedido"].cliente_top(),
         "hora_pico":                 repos["pedido"].hora_pico(),
     }
