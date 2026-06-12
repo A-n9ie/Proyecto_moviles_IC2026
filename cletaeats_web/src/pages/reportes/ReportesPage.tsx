@@ -113,6 +113,45 @@ const ReportesPage = () => {
                     ))}
                 </div>
 
+                <div className="reporte-card full">
+                    <h3>⚠️ Quejas por repartidor</h3>
+                    {data.quejas_por_repartidor?.length === 0 && (
+                        <p className="reporte-sub">No hay quejas registradas.</p>
+                    )}
+                    {data.quejas_por_repartidor?.map((r: any) => (
+                        <div key={r.repartidor_id} className="cliente-bloque">
+                            <p className="cliente-titulo">
+                                <strong>{r.repartidor_nombre}</strong>
+                                <span className="cliente-cedula"> (cédula: {r.repartidor_cedula})</span>
+                                <span className="cliente-conteo"> — {r.total_quejas} queja(s)</span>
+                                <span className="cliente-cedula"> · {r.amonestaciones} amonestación(es)</span>
+                            </p>
+                            <table className="reportes-table">
+                                <thead>
+                                    <tr>
+                                        <th>Motivo</th>
+                                        <th>Descripción</th>
+                                        <th>Cliente</th>
+                                        <th>Fecha</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {r.quejas.map((q: any) => (
+                                        <tr key={q.queja_id}>
+                                            <td>{q.motivo}</td>
+                                            <td>{q.descripcion}</td>
+                                            <td>{q.cliente}</td>
+                                            <td>{q.fecha}</td>
+                                            <td>{q.estado_texto}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ))}
+                </div>
+
             </div>
         </div>
     )
