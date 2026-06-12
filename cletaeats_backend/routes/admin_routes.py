@@ -220,6 +220,7 @@ def obtener_reportes(_=Depends(require_admin), repos=Depends(get_repos)):
         "restaurante_menos_pedidos": repos["pedido"].restaurante_menos_pedidos(),
         "monto_por_restaurante":     repos["pedido"].monto_por_restaurante(),
         "monto_total_global":        repos["pedido"].monto_total_global(),
+        "pedidos_por_cliente":       repos["pedido"].pedidos_por_cliente(),
         "cliente_top":               repos["pedido"].cliente_top(),
         "hora_pico":                 repos["pedido"].hora_pico(),
     }

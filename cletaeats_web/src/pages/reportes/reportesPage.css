@@ -79,3 +79,32 @@
     }
     .reporte-card { padding: 0.75rem; }
 }
+
+.cliente-bloque {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--gris-borde);
+}
+
+.cliente-bloque:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.cliente-titulo {
+    font-size: 15px;
+    color: var(--texto);
+    margin: 0.5rem 0;
+}
+
+.cliente-cedula {
+    font-size: 13px;
+    color: var(--texto-sec);
+    font-weight: 400;
+}
+
+.cliente-conteo {
+    font-size: 13px;
+    color: var(--primario);
+    font-weight: 600;
+}

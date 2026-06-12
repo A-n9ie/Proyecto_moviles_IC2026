@@ -75,6 +75,44 @@ const ReportesPage = () => {
                     </table>
                 </div>
 
+                <div className="reporte-card full">
+                    <h3>📋 Pedidos por cliente</h3>
+                    {data.pedidos_por_cliente?.length === 0 && (
+                        <p className="reporte-sub">No hay pedidos registrados.</p>
+                    )}
+                    {data.pedidos_por_cliente?.map((c: any) => (
+                        <div key={c.cliente_id} className="cliente-bloque">
+                            <p className="cliente-titulo">
+                                <strong>{c.cliente_nombre}</strong>
+                                <span className="cliente-cedula"> (cédula: {c.cliente_cedula})</span>
+                                <span className="cliente-conteo"> — {c.total_pedidos} pedido(s)</span>
+                            </p>
+                            <table className="reportes-table">
+                                <thead>
+                                    <tr>
+                                        <th>Pedido #</th>
+                                        <th>Fecha</th>
+                                        <th>Restaurante</th>
+                                        <th>Estado</th>
+                                        <th>Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {c.pedidos.map((p: any) => (
+                                        <tr key={p.pedido_id}>
+                                            <td>{p.pedido_id}</td>
+                                            <td>{p.fecha}</td>
+                                            <td>{p.restaurante}</td>
+                                            <td>{p.estado_texto}</td>
+                                            <td>₡{p.monto?.toLocaleString()}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ))}
+                </div>
+
             </div>
         </div>
     )

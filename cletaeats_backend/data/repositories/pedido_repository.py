@@ -338,6 +338,62 @@ class PedidoRepository:
                 ).scalar()
                 return {"monto_total": total or 0}
 
+    def pedidos_por_cliente(self) -> list:
+        """
+        Reporte (n): listado detallado de pedidos agrupados por cliente.
+        Cada cliente trae su lista de pedidos con id, fecha, restaurante,
+        estado y monto (suma de cantidad * precio_unitario de ese pedido).
+        """
+        with engine.connect() as conn:
+            # Monto por pedido (subtotal de la comida de cada pedido)
+            montos_rows = conn.execute(
+                select(
+                    t_detalle.c.PEDIDO_ID,
+                    func.sum(t_detalle.c.CANTIDAD * t_detalle.c.PRECIO_UNITARIO).label("MONTO")
+                ).group_by(t_detalle.c.PEDIDO_ID)
+            ).mappings().all()
+            montos = {r["PEDIDO_ID"]: r["MONTO"] for r in montos_rows}
+
+            # Todos los pedidos con su cliente y restaurante
+            rows = conn.execute(
+                select(
+                    t_cliente.c.ID.label("CLIENTE_ID"),
+                    t_cliente.c.NOMBRE.label("CLIENTE_NOMBRE"),
+                    t_cliente.c.CEDULA.label("CLIENTE_CEDULA"),
+                    t_pedido.c.ID.label("PEDIDO_ID"),
+                    t_pedido.c.FECHA_CREACION,
+                    t_pedido.c.ESTADO,
+                    t_rest.c.NOMBRE.label("RESTAURANTE_NOMBRE")
+                )
+                .join(t_cliente, t_pedido.c.CLIENTE_ID == t_cliente.c.ID)
+                .join(t_rest, t_pedido.c.RESTAURANTE_ID == t_rest.c.ID)
+                .order_by(t_cliente.c.NOMBRE, t_pedido.c.FECHA_CREACION.desc())
+            ).mappings().all()
+
+            # Agrupar por cliente
+            agrupado = {}
+            for r in rows:
+                cid = r["CLIENTE_ID"]
+                if cid not in agrupado:
+                    agrupado[cid] = {
+                        "cliente_id":     cid,
+                        "cliente_nombre": r["CLIENTE_NOMBRE"],
+                        "cliente_cedula": r["CLIENTE_CEDULA"],
+                        "total_pedidos":  0,
+                        "pedidos":        []
+                    }
+                agrupado[cid]["pedidos"].append({
+                    "pedido_id":    r["PEDIDO_ID"],
+                    "fecha":        r["FECHA_CREACION"],
+                    "restaurante":  r["RESTAURANTE_NOMBRE"],
+                    "estado":       r["ESTADO"],
+                    "estado_texto": _ESTADO_TEXTO.get(r["ESTADO"], "DESCONOCIDO"),
+                    "monto":        montos.get(r["PEDIDO_ID"], 0)
+                })
+                agrupado[cid]["total_pedidos"] += 1
+
+            return list(agrupado.values())
+
     @staticmethod
     def _map(row) -> Pedido:
         return Pedido(
