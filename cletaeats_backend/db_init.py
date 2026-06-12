@@ -6,7 +6,7 @@ from data.database.tables import (
     metadata,
     restaurante, categoria, restaurante_categoria,
     combo, usuario, cliente, tarjeta_cliente, repartidor,
-    pedido, detalle_pedido
+    pedido, detalle_pedido, queja
 )
 from services.hash_service import hash_password
 
@@ -582,6 +582,30 @@ with engine.begin() as conn:
     conn.execute(insert(detalle_pedido).values(
         PEDIDO_ID=p10_id, COMBO_ID=82, CANTIDAD=2,
         PRECIO_UNITARIO=4000, CONFIGURACION=None
+    ))
+
+    # ----- QUEJAS DE EJEMPLO -----
+    # Variadas: distintos motivos, repartidores y estados (0=pendiente, 1=amonestada, 2=menor)
+    # Pedro (rep_id) tiene varias; Ana (rep2_id) tiene una. Sirve para el reporte (m).
+    conn.execute(insert(queja).values(
+        CLIENTE_ID=cliente_id, REPARTIDOR_ID=rep_id, PEDIDO_ID=p1_id,
+        MOTIVO="tiempo", DESCRIPCION="El pedido llegó 40 minutos tarde.",
+        FECHA="2026-06-01 13:00:00", ESTADO=0
+    ))
+    conn.execute(insert(queja).values(
+        CLIENTE_ID=cliente_id, REPARTIDOR_ID=rep_id, PEDIDO_ID=p8_id,
+        MOTIVO="amabilidad", DESCRIPCION="El repartidor fue cortante al entregar.",
+        FECHA="2026-06-08 13:40:00", ESTADO=1
+    ))
+    conn.execute(insert(queja).values(
+        CLIENTE_ID=cliente2_id, REPARTIDOR_ID=rep_id, PEDIDO_ID=p3_id,
+        MOTIVO="presentacion", DESCRIPCION="La bolsa venía abierta.",
+        FECHA="2026-06-03 14:00:00", ESTADO=2
+    ))
+    conn.execute(insert(queja).values(
+        CLIENTE_ID=cliente_id, REPARTIDOR_ID=rep2_id, PEDIDO_ID=p6_id,
+        MOTIVO="otro", DESCRIPCION="Se equivocó de combo, faltaba un producto.",
+        FECHA="2026-06-06 22:15:00", ESTADO=0
     ))
 
 print("BD inicializada correctamente.")

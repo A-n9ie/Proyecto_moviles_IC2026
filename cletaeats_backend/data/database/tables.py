@@ -130,3 +130,15 @@ detalle_pedido = Table("DETALLE_PEDIDO", metadata,
     Column("CONFIGURACION",   Text),
     CheckConstraint("CANTIDAD > 0", name="ck_detalle_cantidad"),
 )
+
+queja = Table("QUEJA", metadata,
+    Column("ID",            Integer, primary_key=True, autoincrement=True),
+    Column("CLIENTE_ID",    Integer, ForeignKey("CLIENTE.ID",    ondelete="CASCADE", onupdate="CASCADE"), nullable=False),
+    Column("REPARTIDOR_ID", Integer, ForeignKey("REPARTIDOR.ID", ondelete="CASCADE", onupdate="CASCADE"), nullable=False),
+    Column("PEDIDO_ID",     Integer, ForeignKey("PEDIDO.ID",     ondelete="SET NULL", onupdate="CASCADE")),
+    Column("MOTIVO",        Text,    nullable=False),   # amabilidad, tiempo, presentacion, otro
+    Column("DESCRIPCION",   Text),
+    Column("FECHA",         Text,    nullable=False, server_default=func.datetime("now")),
+    Column("ESTADO",        Integer, nullable=False, default=0),  # 0=PENDIENTE, 1=AMONESTADA, 2=MENOR
+    CheckConstraint("ESTADO IN (0,1,2)", name="ck_queja_estado"),
+)
