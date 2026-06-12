@@ -68,11 +68,10 @@ const AppRouter = () => {
                     path="/reportes"
                     element={<ReportesPage />}
                 />
-            </Route>
 
                 <Route
-                     path="/quejas"
-                     element={<QuejasPage />}
+                    path="/quejas"
+                    element={<QuejasPage />}
                 />
             </Route>
 
