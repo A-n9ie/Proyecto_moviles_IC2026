@@ -23,8 +23,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        manifestPlaceholders["MAPS_API_KEY"] =
-            project.findProperty("MAPS_API_KEY") as String? ?: ""
     }
 
     buildTypes {
@@ -73,7 +71,7 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation(libs.gson)
 
-    implementation(libs.google.maps.compose)
+    implementation(libs.osmdroid)
     implementation(libs.play.services.location)
 
     implementation(libs.androidx.room.runtime)

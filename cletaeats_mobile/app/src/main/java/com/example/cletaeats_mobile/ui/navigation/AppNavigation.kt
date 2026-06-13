@@ -177,7 +177,15 @@ fun AppNavigation(
             MapaRestaurantesScreen(
                 restaurantes       = uiState.restaurantesFiltrados,
                 onRestauranteClick = { restauranteId ->
-                    navController.navigate(AppRoutes.combosRuta(restauranteId))
+                    val restaurante = uiState.restaurantes.find { it.id == restauranteId }
+                    navController.navigate(
+                        AppRoutes.combosRuta(
+                            restauranteId,
+                            restaurante?.latitud,
+                            restaurante?.longitud,
+                            restaurante?.nombre ?: ""
+                        )
+                    )
                 },
                 onVolver = { navController.popBackStack() }
             )

@@ -1,8 +1,5 @@
 package com.example.cletaeats_mobile.ui.repartidor
 
-import android.location.Location
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -17,10 +14,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cletaeats.ui.theme.*
 import com.example.cletaeats_mobile.domain.model.Pedido
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.*
-import com.google.maps.android.compose.*
 import kotlinx.coroutines.delay
+
+import androidx.compose.ui.viewinterop.AndroidView
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
 
 // ── Estados de la simulación ──────────────────────────────────────
 enum class EstadoSimulacion {
@@ -45,19 +46,16 @@ fun MapaSeguimientoScreen(
     val latDest = latRest + 0.012
     val lngDest = lngRest + 0.008
 
-    val origenLatLng  = LatLng(latRest, lngRest)
-    val destinoLatLng = LatLng(latDest, lngDest)
+    val origenGp  = GeoPoint(latRest, lngRest)
+    val destinoGp = GeoPoint(latDest, lngDest)
 
     // ── Estado de la simulación ───────────────────────────────────
     var estadoSim by remember { mutableStateOf(EstadoSimulacion.PREPARANDO) }
     var progreso  by remember { mutableFloatStateOf(0f) }  // 0.0 → 1.0 durante EN_CAMINO
 
     // Posición animada del repartidor en el mapa
-    var posRepartidor by remember { mutableStateOf(origenLatLng) }
-
-    val cameraState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(origenLatLng, 13f)
-    }
+    var posRepartidor by remember { mutableStateOf(origenGp) }
+    val mapViewRef = remember { mutableStateOf<MapView?>(null) }
 
     // ── Simulación con coroutines ─────────────────────────────────
     LaunchedEffect(Unit) {
@@ -71,16 +69,16 @@ fun MapaSeguimientoScreen(
         repeat(pasos) { i ->
             val t = (i + 1).toFloat() / pasos
             progreso = t
+
             // Interpolación lineal entre origen y destino
-            posRepartidor = LatLng(
+            posRepartidor = GeoPoint(
                 latRest + (latDest - latRest) * t,
                 lngRest + (lngDest - lngRest) * t
             )
-            // Mover cámara suavemente siguiendo al repartidor
-            cameraState.animate(
-                CameraUpdateFactory.newLatLng(posRepartidor),
-                durationMs = 450
-            )
+
+            // Mover cámara siguiendo al repartidor
+            mapViewRef.value?.controller?.animateTo(posRepartidor)
+
             delay(500L)
         }
 
@@ -88,6 +86,22 @@ fun MapaSeguimientoScreen(
         estadoSim = EstadoSimulacion.ENTREGADO
         delay(1_500L)
         onEntregado()
+    }
+
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            when (event) {
+                androidx.lifecycle.Lifecycle.Event.ON_RESUME  -> mapViewRef.value?.onResume()
+                androidx.lifecycle.Lifecycle.Event.ON_PAUSE   -> mapViewRef.value?.onPause()
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            mapViewRef.value?.onDetach()
+        }
     }
 
     Scaffold(
@@ -110,43 +124,61 @@ fun MapaSeguimientoScreen(
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
 
             // ── Mapa ──────────────────────────────────────────────
-            GoogleMap(
-                modifier            = Modifier.fillMaxSize(),
-                cameraPositionState = cameraState
-            ) {
-                // Marcador restaurante (origen)
-                Marker(
-                    state   = MarkerState(position = origenLatLng),
-                    title   = pedido.restauranteNombre,
-                    snippet = "Origen",
-                    icon    = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
-                )
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { ctx ->
+                    MapView(ctx).apply {
+                        setTileSource(TileSourceFactory.MAPNIK)
+                        setMultiTouchControls(true)
+                        controller.setZoom(13.0)
+                        controller.setCenter(origenGp)
+                        mapViewRef.value = this
+                    }
+                },
+                update = { mapView ->
+                    mapView.overlays.clear()
 
-                // Marcador destino (cliente)
-                Marker(
-                    state   = MarkerState(position = destinoLatLng),
-                    title   = "Punto de entrega",
-                    snippet = pedido.clienteNombre,
-                    icon    = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
-                )
+                    // Polyline de ruta
+                    val polyline = Polyline(mapView).apply {
+                        setPoints(listOf(origenGp, destinoGp))
+                        outlinePaint.color = android.graphics.Color.parseColor("#FF6600") // CletaNaranja
+                        outlinePaint.strokeWidth = 8f
+                    }
+                    mapView.overlays.add(polyline)
 
-                // Marcador repartidor (se mueve)
-                if (estadoSim != EstadoSimulacion.PREPARANDO) {
-                    Marker(
-                        state   = MarkerState(position = posRepartidor),
-                        title   = "Repartidor",
-                        snippet = "En camino",
-                        icon    = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
-                    )
+                    // Marcador origen (restaurante)
+                    val markerOrigen = Marker(mapView).apply {
+                        position = origenGp
+                        title = pedido.restauranteNombre
+                        snippet = "Origen"
+                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                    }
+                    mapView.overlays.add(markerOrigen)
+
+                    // Marcador destino (cliente)
+                    val markerDestino = Marker(mapView).apply {
+                        position = destinoGp
+                        title = "Punto de entrega"
+                        snippet = pedido.clienteNombre
+                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                    }
+                    mapView.overlays.add(markerDestino)
+
+                    // Marcador repartidor (solo cuando está en camino)
+                    if (estadoSim != EstadoSimulacion.PREPARANDO) {
+                        val markerRep = Marker(mapView).apply {
+                            position = posRepartidor
+                            title = "Repartidor"
+                            snippet = "En camino"
+                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                        }
+                        mapView.overlays.add(markerRep)
+                    }
+
+                    mapView.invalidate()
+                    mapViewRef.value = mapView
                 }
-
-                // Línea de ruta
-                Polyline(
-                    points = listOf(origenLatLng, destinoLatLng),
-                    color  = CletaNaranja,
-                    width  = 8f
-                )
-            }
+            )
 
             // ── Panel inferior de estado ──────────────────────────
             PanelEstado(

@@ -73,9 +73,11 @@ fun CombosScreen(
     }
 
     LaunchedEffect(restauranteId) {
+        android.util.Log.d("CombosScreen", "LaunchedEffect restauranteId=$restauranteId nombre=$restauranteNombre")
         // Iniciar carrito SIEMPRE con el nombre que ya viene por parámetro de navegación
         carritoViewModel.iniciarCarrito(restauranteId, restauranteNombre)
         comboViewModel.cargarCombos(restauranteId)
+        android.util.Log.d("CombosScreen", "cargarCombos llamado")
     }
 
     // Pedir permiso al entrar a la pantalla
@@ -159,6 +161,7 @@ fun CombosScreen(
 
     // Diálogo de conflicto de restaurante
     if (carritoState.restauranteAnteriorNombre.isNotEmpty()) {
+        android.util.Log.d("CombosScreen", "Conflicto de carrito detectado: ${carritoState.restauranteAnteriorNombre}")
         AlertDialog(
             onDismissRequest = {
                 carritoViewModel.cancelarCambioRestaurante()

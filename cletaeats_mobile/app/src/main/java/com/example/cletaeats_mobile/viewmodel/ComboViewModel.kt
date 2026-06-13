@@ -27,16 +27,27 @@ class ComboViewModel(private val repo: IComboRepository) : ViewModel() {
     fun cargarCombos(restauranteId: Int) {
         val state = _uiState.value
         if (state.combos.isNotEmpty() &&
-            state.combos.first().restauranteId == restauranteId) return
+            state.combos.first().restauranteId == restauranteId) {
+            android.util.Log.d("ComboViewModel", "cargarCombos: cache hit, no recarga ($restauranteId)")
+            return
+        }
 
+        android.util.Log.d("ComboViewModel", "cargarCombos: iniciando carga para restauranteId=$restauranteId")
         _uiState.value = ComboUiState(isLoading = true)
         viewModelScope.launch {
+            android.util.Log.d("ComboViewModel", "cargarCombos: dentro de coroutine, llamando al repo")
             when (val result = repo.obtenerCombosPorRestaurante(restauranteId)) {
-                is Result.Success -> _uiState.value = ComboUiState(
-                    restaurante = result.data.restaurante,
-                    combos      = result.data.combos
-                )
-                is Result.Error -> _uiState.value = ComboUiState(errorMsg = result.message)
+                is Result.Success -> {
+                    android.util.Log.d("ComboViewModel", "cargarCombos: éxito, combos=${result.data.combos.size}")
+                    _uiState.value = ComboUiState(
+                        restaurante = result.data.restaurante,
+                        combos      = result.data.combos
+                    )
+                }
+                is Result.Error -> {
+                    android.util.Log.d("ComboViewModel", "cargarCombos: error -> ${result.message}")
+                    _uiState.value = ComboUiState(errorMsg = result.message)
+                }
             }
         }
     }

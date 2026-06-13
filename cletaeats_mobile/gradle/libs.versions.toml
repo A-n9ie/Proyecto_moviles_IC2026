@@ -10,6 +10,7 @@ kotlin = "2.3.21"
 composeBom = "2026.05.00"
 googleMaps = "4.3.3"
 playServicesLocation = "21.3.0"
+osmdroid            = "6.1.18"
 ksp = "2.3.9"
 
 navigationCompose = "2.9.8"
@@ -54,8 +55,8 @@ retrofit-gson      = { group = "com.squareup.retrofit2", name = "converter-gson"
 okhttp-logging     = { group = "com.squareup.okhttp3",   name = "logging-interceptor", version.ref = "okhttp"   }
 gson               = { group = "com.google.code.gson",   name = "gson",               version.ref = "gson"      }
 
-google-maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "googleMaps" }
 play-services-location = { group = "com.google.android.gms",  name = "play-services-location", version.ref = "playServicesLocation" }
+osmdroid               = { group = "org.osmdroid",            name = "osmdroid-android",        version.ref = "osmdroid"            }
 
 androidx-room-runtime  = { group = "androidx.room",          name = "room-runtime",           version.ref = "room"       }
 androidx-room-ktx      = { group = "androidx.room",          name = "room-ktx",               version.ref = "room"       }
