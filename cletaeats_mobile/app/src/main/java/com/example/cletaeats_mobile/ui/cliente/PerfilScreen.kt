@@ -28,10 +28,11 @@ import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.cletaeats.ui.theme.*
 import com.example.cletaeats_mobile.domain.model.Tarjeta
-import com.example.cletaeats_mobile.ui.utils.toCRC
 import com.example.cletaeats_mobile.viewmodel.PerfilViewModel
 import com.example.cletaeats_mobile.viewmodel.TarjetaViewModel
-
+import com.example.cletaeats_mobile.ui.utils.CardDateTransformation
+import com.example.cletaeats_mobile.ui.utils.resolveImageUrl
+import com.example.cletaeats_mobile.ui.utils.soloDigitosFecha
 // ─────────────────────────────────────────────────────────────────────────────
 // PANTALLA PRINCIPAL DE PERFIL
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,7 +105,7 @@ fun PerfilScreen(
                 AvatarHeader(
                     nombre       = perfilState.nombre,
                     email        = perfilState.email,
-                    imagenUrl    = perfilState.imagenUrl,
+                    imagenUrl    = resolveImageUrl(perfilState.imagenUrl) ?: "",
                     onCambiarFoto = { imageLauncher.launch("image/*") }
                 )
             }
@@ -699,12 +700,9 @@ private fun DialogAgregarTarjeta(
                     OutlinedTextField(
                         value = fechaVenc,
                         onValueChange = { input ->
-                            // Solo dígitos y /, máximo 5 caracteres MM/YY
-                            val digits = input.filter { it.isDigit() }.take(4)
-                            fechaVenc = if (digits.length >= 3) {
-                                "${digits.take(2)}/${digits.drop(2)}"
-                            } else digits
+                            fechaVenc = soloDigitosFecha(input)
                         },
+                        visualTransformation = CardDateTransformation,
                         label = { Text("Vencimiento (MM/YY)", color = CletaTextoSecundario) },
                         leadingIcon = { Icon(Icons.Default.DateRange, null, tint = CletaNaranja) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -775,10 +773,12 @@ private fun DialogAgregarTarjeta(
                         onClick = {
                             when {
                                 numero.length < 16 -> { errorLocal = "El número debe tener 16 dígitos"; return@Button }
-                                fechaVenc.length < 5 -> { errorLocal = "Fecha de vencimiento inválida (MM/YY)"; return@Button }
+                                fechaVenc.length < 4 -> { errorLocal = "Fecha de vencimiento inválida (MM/YY)"; return@Button }
                                 cvv.length < 3 -> { errorLocal = "CVV debe tener 3 o 4 dígitos"; return@Button }
                             }
-                            onAgregar(numero, alias.trim(), fechaVenc, cvv, esPrincipal)
+                            val fechaFormateada = if (fechaVenc.length >= 3)
+                                "${fechaVenc.take(2)}/${fechaVenc.drop(2)}" else fechaVenc
+                            onAgregar(numero, alias.trim(), fechaFormateada, cvv, esPrincipal)
                         },
                         modifier = Modifier.weight(1f),
                         shape    = RoundedCornerShape(12.dp),
@@ -801,7 +801,7 @@ private fun EditarTarjetaDialog(
     onDismiss: () -> Unit
 ) {
     var alias       by remember { mutableStateOf(tarjeta.alias) }
-    var fechaVenc   by remember { mutableStateOf(tarjeta.fechaVencimiento) }
+    var fechaVenc   by remember { mutableStateOf(tarjeta.fechaVencimiento.replace("/", "")) }
     var cvv         by remember { mutableStateOf(tarjeta.cvv) }
     var esPrincipal by remember { mutableStateOf(tarjeta.esPrincipal == 1) }
     var errorLocal  by remember { mutableStateOf("") }
@@ -848,11 +848,9 @@ private fun EditarTarjetaDialog(
                     OutlinedTextField(
                         value         = fechaVenc,
                         onValueChange = { input ->
-                            val digits = input.filter { it.isDigit() }.take(4)
-                            fechaVenc = if (digits.length >= 3)
-                                "${digits.take(2)}/${digits.drop(2)}"
-                            else digits
+                            fechaVenc = soloDigitosFecha(input)
                         },
+                        visualTransformation = CardDateTransformation,
                         label           = { Text("Venc. (MM/YY)", color = CletaTextoSecundario) },
                         leadingIcon     = { Icon(Icons.Default.DateRange, null, tint = CletaNaranja) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -926,7 +924,7 @@ private fun EditarTarjetaDialog(
                     Button(
                         onClick = {
                             when {
-                                fechaVenc.length < 5 -> {
+                                fechaVenc.length < 4 -> {
                                     errorLocal = "Fecha inválida (MM/YY)"
                                     return@Button
                                 }
@@ -935,7 +933,9 @@ private fun EditarTarjetaDialog(
                                     return@Button
                                 }
                             }
-                            onGuardar(alias.trim(), fechaVenc, cvv, esPrincipal)
+                            val fechaFormateada = if (fechaVenc.length >= 3)
+                                "${fechaVenc.take(2)}/${fechaVenc.drop(2)}" else fechaVenc
+                            onGuardar(alias.trim(), fechaFormateada, cvv, esPrincipal)
                         },
                         modifier = Modifier.weight(1f),
                         shape    = RoundedCornerShape(12.dp),

@@ -105,6 +105,7 @@ object AppContainer {
     private val authRepository by lazy {
         AuthRepositoryImpl(RetrofitClient.create<IAuthApi>(), RetrofitClient.create<ITarjetaApi>(), sessionManager, syncManager)
     }
+    private val _perfilViewModel by lazy { PerfilViewModel(perfilRepo, sessionManager) }
 
     fun init(context: Context) {
         appContext = context.applicationContext
@@ -130,7 +131,7 @@ object AppContainer {
 
     fun historialRepartidorViewModel() = HistorialRepartidorViewModel(pedidoRepository)
 
-    fun perfilViewModel() = PerfilViewModel(perfilRepo, sessionManager)
+    fun perfilViewModel() = _perfilViewModel
 
     // Factory del ViewModel
     fun perfilRepartidorViewModel() = PerfilRepartidorViewModel(

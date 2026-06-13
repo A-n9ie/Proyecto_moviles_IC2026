@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cletaeats_mobile.ui.components.CletaButton
@@ -23,6 +24,8 @@ import com.example.cletaeats_mobile.ui.components.CletaTextField
 import com.example.cletaeats_mobile.ui.components.ErrorBanner
 import com.example.cletaeats.ui.theme.*
 import com.example.cletaeats_mobile.viewmodel.AuthViewModel
+import com.example.cletaeats_mobile.ui.utils.CardDateTransformation
+import com.example.cletaeats_mobile.ui.utils.soloDigitosFecha
 
 @Composable
 fun RegisterScreen(
@@ -157,7 +160,7 @@ private fun FormularioCliente(
     val cedulaError   = if (cedula.isNotEmpty() && cedula.length < 9) "Cédula inválida" else null
     val telefonoError = if (telefono.isNotEmpty() && telefono.length < 8) "Teléfono inválido" else null
     val tarjetaError  = if (tarjeta.isNotEmpty() && tarjeta.length < 16) "Debe tener 16 dígitos" else null
-    val fechaVencError = if (fechaVenc.isNotEmpty() && fechaVenc.length < 5) "Formato MM/YY" else null
+    val fechaVencError = if (fechaVenc.isNotEmpty() && fechaVenc.length < 4) "Formato MM/YY" else null
     val cvvRegError   = if (cvvReg.isNotEmpty() && cvvReg.length < 3) "Mínimo 3 dígitos" else null
 
     val formValido = email.isNotEmpty() && password.isNotEmpty()
@@ -211,13 +214,13 @@ private fun FormularioCliente(
         CampoConIcono(
             valor = fechaVenc,
             onValor = { input ->
-                val digits = input.filter { it.isDigit() }.take(4)
-                fechaVenc = if (digits.length >= 3) "${digits.take(2)}/${digits.drop(2)}" else digits
+                fechaVenc = soloDigitosFecha(input)
                 onCambio()
             },
             label = "Venc. (MM/YY)", icono = Icons.Default.DateRange,
             modifier = Modifier.weight(1.6f),
             error = fechaVencError, tipo = KeyboardType.Number,
+            visualTransformation = CardDateTransformation,
         )
         CampoConIcono(
             valor = cvvReg,
@@ -347,7 +350,8 @@ private fun CampoConIcono(
     modifier:   Modifier         = Modifier.fillMaxWidth(),
     error:      String?          = null,
     tipo:       KeyboardType     = KeyboardType.Text,
-    esPassword: Boolean          = false
+    esPassword: Boolean          = false,
+    visualTransformation: VisualTransformation = VisualTransformation.None
 ) {
     CletaTextField(
         value          = valor,
@@ -355,6 +359,7 @@ private fun CampoConIcono(
         label          = label,
         isPassword     = esPassword,
         error          = error,
+        visualTransformation = visualTransformation,
         modifier       = modifier,
         keyboardOptions = KeyboardOptions(
             keyboardType = tipo,

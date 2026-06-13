@@ -28,6 +28,7 @@ import com.example.cletaeats_mobile.viewmodel.RestauranteViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
+import com.example.cletaeats_mobile.ui.utils.resolveImageUrl
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,7 +50,12 @@ fun RestaurantesScreen(
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope       = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) { viewModel.cargarRestaurantes() }
+    LaunchedEffect(Unit) {
+        viewModel.cargarRestaurantes()
+        if (perfilState.imagenUrl.isBlank() && perfilState.nombre.isBlank()) {
+            perfilVM.cargarPerfil()
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState   = drawerState,
@@ -57,7 +63,7 @@ fun RestaurantesScreen(
             DrawerContent(
                 nombre = session.getNombre(),
                 email = session.getEmail(),
-                imagenUrl = perfilState.imagenUrl,
+                imagenUrl = resolveImageUrl(perfilState.imagenUrl) ?: "",
 
                 onVerPerfil = {
                     scope.launch {
@@ -94,7 +100,8 @@ fun RestaurantesScreen(
             topBar = {
                 CletaTopBar(
                     titulo      = "Restaurantes",
-                    onMenuClick = { scope.launch { drawerState.open() } }
+                    onMenuClick = { scope.launch { drawerState.open() } },
+                    modoActivo  = session.getDataMode()
                 )
             },
             containerColor = CletaGrisOscuro

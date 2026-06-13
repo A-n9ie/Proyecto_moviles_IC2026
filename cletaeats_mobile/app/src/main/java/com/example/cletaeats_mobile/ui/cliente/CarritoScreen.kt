@@ -1,6 +1,5 @@
 package com.example.cletaeats_mobile.ui.cliente
 
-import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -29,6 +28,8 @@ import com.example.cletaeats_mobile.viewmodel.CarritoViewModel
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.draw.clip
 import com.example.cletaeats_mobile.viewmodel.TarjetaViewModel
+import com.example.cletaeats_mobile.ui.utils.CardDateTransformation
+import com.example.cletaeats_mobile.ui.utils.soloDigitosFecha
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -591,9 +592,9 @@ private fun WalletDialog(
                     OutlinedTextField(
                         value = fechaVencimiento,
                         onValueChange = { input ->
-                            val digits = input.filter { it.isDigit() }.take(4)
-                            fechaVencimiento = if (digits.length >= 3) "${digits.take(2)}/${digits.drop(2)}" else digits
+                            fechaVencimiento = soloDigitosFecha(input)
                         },
+                        visualTransformation = CardDateTransformation,
                         label = { Text("Venc. (MM/YY)") },
                         leadingIcon = { Icon(Icons.Default.DateRange, null, tint = CletaNaranja) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -666,12 +667,14 @@ private fun WalletDialog(
                             onGuardar(
                                 numero,
                                 alias,
-                                fechaVencimiento,
+                                if (fechaVencimiento.length >= 3)
+                                    "${fechaVencimiento.take(2)}/${fechaVencimiento.drop(2)}"
+                                else fechaVencimiento,
                                 cvv,
                                 principal
                             )
                         },
-                        enabled = numero.length >= 8 && numeroError == null && fechaVencimiento.length == 5 && cvv.length >= 3,
+                        enabled = numero.length >= 8 && numeroError == null && fechaVencimiento.length == 4 && cvv.length >= 3,
                         modifier = Modifier.weight(1f),
                         colors   = ButtonDefaults.buttonColors(containerColor = CletaNaranja)
                     ) {

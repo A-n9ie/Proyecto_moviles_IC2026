@@ -21,6 +21,7 @@ import com.example.cletaeats_mobile.viewmodel.PedidosClienteViewModel
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import com.example.cletaeats_mobile.ui.components.ModoBadge
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
@@ -62,7 +63,12 @@ fun MisPedidosScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Mis pedidos", color = CletaBlanco, fontWeight = FontWeight.Bold) },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Mis pedidos", color = CletaBlanco, fontWeight = FontWeight.Bold)
+                        ModoBadge(AppContainer.getSessionManager().getDataMode())
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onVolver) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = CletaBlanco)

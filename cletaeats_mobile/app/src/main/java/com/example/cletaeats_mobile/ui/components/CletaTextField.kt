@@ -44,7 +44,8 @@ fun CletaTextField(
     isPassword:   Boolean  = false,
     error:        String?  = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    leadingIcon:  (@Composable () -> Unit)? = null
+    leadingIcon:  (@Composable () -> Unit)? = null,
+    visualTransformation: VisualTransformation = VisualTransformation.None
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
 
@@ -57,10 +58,16 @@ fun CletaTextField(
         supportingText = if (error != null) {
             { Text(error) }
         } else null,
-        visualTransformation = if (isPassword && !passwordVisible)
-            PasswordVisualTransformation()
-        else
-            VisualTransformation.None,
+        visualTransformation = when {
+            isPassword && !passwordVisible ->
+                PasswordVisualTransformation()
+
+            isPassword ->
+                VisualTransformation.None
+
+            else ->
+                visualTransformation
+        },
         keyboardOptions = keyboardOptions,
         leadingIcon     = leadingIcon,
         trailingIcon = if (isPassword) {

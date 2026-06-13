@@ -25,7 +25,6 @@ import com.example.cletaeats_mobile.ui.utils.toCRC
 import com.example.cletaeats_mobile.viewmodel.CarritoViewModel
 import com.example.cletaeats_mobile.viewmodel.ComboViewModel
 
-import android.annotation.SuppressLint
 import android.location.Location
 import androidx.compose.ui.platform.LocalContext
 import com.google.android.gms.location.LocationServices
@@ -43,6 +42,11 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import android.os.Looper
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import com.example.cletaeats_mobile.AppContainer
+import com.example.cletaeats_mobile.ui.components.ModoBadge
+import com.example.cletaeats_mobile.ui.utils.resolveImageUrl
 @Composable
 fun CombosScreen(
     restauranteId:    Int,
@@ -301,7 +305,6 @@ private fun ComboCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // ── Placeholder de imagen del combo ───────────────────
                 Box(
                     modifier = Modifier
                         .size(64.dp)
@@ -309,12 +312,22 @@ private fun ComboCard(
                         .background(CletaNaranja.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "#${combo.numeroCombo}",
-                        color = CletaNaranja,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.ExtraBold
-                    )
+                    val urlCombo = resolveImageUrl(combo.imagenUrl)
+                    if (urlCombo != null) {
+                        AsyncImage(
+                            model = urlCombo,
+                            contentDescription = combo.nombre,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Text(
+                            text = "#${combo.numeroCombo}",
+                            color = CletaNaranja,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
                 }
 
                 Spacer(Modifier.width(14.dp))
@@ -494,7 +507,12 @@ private fun CarritoBarra(
 @Composable
 private fun CombosTopBar(titulo: String, onVolver: () -> Unit) {
     TopAppBar(
-        title           = { Text(titulo, color = CletaBlanco, fontWeight = FontWeight.Bold) },
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(titulo, color = CletaBlanco, fontWeight = FontWeight.Bold)
+                ModoBadge(AppContainer.getSessionManager().getDataMode())
+            }
+        },
         navigationIcon  = {
             IconButton(onClick = onVolver) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = CletaBlanco)

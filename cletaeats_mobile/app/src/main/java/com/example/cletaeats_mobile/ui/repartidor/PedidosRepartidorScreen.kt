@@ -23,6 +23,7 @@ import com.example.cletaeats_mobile.viewmodel.PedidosRepartidorViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import com.example.cletaeats_mobile.data.remote.RepartidorLocationService
+import com.example.cletaeats_mobile.ui.components.ModoBadge
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
@@ -93,7 +94,12 @@ fun PedidosRepartidorScreen(
             snackbarHost = { SnackbarHost(snackbarHost) },
             topBar = {
                 TopAppBar(
-                    title = { Text("Mis pedidos", color = CletaBlanco, fontWeight = FontWeight.Bold) },
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Mis pedidos", color = CletaBlanco, fontWeight = FontWeight.Bold)
+                            ModoBadge(AppContainer.getSessionManager().getDataMode())
+                        }
+                    },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
                             Icon(Icons.Default.Menu, contentDescription = "Menú", tint = CletaBlanco)

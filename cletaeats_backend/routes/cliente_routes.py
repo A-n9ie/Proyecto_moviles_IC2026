@@ -157,11 +157,12 @@ def obtener_perfil(sesion: dict = Depends(get_current_user)):
     
     
     return {
-        "id":        cliente.id,
-        "nombre":    cliente.nombre,
-        "telefono":  cliente.telefono,
-        "direccion": cliente.direccion,
-        "cedula":    cliente.cedula      # solo lectura en la respuesta
+        "id":         cliente.id,
+        "nombre":     cliente.nombre,
+        "telefono":   cliente.telefono,
+        "direccion":  cliente.direccion,
+        "cedula":     cliente.cedula,     # solo lectura en la respuesta
+        "imagen_url": cliente.imagen_url or ""
     }
 
 

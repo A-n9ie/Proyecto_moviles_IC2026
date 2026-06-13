@@ -1,6 +1,5 @@
 # data/repositories/tarjeta_cliente_repository.py
 from sqlalchemy import select, insert, update, delete
-from core.entities import tarjeta_cliente
 from data.database.db_connection import engine
 from data.database.tables import tarjeta_cliente as t_tarjeta
 from data.utils.mapper_utils import to_lower_dict
@@ -37,15 +36,26 @@ class TarjetaClienteRepository:
     def obtener_por_id(self, id: int):
         with engine.connect() as conn:
             row = conn.execute(
-                select(tarjeta_cliente).where(tarjeta_cliente.c.ID == id)
+                select(t_tarjeta).where(t_tarjeta.c.ID == id)
             ).mappings().first()
             return dict(row) if row else None
 
     def actualizar(self, data: dict) -> bool:
-        from sqlalchemy import update
         with engine.begin() as conn:
+            if data.get("es_principal", 0):
+                # obtener cliente_id de la tarjeta para desmarcar las demás
+                row = conn.execute(
+                    select(t_tarjeta.c.CLIENTE_ID).where(t_tarjeta.c.ID == data["id"])
+                ).first()
+                if row:
+                    conn.execute(
+                        update(t_tarjeta)
+                        .where(t_tarjeta.c.CLIENTE_ID == row.CLIENTE_ID)
+                        .where(t_tarjeta.c.ID != data["id"])
+                        .values(ES_PRINCIPAL=0)
+                    )
             result = conn.execute(
-                update(tarjeta_cliente).where(tarjeta_cliente.c.ID == data["id"]).values(
+                update(t_tarjeta).where(t_tarjeta.c.ID == data["id"]).values(
                     ALIAS             = data["alias"],
                     FECHA_VENCIMIENTO = data["fecha_vencimiento"],
                     CVV               = data["cvv"],
