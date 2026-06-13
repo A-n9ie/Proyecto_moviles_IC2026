@@ -22,6 +22,7 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
+import com.google.firebase.firestore.FirebaseFirestore
 
 // ── Estados de la simulación ──────────────────────────────────────
 enum class EstadoSimulacion {
@@ -58,34 +59,71 @@ fun MapaSeguimientoScreen(
     val mapViewRef = remember { mutableStateOf<MapView?>(null) }
 
     // ── Simulación con coroutines ─────────────────────────────────
+    // ── Firestore: referencia al documento de ubicación de este pedido ────
+    val ubicacionDoc = remember(pedido.id) {
+        FirebaseFirestore.getInstance()
+            .collection("ubicaciones_repartidores")
+            .document(pedido.id.toString())
+    }
+
+    // Helper para publicar la posición actual
+    fun publicarUbicacion(gp: GeoPoint) {
+        ubicacionDoc.set(
+            mapOf(
+                "latitud"  to gp.latitude,
+                "longitud" to gp.longitude,
+                "timestamp" to System.currentTimeMillis()
+            )
+        )
+    }
+
+    // ── Simulación con coroutines ─────────────────────────────────
     LaunchedEffect(Unit) {
         // Fase 1: PREPARANDO — 5 segundos
         estadoSim = EstadoSimulacion.PREPARANDO
+        publicarUbicacion(origenGp)  // publica posición inicial (en el restaurante)
         delay(5_000L)
 
         // Fase 2: EN_CAMINO — 10 segundos interpolando posición
         estadoSim = EstadoSimulacion.EN_CAMINO
-        val pasos = 20  // una actualización cada 500ms
+        val duracionViajeMs = 35_000L // 35 segundos
+        val intervaloMs = 500L
+        val pasos = (duracionViajeMs / intervaloMs).toInt()
+
         repeat(pasos) { i ->
             val t = (i + 1).toFloat() / pasos
+
             progreso = t
 
-            // Interpolación lineal entre origen y destino
             posRepartidor = GeoPoint(
                 latRest + (latDest - latRest) * t,
                 lngRest + (lngDest - lngRest) * t
             )
 
-            // Mover cámara siguiendo al repartidor
             mapViewRef.value?.controller?.animateTo(posRepartidor)
+            publicarUbicacion(posRepartidor)
 
-            delay(500L)
+            delay(intervaloMs)
         }
 
         // Fase 3: ENTREGADO
         estadoSim = EstadoSimulacion.ENTREGADO
+        publicarUbicacion(destinoGp)
         delay(1_500L)
+
+        // Limpiar el documento al finalizar (opcional pero recomendado)
+        ubicacionDoc.delete()
+
         onEntregado()
+    }
+
+    // Si el repartidor sale de la pantalla antes de terminar, limpiar el documento
+    DisposableEffect(pedido.id) {
+        onDispose {
+            if (estadoSim != EstadoSimulacion.ENTREGADO) {
+                ubicacionDoc.delete()
+            }
+        }
     }
 
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current

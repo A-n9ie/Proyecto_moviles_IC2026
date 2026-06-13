@@ -1,5 +1,7 @@
 package com.example.cletaeats_mobile.ui.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
@@ -228,9 +230,28 @@ fun AppNavigation(
             val pedidoId = backStackEntry.arguments?.getString("pedidoId")?.toIntOrNull() ?: return@composable
 
             // Buscar el pedido en el viewmodel del repartidor
-            val repVM = remember { AppContainer.pedidosRepartidorViewModel() }
+            val repVM = remember(backStackEntry) { AppContainer.pedidosRepartidorViewModel() }
             val state by repVM.uiState.collectAsState()
-            val pedido = state.pedidos.find { it.id == pedidoId } ?: return@composable
+
+            // Esta instancia es nueva, así que hay que cargar los pedidos
+            LaunchedEffect(Unit) {
+                repVM.cargarPedidos()
+            }
+
+            val pedido = state.pedidos.find { it.id == pedidoId }
+
+            if (pedido == null) {
+                // Mientras cargan los pedidos, mostrar spinner en vez de pantalla vacía
+                Box(
+                    modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+                    contentAlignment = androidx.compose.ui.Alignment.Center
+                ) {
+                    androidx.compose.material3.CircularProgressIndicator(
+                        color = com.example.cletaeats.ui.theme.CletaNaranja
+                    )
+                }
+                return@composable
+            }
 
             MapaSeguimientoScreen(
                 pedido      = pedido,
