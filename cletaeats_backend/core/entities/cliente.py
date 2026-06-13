@@ -13,6 +13,7 @@ class Cliente:
         nombre: str = "",
         direccion: str = "",
         telefono: str = "",
+        imagen_url: str = "",
     ):
         self.id         = id
         self.usuario_id = usuario_id
@@ -20,6 +21,7 @@ class Cliente:
         self.nombre     = nombre
         self.direccion  = direccion
         self.telefono   = telefono
+        self.imagen_url = imagen_url
 
     # Getters y setters (requeridos por el enunciado del profe)
     def get_nombre(self) -> str: return self.nombre

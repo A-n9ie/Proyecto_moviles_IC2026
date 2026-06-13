@@ -138,11 +138,13 @@ class RepartidorRepository:
             correo=row["CORREO"],
             direccion=row["DIRECCION"],
             telefono=row["TELEFONO"],
+            imagen_url=row["IMAGEN_URL"] or "",
             tarjeta=row["TARJETA"],
             disponible=row["DISPONIBLE"],
             km_recorridos_diarios=row["KM_RECORRIDOS_DIARIOS"],
             costo_km_habil=row["COSTO_KM_HABIL"],
             costo_km_feriado=row["COSTO_KM_FERIADO"],
-            amonestaciones=row["AMONESTACIONES"]
+            amonestaciones=row["AMONESTACIONES"],
+            rating=row["RATING"] or 0.0
         )
     

@@ -97,23 +97,38 @@ class PedidoRepository:
                     t_pedido.c.FECHA_CREACION,
                     t_pedido.c.DISTANCIA_KM,
                     t_rest.c.NOMBRE.label("RESTAURANTE_NOMBRE"),
-                    t_rest.c.LATITUD.label("RESTAURANTE_LATITUD"),    # ← nuevo, para el mapa
-                    t_rest.c.LONGITUD.label("RESTAURANTE_LONGITUD"),  # ← nuevo, para el mapa
+                    t_rest.c.LATITUD.label("RESTAURANTE_LATITUD"),
+                    t_rest.c.LONGITUD.label("RESTAURANTE_LONGITUD"),
                     t_cliente.c.NOMBRE.label("CLIENTE_NOMBRE"),
                     t_cliente.c.DIRECCION.label("CLIENTE_DIRECCION")
                 )
                 .join(t_rest,    t_pedido.c.RESTAURANTE_ID == t_rest.c.ID)
                 .join(t_cliente, t_pedido.c.CLIENTE_ID     == t_cliente.c.ID)
                 .where(t_pedido.c.REPARTIDOR_ID == repartidor_id)
-                .where(t_pedido.c.ESTADO.in_([0, 1, 2]))  # incluye el estado 0 = CREADO, así el repartidor ve el pedido apenas se le asigna (antes solo veía estados 1 y 2, por eso nunca le aparecía un pedido nuevo)
+                .where(t_pedido.c.ESTADO.in_([0, 1, 2]))
                 .order_by(t_pedido.c.FECHA_CREACION)
             ).mappings().all()
+
+            # Obtener conteo de ítems por pedido en una sola consulta adicional
+            pedido_ids = [r["ID"] for r in rows]
+            conteos = {}
+            if pedido_ids:
+                cnt_rows = conn.execute(
+                    select(
+                        t_detalle.c.PEDIDO_ID,
+                        func.sum(t_detalle.c.CANTIDAD).label("ITEMS_COUNT")
+                    )
+                    .where(t_detalle.c.PEDIDO_ID.in_(pedido_ids))
+                    .group_by(t_detalle.c.PEDIDO_ID)
+                ).mappings().all()
+                conteos = {r["PEDIDO_ID"]: int(r["ITEMS_COUNT"]) for r in cnt_rows}
+
             result = []
             for r in rows:
                 d = to_lower_dict(r)
                 d["estado_texto"] = _ESTADO_TEXTO.get(d["estado"], "DESCONOCIDO")
                 d["tipo_comida"]  = ""
-                d["items_count"]  = 0   # repartidor no necesita conteo de items
+                d["items_count"]  = conteos.get(d["id"], 0)
                 result.append(d)
             return result
     

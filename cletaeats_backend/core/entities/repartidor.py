@@ -15,12 +15,14 @@ class Repartidor:
         correo: str = "",
         direccion: str = "",
         telefono: str = "",
+        imagen_url: str = "",
         tarjeta: str = "",
         disponible: int = 1,
         km_recorridos_diarios: float = 0.0,
         costo_km_habil: float = 1000.0,
         costo_km_feriado: float = 1500.0,
-        amonestaciones: int = 0
+        amonestaciones: int = 0,
+        rating: float = 0.0,
     ):
         self.id                    = id
         self.usuario_id            = usuario_id
@@ -29,12 +31,14 @@ class Repartidor:
         self.correo                = correo
         self.direccion             = direccion
         self.telefono              = telefono
+        self.imagen_url            = imagen_url
         self.tarjeta               = tarjeta
         self.disponible            = disponible
         self.km_recorridos_diarios = km_recorridos_diarios
         self.costo_km_habil        = costo_km_habil
         self.costo_km_feriado      = costo_km_feriado
         self.amonestaciones        = amonestaciones
+        self.rating                = rating
 
     def get_nombre(self) -> str: return self.nombre
     def set_nombre(self, v: str): self.nombre = v

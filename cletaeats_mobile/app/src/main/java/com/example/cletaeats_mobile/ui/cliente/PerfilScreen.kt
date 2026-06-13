@@ -33,6 +33,8 @@ import com.example.cletaeats_mobile.viewmodel.TarjetaViewModel
 import com.example.cletaeats_mobile.ui.utils.CardDateTransformation
 import com.example.cletaeats_mobile.ui.utils.resolveImageUrl
 import com.example.cletaeats_mobile.ui.utils.soloDigitosFecha
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 // ─────────────────────────────────────────────────────────────────────────────
 // PANTALLA PRINCIPAL DE PERFIL
 // ─────────────────────────────────────────────────────────────────────────────
@@ -46,11 +48,39 @@ fun PerfilScreen(
     val perfilState  by perfilViewModel.uiState.collectAsState()
     val tarjetaState by tarjetaViewModel.uiState.collectAsState()
     val context = LocalContext.current
-    val imageLauncher = rememberLauncherForActivityResult(
+    // Galería
+    val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let { perfilViewModel.subirFotoPerfil(context, it) }
     }
+
+    // Cámara: necesita un URI temporal en cache
+    var cameraUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            cameraUri?.let { perfilViewModel.subirFotoPerfil(context, it) }
+        }
+    }
+
+    // Permiso de cámara
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            val tmpFile = java.io.File(context.cacheDir, "foto_perfil_${System.currentTimeMillis()}.jpg")
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                context, "${context.packageName}.provider", tmpFile
+            )
+            cameraUri = uri
+            cameraLauncher.launch(uri)
+        }
+    }
+
+    // Diálogo para elegir fuente de imagen
+    var mostrarDialogoFoto by remember { mutableStateOf(false) }
     // Campos editables locales — se inicializan con los datos actuales
     var nombre    by remember(perfilState.nombre)    { mutableStateOf(perfilState.nombre) }
     var telefono  by remember(perfilState.telefono)  { mutableStateOf(perfilState.telefono) }
@@ -103,10 +133,10 @@ fun PerfilScreen(
             // ── Avatar + nombre de bienvenida ──────────────────────
             item {
                 AvatarHeader(
-                    nombre       = perfilState.nombre,
-                    email        = perfilState.email,
-                    imagenUrl    = resolveImageUrl(perfilState.imagenUrl) ?: "",
-                    onCambiarFoto = { imageLauncher.launch("image/*") }
+                    nombre        = perfilState.nombre,
+                    email         = perfilState.email,
+                    imagenUrl     = resolveImageUrl(perfilState.imagenUrl) ?: "",
+                    onCambiarFoto = { mostrarDialogoFoto = true }
                 )
             }
 
@@ -387,6 +417,55 @@ fun PerfilScreen(
                 mostrarEditarTarjeta = null
             },
             onDismiss = { mostrarEditarTarjeta = null }
+        )
+    }
+
+    // ── Diálogo: elegir galería o cámara ──────────────────────────
+    if (mostrarDialogoFoto) {
+        AlertDialog(
+            onDismissRequest = { mostrarDialogoFoto = false },
+            containerColor   = CletaGrisMedio,
+            title = {
+                Text("Cambiar foto de perfil", color = CletaBlanco,
+                    fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            mostrarDialogoFoto = false
+                            galleryLauncher.launch("image/*")
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape    = RoundedCornerShape(10.dp),
+                        colors   = ButtonDefaults.buttonColors(containerColor = CletaNaranja)
+                    ) {
+                        Icon(Icons.Default.PhotoLibrary, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Elegir de la galería")
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            mostrarDialogoFoto = false
+                            cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape    = RoundedCornerShape(10.dp),
+                        colors   = ButtonDefaults.outlinedButtonColors(contentColor = CletaNaranja),
+                        border   = BorderStroke(1.dp, CletaNaranja)
+                    ) {
+                        Icon(Icons.Default.CameraAlt, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Tomar foto")
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { mostrarDialogoFoto = false }) {
+                    Text("Cancelar", color = CletaTextoSecundario)
+                }
+            }
         )
     }
 }

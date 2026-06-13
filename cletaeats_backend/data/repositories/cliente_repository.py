@@ -82,5 +82,6 @@ class ClienteRepository:
             cedula=row["CEDULA"],
             nombre=row["NOMBRE"],
             direccion=row["DIRECCION"],
-            telefono=row["TELEFONO"]
+            telefono=row["TELEFONO"],
+            imagen_url=row["IMAGEN_URL"] or ""
         )
