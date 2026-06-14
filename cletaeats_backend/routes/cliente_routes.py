@@ -220,9 +220,32 @@ def calificar_repartidor(id_pedido: int, body: RatingBody, sesion: dict = Depend
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
     if pedido.estado != 3:
         raise HTTPException(status_code=400, detail="Solo se puede calificar un pedido entregado")
-    ok = RepartidorRepository().actualizar_campos(
-        pedido.repartidor_id, {"rating": body.rating}
-    )
+    @router.post("/pedidos/{id_pedido}/rating")
+def calificar_repartidor(id_pedido: int, body: RatingBody, sesion: dict = Depends(get_current_user)):
+    if body.rating < 1 or body.rating > 5:
+        raise HTTPException(status_code=400, detail="El rating debe ser entre 1 y 5")
+    pedido = PedidoRepository().obtener_por_id(id_pedido)
+    if not pedido:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    if pedido.estado != 3:
+        raise HTTPException(status_code=400, detail="Solo se puede calificar un pedido entregado")
+
+    # Promediar el rating
+    rep = RepartidorRepository().obtener_por_id(pedido.repartidor_id)
+    if rep:
+        nuevo_rating = round((rep.rating + body.rating) / 2, 2) if rep.rating else float(body.rating)
+        RepartidorRepository().actualizar_campos(pedido.repartidor_id, {"rating": nuevo_rating})
+
+    # Marcar el pedido como ya calificado
+    from sqlalchemy import update
+    from data.database.db_connection import engine
+    from data.database.tables import pedido as t_pedido
+    with engine.begin() as conn:
+        conn.execute(
+            update(t_pedido)
+            .where(t_pedido.c.ID == id_pedido)
+            .values(CALIFICADO=1)
+        )
     return {"mensaje": "Calificación registrada"}
 
 @router.put("/pedidos/{id_pedido}/cancelar")

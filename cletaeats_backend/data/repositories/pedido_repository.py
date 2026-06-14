@@ -94,6 +94,7 @@ class PedidoRepository:
                 select(
                     t_pedido.c.ID,
                     t_pedido.c.ESTADO,
+                    t_pedido.c.CALIFICADO,
                     t_pedido.c.FECHA_CREACION,
                     t_pedido.c.DISTANCIA_KM,
                     t_rest.c.NOMBRE.label("RESTAURANTE_NOMBRE"),
@@ -129,6 +130,7 @@ class PedidoRepository:
                 d["estado_texto"] = _ESTADO_TEXTO.get(d["estado"], "DESCONOCIDO")
                 d["tipo_comida"]  = ""
                 d["items_count"]  = conteos.get(d["id"], 0)
+                d["calificado"] = bool(d.get("calificado", 0))
                 result.append(d)
             return result
     
