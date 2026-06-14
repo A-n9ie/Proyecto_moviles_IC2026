@@ -76,6 +76,23 @@ class PedidoRepository:
                 ).mappings().all()
                 conteos = {r["PEDIDO_ID"]: int(r["ITEMS_COUNT"]) for r in cnt_rows}
 
+            # Items detallados por pedido
+            items_detalle_map = {}
+            if pedido_ids:
+                item_rows = conn.execute(
+                    select(
+                        t_detalle.c.PEDIDO_ID,
+                        t_combo.c.NOMBRE.label("COMBO_NOMBRE"),
+                        t_detalle.c.CANTIDAD
+                    )
+                    .join(t_combo, t_detalle.c.COMBO_ID == t_combo.c.ID)
+                    .where(t_detalle.c.PEDIDO_ID.in_(pedido_ids))
+                ).mappings().all()
+                for r in item_rows:
+                    items_detalle_map.setdefault(r["PEDIDO_ID"], []).append(
+                        f"{r['CANTIDAD']}x {r['COMBO_NOMBRE']}"
+                    )
+
             result = []
             for r in rows:
                 d = to_lower_dict(r)
@@ -86,6 +103,7 @@ class PedidoRepository:
                 d["fecha_entrega"]       = d.get("fecha_entrega") or ""
                 d["restaurante_latitud"] = d.get("restaurante_latitud")
                 d["restaurante_longitud"]= d.get("restaurante_longitud")
+                d["items_detalle"] = items_detalle_map.get(d["id"], [])
                 result.append(d)
             return result
 
@@ -235,7 +253,8 @@ class PedidoRepository:
                     t_detalle.c.CANTIDAD,
                     t_detalle.c.PRECIO_UNITARIO,
                     t_combo.c.NOMBRE.label("COMBO_NOMBRE"),
-                    t_combo.c.NUMERO_COMBO
+                    t_combo.c.NUMERO_COMBO,
+                    t_detalle.c.COMBO_ID,
                 )
                 .join(t_combo, t_detalle.c.COMBO_ID == t_combo.c.ID)
                 .where(t_detalle.c.PEDIDO_ID == pedido_id)
@@ -260,6 +279,7 @@ class PedidoRepository:
                 "items": [
                     {
                         "combo_nombre":    i["COMBO_NOMBRE"],
+                        "combo_id": i["COMBO_ID"],
                         "numero_combo":    i["NUMERO_COMBO"],
                         "cantidad":        i["CANTIDAD"],
                         "precio_unitario": i["PRECIO_UNITARIO"],
@@ -340,21 +360,21 @@ class PedidoRepository:
             return to_lower_dict(row) if row else {}
 
     def monto_total_global(self) -> dict:
-            """
-            Reporte (k): monto total vendido por TODOS los restaurantes juntos.
-            Suma cantidad * precio_unitario de todas las líneas de pedido.
-            """
-            from sqlalchemy import func
-            with engine.connect() as conn:
-                total = conn.execute(
-                    select(
-                        func.coalesce(
-                            func.sum(t_detalle.c.CANTIDAD * t_detalle.c.PRECIO_UNITARIO),
-                            0
-                        ).label("MONTO_TOTAL")
-                    )
-                ).scalar()
-                return {"monto_total": total or 0}
+        """
+        Reporte (k): monto total vendido por TODOS los restaurantes juntos.
+        Suma cantidad * precio_unitario de todas las líneas de pedido.
+        """
+        from sqlalchemy import func
+        with engine.connect() as conn:
+            total = conn.execute(
+                select(
+                    func.coalesce(
+                        func.sum(t_detalle.c.CANTIDAD * t_detalle.c.PRECIO_UNITARIO),
+                        0
+                    ).label("MONTO_TOTAL")
+                )
+            ).scalar()
+            return {"monto_total": total or 0}
 
     def pedidos_por_cliente(self) -> list:
         """

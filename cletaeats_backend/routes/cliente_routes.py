@@ -204,8 +204,8 @@ def upload_imagen_cliente(file: UploadFile = File(...), sesion: dict = Depends(g
     from fastapi import UploadFile, File
     ext = file.filename.rsplit(".", 1)[-1] if "." in file.filename else "jpg"
     nombre = f"{uuid.uuid4().hex}.{ext}"
-    ruta = os.path.join("data", "uploads", nombre)
-    os.makedirs(os.path.dirname(ruta), exist_ok=True)
+    ruta = os.path.join("uploads", nombre)
+    os.makedirs("uploads", exist_ok=True)
     with open(ruta, "wb") as f:
         f.write(file.file.read())
     return {"url": f"/uploads/{nombre}"}

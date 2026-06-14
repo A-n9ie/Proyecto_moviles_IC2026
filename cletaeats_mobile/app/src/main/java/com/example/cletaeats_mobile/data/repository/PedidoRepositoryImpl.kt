@@ -160,7 +160,7 @@ private fun FacturaResponse.toFacturaData() =
         clienteNombre     = clienteNombre,
         repartidorNombre  = repartidorNombre,
         items = items.map {
-            ItemFactura(it.comboNombre, it.numeroCombo, it.cantidad,
+            ItemFactura(it.comboId, it.comboNombre, it.numeroCombo, it.cantidad,
                 it.precioUnitario, it.subtotalItem ?: 0.0)
         },
         subtotal        = subtotal,
@@ -187,4 +187,5 @@ private fun PedidoListResponse.toPedido() =
         restauranteLongitud = restauranteLongitud,
         calificado = calificado,
         restauranteId = restauranteId,
+        itemsDetalle = itemsDetalle,
     )

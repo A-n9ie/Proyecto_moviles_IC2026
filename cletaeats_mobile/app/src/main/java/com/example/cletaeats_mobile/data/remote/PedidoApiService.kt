@@ -28,7 +28,8 @@ data class ItemFacturaResponse(
     @SerializedName("numero_combo")    val numeroCombo: Int,
     val cantidad: Int,
     @SerializedName("precio_unitario") val precioUnitario: Double,
-    @SerializedName("subtotal_item") val subtotalItem: Double? = null
+    @SerializedName("subtotal_item") val subtotalItem: Double? = null,
+    @SerializedName("combo_id") val comboId: Int = 0,
 )
 
 data class FacturaResponse(
@@ -57,6 +58,7 @@ data class PedidoListResponse(
     @SerializedName("fecha_creacion")     val fechaCreacion: String,
     @SerializedName("fecha_entrega")      val fechaEntrega: String? = null,
     @SerializedName("items_count")        val itemsCount: Int,
+    @SerializedName("items_detalle") val itemsDetalle: List<String> = emptyList(),
     @SerializedName("restaurante_latitud")  val restauranteLatitud:  Double? = null,
     @SerializedName("restaurante_longitud") val restauranteLongitud: Double? = null,
     @SerializedName("calificado") val calificado: Boolean = false,

@@ -118,7 +118,7 @@ class PedidosClienteViewModel(
                     carritoViewModel.confirmarCambioRestaurante(pedido.restauranteId, factura.restauranteNombre)
                     factura.items.forEach { item ->
                         val combo = com.example.cletaeats_mobile.domain.model.Combo(
-                            id          = 0,
+                            id            = item.comboId,
                             restauranteId = pedido.restauranteId,
                             numeroCombo = item.numeroCombo,
                             nombre      = item.comboNombre,

@@ -11,6 +11,7 @@ data class Pedido(
     val fechaCreacion:     String = "",
     val fechaEntrega:      String = "",
     val itemsCount:        Int    = 0,
+    val itemsDetalle: List<String> = emptyList(),
     val restauranteLatitud:  Double? = null,
     val restauranteLongitud: Double? = null,
     val calificado: Boolean = false,

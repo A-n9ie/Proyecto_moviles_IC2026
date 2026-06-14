@@ -16,6 +16,7 @@ data class FacturaData(
 )
 
 data class ItemFactura(
+    val comboId: Int = 0,
     val comboNombre:    String = "",
     val numeroCombo:    Int    = 0,
     val cantidad:       Int    = 0,

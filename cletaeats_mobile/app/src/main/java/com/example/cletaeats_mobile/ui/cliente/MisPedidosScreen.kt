@@ -228,8 +228,14 @@ private fun PedidoClienteCard(
                 Text(pedido.fechaCreacion, color = CletaTextoSecundario, fontSize = 12.sp)
             }
             Spacer(Modifier.height(4.dp))
-            Text("${pedido.itemsCount} combo(s) · ${pedido.distanciaKm} km",
-                color = CletaTextoSecundario, fontSize = 12.sp)
+            if (pedido.itemsDetalle.isNotEmpty()) {
+                pedido.itemsDetalle.forEach { item ->
+                    Text(item, color = CletaTextoSecundario, fontSize = 12.sp)
+                }
+            } else {
+                Text("${pedido.itemsCount} combo(s)", color = CletaTextoSecundario, fontSize = 12.sp)
+            }
+            Text("${pedido.distanciaKm} km", color = CletaTextoSecundario, fontSize = 12.sp)
 
             // Solo mostrar si el pedido está EN_CAMINO (estado 2)
             if (pedido.estado == 2) {
@@ -247,8 +253,8 @@ private fun PedidoClienteCard(
             }
 
             if (pedido.estado == 3) {
-                var rating by remember { mutableStateOf(0) }
                 val enviado = pedido.calificado
+                var rating by remember(pedido.id) { mutableStateOf(if (enviado) 5 else 0) }
 
                 Spacer(Modifier.height(10.dp))
                 Text("Calificar repartidor:", color = CletaBlanco, fontSize = 13.sp)
@@ -262,12 +268,13 @@ private fun PedidoClienteCard(
                                     onCalificar(estrella)
                                 }
                             },
+                            enabled = !enviado,
                             modifier = Modifier.size(36.dp)
                         ) {
                             Icon(
                                 imageVector = if (estrella <= rating) Icons.Default.Star else Icons.Default.StarBorder,
                                 contentDescription = "$estrella estrellas",
-                                tint = CletaNaranja
+                                tint = if (enviado) CletaTextoSecundario else CletaNaranja
                             )
                         }
                     }
