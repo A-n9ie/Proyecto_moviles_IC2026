@@ -59,6 +59,7 @@ data class PedidoListResponse(
     @SerializedName("items_count")        val itemsCount: Int,
     @SerializedName("restaurante_latitud")  val restauranteLatitud:  Double? = null,
     @SerializedName("restaurante_longitud") val restauranteLongitud: Double? = null,
+    @SerializedName("calificado") val calificado: Boolean = false,
 )
 
 data class RatingRequest(val rating: Int)

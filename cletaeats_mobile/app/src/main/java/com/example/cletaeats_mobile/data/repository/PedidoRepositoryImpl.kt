@@ -184,5 +184,6 @@ private fun PedidoListResponse.toPedido() =
         fechaEntrega      = fechaEntrega ?: "",
         itemsCount        = itemsCount,
         restauranteLatitud  = restauranteLatitud,
-        restauranteLongitud = restauranteLongitud
+        restauranteLongitud = restauranteLongitud,
+        calificado = calificado,
     )
