@@ -13,5 +13,6 @@ data class Pedido(
     val itemsCount:        Int    = 0,
     val restauranteLatitud:  Double? = null,
     val restauranteLongitud: Double? = null,
-    val calificado: Boolean = false
+    val calificado: Boolean = false,
+    val restauranteId: Int = 0,
 )

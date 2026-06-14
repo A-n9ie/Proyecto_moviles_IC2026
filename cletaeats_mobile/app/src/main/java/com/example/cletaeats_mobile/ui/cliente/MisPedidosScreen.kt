@@ -24,13 +24,16 @@ import androidx.compose.foundation.rememberScrollState
 import com.example.cletaeats_mobile.ui.components.ModoBadge
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import com.example.cletaeats_mobile.viewmodel.CarritoViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MisPedidosScreen(
     viewModel: PedidosClienteViewModel,
     onVolver: () -> Unit,
-    onRastrear: (Int) -> Unit
+    onRastrear: (Int) -> Unit,
+    carritoVm: CarritoViewModel,
+    onIrARestaurante: (Int, String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val pedidosFiltrados by viewModel.pedidosFiltrados.collectAsState()
@@ -161,7 +164,11 @@ fun MisPedidosScreen(
                             onCalificar = { rating -> viewModel.calificarRepartidor(pedido.id, rating) },
                             onCancelar  = { viewModel.cancelarPedido(pedido.id) },
                             onReportar  = { motivo, desc -> viewModel.crearQueja(pedido.id, motivo, desc) },
-                            onDialogoChange = { abierto -> dialogoAbierto = abierto }
+                            onDialogoChange = { abierto -> dialogoAbierto = abierto },
+                            onVolverAPedir = { viewModel.volverAPedir(pedido.id, carritoVm) { restId, restNombre ->
+                                onIrARestaurante(restId, restNombre)
+                            }},
+
                         )
                     }
 
@@ -179,7 +186,8 @@ private fun PedidoClienteCard(
     onCalificar: (Int) -> Unit,
     onCancelar: () -> Unit,
     onReportar: (String, String) -> Unit,
-    onDialogoChange: (Boolean) -> Unit
+    onDialogoChange: (Boolean) -> Unit,
+    onVolverAPedir: () -> Unit,
 ) {
     val estadoColor = when (pedido.estado) {
         3    -> CletaExito
@@ -299,6 +307,19 @@ private fun PedidoClienteCard(
                             onDialogoChange(false)   // reanuda el polling
                         }
                     )
+                }
+
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = onVolverAPedir,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = CletaGrisMedio),
+                    border = BorderStroke(1.dp, CletaNaranja)
+                ) {
+                    Icon(Icons.Default.Replay, contentDescription = null, modifier = Modifier.size(18.dp), tint = CletaNaranja)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Volver a pedir", color = CletaNaranja, fontWeight = FontWeight.SemiBold)
                 }
 
             }

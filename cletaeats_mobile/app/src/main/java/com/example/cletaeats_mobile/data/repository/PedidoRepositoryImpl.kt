@@ -186,4 +186,5 @@ private fun PedidoListResponse.toPedido() =
         restauranteLatitud  = restauranteLatitud,
         restauranteLongitud = restauranteLongitud,
         calificado = calificado,
+        restauranteId = restauranteId,
     )

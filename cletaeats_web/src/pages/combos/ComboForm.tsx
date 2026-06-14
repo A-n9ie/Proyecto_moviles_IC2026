@@ -4,6 +4,7 @@ import TextInput from '../../components/common/inputs/TextInput'
 import { useRestaurantes } from '../../hooks/useRestaurantes'
 import { useProductos } from '../../hooks/useProductos'
 import type { Combo, ComboRequest } from '../../types/combos'
+import { combosService } from '../../services/combos/combosService'
 
 interface Props {
     combo?: Combo | null
@@ -20,13 +21,15 @@ const ComboForm = ({ combo, onSubmit, onClose }: Props) => {
         nombre: combo?.nombre ?? '',
         descripcion: combo?.descripcion ?? '',
         precio: combo?.precio ?? 0,
-        producto_ids: combo?.productos?.map(p => p.id) ?? [],  // ← nuevo
+        producto_ids: combo?.productos?.map(p => p.id) ?? [],
+        imagen_url: combo?.imagen_url ?? '',  // ← nuevo
     })
 
     const { productos } = useProductos()
     const productosDelRestaurante = productos.filter(p => p.restaurante_id === form.restaurante_id && p.estado === 1)
 
     const [loading, setLoading] = useState(false)
+    const [uploadingImg, setUploadingImg] = useState(false)
 
     const handleSubmit = async () => {
         try {
@@ -119,6 +122,35 @@ const ComboForm = ({ combo, onSubmit, onClose }: Props) => {
                 onChange={set('precio')}
                 rules={[{ type: 'required' }, { type: 'min', value: 1, message: 'El precio debe ser mayor a 0' }]}
             />
+
+            <div className="text-input-container">
+    <label className="text-input-label">Imagen del combo</label>
+    <input
+        type="file"
+        accept="image/*"
+        disabled={uploadingImg}
+        onChange={async (e) => {
+            const file = e.target.files?.[0]
+            if (!file) return
+            setUploadingImg(true)
+            try {
+                const url = await combosService.uploadImagen(file)
+                setForm(p => ({ ...p, imagen_url: url }))
+            } finally {
+                setUploadingImg(false)
+            }
+        }}
+        style={{ color: 'var(--blanco)' }}
+    />
+    {uploadingImg && <span style={{ color: 'var(--gris-texto)', fontSize: 13 }}>Subiendo imagen...</span>}
+    {form.imagen_url && (
+        <img
+            src={`https://proyecto-moviles-ic2026.onrender.com${form.imagen_url}`}
+            alt="preview"
+            style={{ marginTop: 8, height: 80, borderRadius: 8, objectFit: 'cover' }}
+        />
+    )}
+</div>
 
             <div className="flex justify-end gap-3 pt-3">
                 <Button variant="secondary" onClick={onClose}>Cancelar</Button>

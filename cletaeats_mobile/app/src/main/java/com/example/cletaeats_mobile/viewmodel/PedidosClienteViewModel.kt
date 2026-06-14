@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.example.cletaeats_mobile.data.notifications.PedidoNotificador
+import com.example.cletaeats_mobile.viewmodel.CarritoViewModel
 
 data class PedidosClienteUiState(
     val isLoading: Boolean      = false,
@@ -102,6 +103,36 @@ class PedidosClienteViewModel(
 
     fun limpiarQuejaMsg() {
         _uiState.value = _uiState.value.copy(quejaMsg = null)
+    }
+
+    fun volverAPedir(
+        pedidoId: Int,
+        carritoViewModel: CarritoViewModel,
+        onListo: (restauranteId: Int, restauranteNombre: String) -> Unit
+    ) {
+        viewModelScope.launch {
+            when (val result = repo.obtenerFactura(pedidoId)) {
+                is Result.Success -> {
+                    val factura = result.data
+                    val pedido = _uiState.value.pedidos.find { it.id == pedidoId } ?: return@launch
+                    carritoViewModel.confirmarCambioRestaurante(pedido.restauranteId, factura.restauranteNombre)
+                    factura.items.forEach { item ->
+                        val combo = com.example.cletaeats_mobile.domain.model.Combo(
+                            id          = 0,
+                            restauranteId = pedido.restauranteId,
+                            numeroCombo = item.numeroCombo,
+                            nombre      = item.comboNombre,
+                            precio      = item.precioUnitario
+                        )
+                        repeat(item.cantidad) { carritoViewModel.agregarCombo(combo) }
+                    }
+                    onListo(pedido.restauranteId, factura.restauranteNombre)
+                }
+                is Result.Error -> _uiState.value = _uiState.value.copy(
+                    quejaMsg = "No se pudo cargar el pedido anterior."
+                )
+            }
+        }
     }
 
 }

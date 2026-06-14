@@ -52,6 +52,7 @@ class PedidoRepository:
                     t_pedido.c.FECHA_CREACION,
                     t_pedido.c.FECHA_ENTREGA,
                     t_pedido.c.DISTANCIA_KM,
+                    t_pedido.c.RESTAURANTE_ID,
                     t_rest.c.NOMBRE.label("RESTAURANTE_NOMBRE"),
                     t_rest.c.LATITUD.label("RESTAURANTE_LATITUD"),
                     t_rest.c.LONGITUD.label("RESTAURANTE_LONGITUD")

@@ -51,6 +51,7 @@ class ComboBody(BaseModel):
     precio: Optional[float] = None
     estado: Optional[int] = None
     producto_ids: Optional[List[int]] = None
+    imagen_url: Optional[str] = None
 
 class RepartidorBody(BaseModel):
     nombre:        Optional[str] = None

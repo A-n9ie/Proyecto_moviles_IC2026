@@ -17,4 +17,12 @@ export const combosService = {
     remove: async (id: number): Promise<void> => {
         await axiosClient.delete(`/admin/combos/${id}`)
     },
+    uploadImagen: async (file: File): Promise<string> => {
+    const form = new FormData()
+    form.append('file', file)
+    const r = await axiosClient.post<{ url: string }>('/admin/upload-imagen', form, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    return r.data.url
+    },
 }
