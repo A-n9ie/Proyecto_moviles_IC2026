@@ -16,7 +16,6 @@ from core.use_cases.pedido_use_cases import PedidoUseCases
 from data.database.tables import usuario as t_usuario
 from sqlalchemy import select
 from data.database.db_connection import engine
-from data.repositories.repartidor_repository import RepartidorRepository
 
 router = APIRouter()
 
@@ -212,15 +211,6 @@ def upload_imagen_cliente(file: UploadFile = File(...), sesion: dict = Depends(g
     return {"url": f"/uploads/{nombre}"}
 
 @router.post("/pedidos/{id_pedido}/rating")
-def calificar_repartidor(id_pedido: int, body: RatingBody, sesion: dict = Depends(get_current_user)):
-    if body.rating < 1 or body.rating > 5:
-        raise HTTPException(status_code=400, detail="El rating debe ser entre 1 y 5")
-    pedido = PedidoRepository().obtener_por_id(id_pedido)
-    if not pedido:
-        raise HTTPException(status_code=404, detail="Pedido no encontrado")
-    if pedido.estado != 3:
-        raise HTTPException(status_code=400, detail="Solo se puede calificar un pedido entregado")
-    @router.post("/pedidos/{id_pedido}/rating")
 def calificar_repartidor(id_pedido: int, body: RatingBody, sesion: dict = Depends(get_current_user)):
     if body.rating < 1 or body.rating > 5:
         raise HTTPException(status_code=400, detail="El rating debe ser entre 1 y 5")
