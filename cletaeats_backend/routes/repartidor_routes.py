@@ -5,6 +5,7 @@ from middleware.auth_middleware import get_current_user
 from data.repositories.pedido_repository import PedidoRepository
 from data.repositories.repartidor_repository import RepartidorRepository
 from pydantic import BaseModel
+from data.repositories.bitacora_repository import BitacoraRepository
 
 router = APIRouter()
 
@@ -90,6 +91,12 @@ def marcar_entregado(id_pedido: int, sesion: dict = Depends(get_current_user)):
     if not ok:
         raise HTTPException(status_code=400, detail="No se pudo actualizar")
     RepartidorRepository().actualizar_disponibilidad(rep.id, 1)  # repartidor vuelve a disponible
+    BitacoraRepository().registrar(
+        usuario_id = sesion["id_usuario"],
+        rol        = "REPARTIDOR",
+        accion     = "PEDIDO_ENTREGADO",
+        detalle    = f"Pedido ID: {id_pedido}"
+    )
     return {"mensaje": "Pedido marcado como entregado", "estado": 3}
 
 @router.get("/perfil")

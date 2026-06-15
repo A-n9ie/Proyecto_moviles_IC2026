@@ -8,6 +8,7 @@ from data.repositories.cliente_repository import ClienteRepository
 from data.repositories.repartidor_repository import RepartidorRepository
 from data.repositories.tarjeta_cliente_repository import TarjetaClienteRepository
 from services.jwt_service import crear_token
+from data.repositories.bitacora_repository import BitacoraRepository
 
 router = APIRouter()
 
@@ -67,6 +68,12 @@ def login(body: LoginRequest):
         )
 
     token = crear_token(**datos)
+    BitacoraRepository().registrar(
+        usuario_id = datos.get("id_usuario") or datos.get("id_perfil"),
+        rol        = datos.get("rol"),
+        accion     = "LOGIN",
+        detalle    = f"Inicio de sesión exitoso"
+    )
     return {"token": token, **datos}
 
 

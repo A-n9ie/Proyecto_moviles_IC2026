@@ -12,6 +12,7 @@ from data.repositories.producto_repository import ProductoRepository
 from data.repositories.pedido_repository import PedidoRepository
 from data.repositories.usuario_repository import UsuarioRepository
 from data.repositories.queja_repository import QuejaRepository
+from data.repositories.bitacora_repository import BitacoraRepository
 from fastapi import File, UploadFile
 import uuid, os, shutil
 
@@ -270,3 +271,8 @@ def obtener_reportes(_=Depends(require_admin), repos=Depends(get_repos)):
         "cliente_top":               repos["pedido"].cliente_top(),
         "hora_pico":                 repos["pedido"].hora_pico(),
     }
+
+
+@router.get("/bitacora")
+def ver_bitacora(_=Depends(require_admin)):
+    return BitacoraRepository().listar(limit=200)

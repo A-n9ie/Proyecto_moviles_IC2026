@@ -18,6 +18,7 @@ import RestaurantesPage from '../../pages/restaurantes/RestaurantesPage'
 import CombosPage from '../../pages/combos/CombosPage'
 import ReportesPage from '../../pages/reportes/ReportesPage'
 import QuejasPage from '../../pages/quejas/QuejasPage'
+import BitacoraPage from '../../pages/admin/BitacoraPage'
 
 const AppRouter = () => {
     return (
@@ -67,6 +68,11 @@ const AppRouter = () => {
                 <Route
                     path="/reportes"
                     element={<ReportesPage />}
+                />
+
+                <Route
+                    path="/bitacora"
+                    element={<BitacoraPage />}
                 />
 
                 <Route

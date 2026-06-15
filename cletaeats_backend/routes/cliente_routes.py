@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from middleware.auth_middleware import get_current_user
 from data.repositories.tarjeta_cliente_repository import TarjetaClienteRepository
 from data.repositories.cliente_repository import ClienteRepository
+from data.repositories.bitacora_repository import BitacoraRepository
 
 from typing import List, Optional
 from data.repositories.pedido_repository import PedidoRepository
@@ -72,6 +73,12 @@ def agregar_tarjeta(body: TarjetaBody, sesion: dict = Depends(get_current_user))
         "cvv":               body.cvv,
         "es_principal":      body.es_principal
     })
+    BitacoraRepository().registrar(
+        usuario_id = sesion["id_usuario"],
+        rol        = "CLIENTE",
+        accion     = "TARJETA_AGREGADA",
+        detalle    = f"Alias: {body.alias}"
+    )
     return {"id": nuevo_id, "mensaje": "Tarjeta agregada"}
 
 @router.put("/tarjetas/{id}")
@@ -97,6 +104,12 @@ def eliminar_tarjeta(id: int, sesion: dict = Depends(get_current_user)):
     ok = TarjetaClienteRepository().eliminar(id)
     if not ok:
         raise HTTPException(status_code=404, detail="Tarjeta no encontrada")
+    BitacoraRepository().registrar(
+        usuario_id = sesion["id_usuario"],
+        rol        = "CLIENTE",
+        accion     = "TARJETA_ELIMINADA",
+        detalle    = f"Tarjeta ID: {id}"
+    )
     return {"mensaje": "Tarjeta eliminada"}
 
 
@@ -138,6 +151,12 @@ def crear_pedido(body: PedidoBody, sesion: dict = Depends(get_current_user)):
     )
     if not ok:
         raise HTTPException(status_code=400, detail=error)
+    BitacoraRepository().registrar(
+        usuario_id = sesion["id_usuario"],
+        rol        = "CLIENTE",
+        accion     = "PEDIDO_CREADO",
+        detalle    = f"Restaurante ID: {body.restaurante_id}, Items: {len(body.items)}"
+    )
     return {"mensaje": "Pedido creado", "factura": factura}
 
 @router.get("/pedidos/{id_pedido}/factura")
@@ -186,6 +205,12 @@ def actualizar_perfil(body: PerfilBody, sesion: dict = Depends(get_current_user)
                 DIRECCION = body.direccion.strip()
             )
         )
+    BitacoraRepository().registrar(
+        usuario_id = sesion["id_usuario"],
+        rol        = "CLIENTE",
+        accion     = "PERFIL_EDITADO",
+        detalle    = f"Nombre: {body.nombre}"
+    )
     return {"mensaje": "Perfil actualizado correctamente"}
 
 @router.put("/perfil/imagen")
@@ -195,6 +220,12 @@ def actualizar_imagen_perfil(body: ImagenPerfilBody, sesion: dict = Depends(get_
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     repo.actualizar_imagen_url(cliente.id, body.imagen_url)
+    BitacoraRepository().registrar(
+        usuario_id = sesion["id_usuario"],
+        rol        = "CLIENTE",
+        accion     = "PERFIL_EDITADO",
+        detalle    = f"Imagen actualizada"
+    )
     return {"mensaje": "Imagen actualizada"}
 
 @router.post("/upload-imagen")
@@ -256,6 +287,12 @@ def cancelar_pedido(id_pedido: int, sesion: dict = Depends(get_current_user)):
     # Liberar repartidor si estaba asignado (vuelve a disponible)
     if pedido.repartidor_id:
         RepartidorRepository().actualizar_disponibilidad(pedido.repartidor_id, 1)
+    BitacoraRepository().registrar(
+        usuario_id = sesion["id_usuario"],
+        rol        = "CLIENTE",
+        accion     = "PEDIDO_CANCELADO",
+        detalle    = f"Pedido ID: {id_pedido}"
+    )
     return {"mensaje": "Pedido cancelado"}
 
 @router.post("/quejas")

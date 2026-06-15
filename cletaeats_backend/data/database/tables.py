@@ -144,3 +144,12 @@ queja = Table("QUEJA", metadata,
     Column("ESTADO",        Integer, nullable=False, default=0),  # 0=PENDIENTE, 1=AMONESTADA, 2=MENOR
     CheckConstraint("ESTADO IN (0,1,2)", name="ck_queja_estado"),
 )
+
+bitacora = Table("BITACORA", metadata,
+    Column("ID",          Integer, primary_key=True, autoincrement=True),
+    Column("USUARIO_ID",  Integer, ForeignKey("USUARIO.ID", ondelete="SET NULL"), nullable=True),
+    Column("ROL",         Text,    nullable=False, default="SISTEMA"),
+    Column("ACCION",      Text,    nullable=False),
+    Column("DETALLE",     Text),
+    Column("FECHA",       Text,    nullable=False, server_default=func.datetime("now")),
+)

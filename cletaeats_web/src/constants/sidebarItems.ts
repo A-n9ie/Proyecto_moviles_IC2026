@@ -41,4 +41,9 @@ export const sidebarItems: SidebarItem[] = [
     icon: '⚠️',
     path: '/quejas',
     },
+    {
+    label: 'Bitácora',
+    icon: '📝',
+    path: '/bitacora',
+    },
 ]
