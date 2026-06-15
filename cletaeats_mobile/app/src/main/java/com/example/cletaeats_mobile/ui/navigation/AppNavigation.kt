@@ -147,7 +147,7 @@ fun AppNavigation(
         }
 
         composable(AppRoutes.MIS_PEDIDOS) { backStackEntry ->
-            val viewModel = remember(backStackEntry) { AppContainer.pedidosClienteViewModel() }
+            val viewModel = AppContainer.pedidosClienteViewModel
             MisPedidosScreen(
                 viewModel  = viewModel,
                 onVolver   = { navController.popBackStack() },

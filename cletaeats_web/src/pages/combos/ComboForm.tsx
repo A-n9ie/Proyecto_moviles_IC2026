@@ -145,10 +145,13 @@ const ComboForm = ({ combo, onSubmit, onClose }: Props) => {
     {uploadingImg && <span style={{ color: 'var(--gris-texto)', fontSize: 13 }}>Subiendo imagen...</span>}
     {form.imagen_url && (
         <img
-            src={`https://proyecto-moviles-ic2026.onrender.com${form.imagen_url}`}
-            alt="preview"
-            style={{ marginTop: 8, height: 120, width: '100%', borderRadius: 8, objectFit: 'cover' }}
-        />
+    src={form.imagen_url.startsWith('http')
+        ? form.imagen_url
+        : `https://proyecto-moviles-ic2026.onrender.com${form.imagen_url}`}
+    alt="preview"
+    style={{ marginTop: 8, height: 120, width: '100%', borderRadius: 8, objectFit: 'cover' }}
+    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+/>
     )}
 </div>
 

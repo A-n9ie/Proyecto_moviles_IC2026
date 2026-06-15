@@ -120,10 +120,12 @@ object AppContainer {
         sessionManager.getDataMode()
     )
 
-    fun pedidosClienteViewModel() = PedidosClienteViewModel(
-        pedidoRepository,
-        PedidoNotificador(notificationHelper, rol = "CLIENTE")
-    )
+    val pedidosClienteViewModel: PedidosClienteViewModel by lazy {
+        PedidosClienteViewModel(
+            pedidoRepository,
+            PedidoNotificador(notificationHelper, rol = "CLIENTE")
+        )
+    }
     fun pedidosRepartidorViewModel() = PedidosRepartidorViewModel(
         pedidoRepository,
         PedidoNotificador(notificationHelper, rol = "REPARTIDOR")

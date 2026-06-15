@@ -82,21 +82,21 @@ class PedidoUseCases:
 
         # ── Asignar repartidor ─────────────────────────────────────
         repartidor = self._repartidores.obtener_primero_disponible()
-        if repartidor is None:
-            return False, None, "No hay repartidores disponibles en este momento"
+        repartidor_id = repartidor.id if repartidor else None
 
         # ── Persistir ─────────────────────────────────────────────
         pedido = Pedido(
             cliente_id     = id_cliente,
             restaurante_id = id_restaurante,
-            repartidor_id  = repartidor.id,
+            repartidor_id = repartidor_id,
             estado         = 0,             # CREADO
             distancia_km   = distancia_km
         )
         try:
             pedido = self._pedidos.crear_con_detalles(pedido, items_procesados)
             # Marcar repartidor como ocupado (disponible=0)
-            self._repartidores.actualizar_disponibilidad(repartidor.id, 0)
+            if repartidor:
+             self._repartidores.actualizar_disponibilidad(repartidor.id, 0)
             # Generar y retornar factura
             factura = self._pedidos.obtener_factura(pedido.id)
             return True, factura, None

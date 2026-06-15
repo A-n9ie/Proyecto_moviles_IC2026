@@ -88,7 +88,7 @@ combo = Table("COMBO", metadata,
     Column("PRECIO",         Float,   nullable=False),
     Column("IMAGEN_URL",     Text),
     Column("ESTADO",         Integer, nullable=False, default=1),
-    CheckConstraint("NUMERO_COMBO BETWEEN 1 AND 9", name="ck_combo_numero"),
+    CheckConstraint("NUMERO_COMBO >= 1", name="ck_combo_numero"),
     CheckConstraint("ESTADO IN (0,1)",               name="ck_combo_estado"),
 )
 
