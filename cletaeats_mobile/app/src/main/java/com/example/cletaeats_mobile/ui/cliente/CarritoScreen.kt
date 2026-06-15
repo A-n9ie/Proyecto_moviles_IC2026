@@ -30,6 +30,8 @@ import androidx.compose.ui.draw.clip
 import com.example.cletaeats_mobile.viewmodel.TarjetaViewModel
 import com.example.cletaeats_mobile.ui.utils.CardDateTransformation
 import com.example.cletaeats_mobile.ui.utils.soloDigitosFecha
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material.icons.filled.DeliveryDining
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,12 +42,52 @@ fun CarritoScreen(
     onVolver: () -> Unit
 ) {
     val state by carritoViewModel.uiState.collectAsState()
+    var mostrarErrorSinRepartidor by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.pedidoCreado) {
         if (state.pedidoCreado) onPedidoCreado()
     }
 
+    LaunchedEffect(state.errorMsg) {
+        if (state.errorMsg?.contains("repartidor", ignoreCase = true) == true) {
+            mostrarErrorSinRepartidor = true
+        }
+    }
+
     val distanciaKm = state.distanciaKm
+
+    if (mostrarErrorSinRepartidor) {
+        AlertDialog(
+            onDismissRequest = {},
+            containerColor = CletaGrisMedio,
+            icon = {
+                Icon(Icons.Default.DeliveryDining, null, tint = CletaNaranja, modifier = Modifier.size(40.dp))
+            },
+            title = {
+                Text("Sin repartidores disponibles", color = CletaBlanco, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            },
+            text = {
+                Text(
+                    "Lo sentimos, todos nuestros repartidores están ocupados en este momento. Por favor intentá más tarde.",
+                    color = CletaTextoSecundario,
+                    textAlign = TextAlign.Center
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        mostrarErrorSinRepartidor = false
+                        carritoViewModel.clearError()
+                        carritoViewModel.limpiar()
+                        onVolver()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = CletaNaranja)
+                ) {
+                    Text("Entendido", color = CletaBlanco)
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {

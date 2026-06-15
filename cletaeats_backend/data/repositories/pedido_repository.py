@@ -182,10 +182,14 @@ class PedidoRepository:
             result = []
             for r in rows:
                 d = to_lower_dict(r)
-                d["estado_texto"]  = _ESTADO_TEXTO.get(d["estado"], "DESCONOCIDO")
-                d["tipo_comida"]   = ""
-                d["items_count"]   = 0
-                d["fecha_entrega"] = d.get("fecha_entrega") or ""
+                d["estado_texto"]   = _ESTADO_TEXTO.get(d["estado"], "DESCONOCIDO")
+                d["tipo_comida"]    = ""
+                d["items_count"]    = 0
+                d["fecha_entrega"]  = d.get("fecha_entrega") or ""
+                d["items_detalle"]  = []
+                d["restaurante_id"] = 0
+                d["rating_dado"]    = 0
+                d["calificado"]     = False
                 result.append(d)
             return result
 
