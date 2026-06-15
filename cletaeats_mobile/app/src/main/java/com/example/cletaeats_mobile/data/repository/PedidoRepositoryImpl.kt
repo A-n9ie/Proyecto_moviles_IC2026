@@ -38,7 +38,12 @@ class PedidoRepositoryImpl(
                 400 -> {
                     val errorBody = resp.errorBody()?.string()
                     val msg = try {
-                        org.json.JSONObject(errorBody ?: "").getString("error")
+                        val json = org.json.JSONObject(errorBody ?: "")
+                        json.optString("detail").ifBlank {
+                            json.optString("error").ifBlank {
+                                "Error en el pedido. Revisá los datos."
+                            }
+                        }
                     } catch (_: Exception) {
                         "Error en el pedido. Revisá los datos."
                     }
