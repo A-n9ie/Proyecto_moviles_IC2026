@@ -119,6 +119,7 @@ pedido = Table("PEDIDO", metadata,
     Column("ESTADO",         Integer, nullable=False, default=0),
     Column("DISTANCIA_KM",   Float,   nullable=False, default=0),
     Column("CALIFICADO",     Integer, nullable=False, default=0),
+    Column("RATING_DADO", Integer, nullable=False, default=0),
     CheckConstraint("ESTADO IN (0,1,2,3,4)", name="ck_pedido_estado"),
 )
 

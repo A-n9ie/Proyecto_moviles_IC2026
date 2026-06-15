@@ -16,4 +16,5 @@ data class Pedido(
     val restauranteLongitud: Double? = null,
     val calificado: Boolean = false,
     val restauranteId: Int = 0,
+    val ratingDado: Int = 0,
 )

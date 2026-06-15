@@ -55,7 +55,8 @@ class PedidoRepository:
                     t_pedido.c.RESTAURANTE_ID,
                     t_rest.c.NOMBRE.label("RESTAURANTE_NOMBRE"),
                     t_rest.c.LATITUD.label("RESTAURANTE_LATITUD"),
-                    t_rest.c.LONGITUD.label("RESTAURANTE_LONGITUD")
+                    t_rest.c.LONGITUD.label("RESTAURANTE_LONGITUD"),
+                    t_pedido.c.RATING_DADO,
                 )
                 .join(t_rest, t_pedido.c.RESTAURANTE_ID == t_rest.c.ID)
                 .where(t_pedido.c.CLIENTE_ID == cliente_id)
@@ -104,6 +105,7 @@ class PedidoRepository:
                 d["restaurante_latitud"] = d.get("restaurante_latitud")
                 d["restaurante_longitud"]= d.get("restaurante_longitud")
                 d["items_detalle"] = items_detalle_map.get(d["id"], [])
+                d["rating_dado"] = d.get("rating_dado", 0)
                 result.append(d)
             return result
 

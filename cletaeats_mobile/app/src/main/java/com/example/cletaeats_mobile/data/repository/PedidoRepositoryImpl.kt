@@ -188,4 +188,5 @@ private fun PedidoListResponse.toPedido() =
         calificado = calificado,
         restauranteId = restauranteId,
         itemsDetalle = itemsDetalle,
+        ratingDado = ratingDado,
     )

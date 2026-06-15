@@ -234,7 +234,7 @@ def calificar_repartidor(id_pedido: int, body: RatingBody, sesion: dict = Depend
         conn.execute(
             update(t_pedido)
             .where(t_pedido.c.ID == id_pedido)
-            .values(CALIFICADO=1)
+            .values(CALIFICADO=1, RATING_DADO=body.rating)
         )
     return {"mensaje": "Calificación registrada"}
 

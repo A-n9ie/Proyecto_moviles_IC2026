@@ -147,7 +147,7 @@ const ComboForm = ({ combo, onSubmit, onClose }: Props) => {
         <img
             src={`https://proyecto-moviles-ic2026.onrender.com${form.imagen_url}`}
             alt="preview"
-            style={{ marginTop: 8, height: 80, borderRadius: 8, objectFit: 'cover' }}
+            style={{ marginTop: 8, height: 120, width: '100%', borderRadius: 8, objectFit: 'cover' }}
         />
     )}
 </div>

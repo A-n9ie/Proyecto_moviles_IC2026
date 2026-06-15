@@ -153,10 +153,8 @@ fun AppNavigation(
                 onVolver   = { navController.popBackStack() },
                 onRastrear = { pedidoId -> navController.navigate(AppRoutes.rastreoRuta(pedidoId)) },
                 carritoVm       = AppContainer.carritoViewModel,
-                onIrARestaurante = { restId, restNombre ->
-                    navController.navigate(
-                        AppRoutes.combosRuta(restId, 0.0, 0.0, restNombre)
-                    )
+                onIrARestaurante = { _, _ ->
+                    navController.navigate(AppRoutes.CARRITO)
                 }
             )
         }

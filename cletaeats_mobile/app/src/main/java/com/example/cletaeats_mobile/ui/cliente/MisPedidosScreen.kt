@@ -254,7 +254,7 @@ private fun PedidoClienteCard(
 
             if (pedido.estado == 3) {
                 val enviado = pedido.calificado
-                var rating by remember(pedido.id) { mutableStateOf(if (enviado) 5 else 0) }
+                var rating by remember(pedido.id) { mutableStateOf(if (enviado) pedido.ratingDado else 0) }
 
                 Spacer(Modifier.height(10.dp))
                 Text("Calificar repartidor:", color = CletaBlanco, fontSize = 13.sp)

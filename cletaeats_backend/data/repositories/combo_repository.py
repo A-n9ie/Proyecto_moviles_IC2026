@@ -66,7 +66,8 @@ class ComboRepository:
                 NUMERO_COMBO=data["numero_combo"],
                 NOMBRE=data["nombre"],
                 DESCRIPCION=data.get("descripcion", ""),
-                PRECIO=data["precio"]
+                PRECIO=data["precio"],
+                IMAGEN_URL=data.get("imagen_url", ""),
             ))
             combo_id = result.inserted_primary_key[0]
             for pid in data.get("producto_ids", []):
@@ -76,7 +77,8 @@ class ComboRepository:
     def actualizar_campos(self, id_combo: int, data: dict) -> bool:
         allowed = {
             "nombre": "NOMBRE", "descripcion": "DESCRIPCION",
-            "precio": "PRECIO", "estado": "ESTADO"
+            "precio": "PRECIO", "estado": "ESTADO",
+            "imagen_url": "IMAGEN_URL",
         }
         values = {allowed[k]: v for k, v in data.items() if k in allowed}
         with engine.begin() as conn:
