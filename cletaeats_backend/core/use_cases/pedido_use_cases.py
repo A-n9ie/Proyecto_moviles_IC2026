@@ -82,13 +82,14 @@ class PedidoUseCases:
 
         # ── Asignar repartidor ─────────────────────────────────────
         repartidor = self._repartidores.obtener_primero_disponible()
-        repartidor_id = repartidor.id if repartidor else None
+        if repartidor is None:
+            return False, None, "Lo sentimos, no hay repartidores disponibles en este momento. Intenta de nuevo más tarde."
 
         # ── Persistir ─────────────────────────────────────────────
         pedido = Pedido(
             cliente_id     = id_cliente,
             restaurante_id = id_restaurante,
-            repartidor_id = repartidor_id,
+            repartidor_id = repartidor.id,
             estado         = 0,             # CREADO
             distancia_km   = distancia_km
         )

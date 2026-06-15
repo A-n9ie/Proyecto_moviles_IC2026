@@ -151,7 +151,10 @@ class PedidoRepository:
                 d["estado_texto"] = _ESTADO_TEXTO.get(d["estado"], "DESCONOCIDO")
                 d["tipo_comida"]  = ""
                 d["items_count"]  = conteos.get(d["id"], 0)
-                d["calificado"] = bool(d.get("calificado", 0))
+                d["calificado"]     = bool(d.get("calificado", 0))
+                d["items_detalle"]  = []
+                d["restaurante_id"] = 0
+                d["rating_dado"]    = 0
                 result.append(d)
             return result
     
