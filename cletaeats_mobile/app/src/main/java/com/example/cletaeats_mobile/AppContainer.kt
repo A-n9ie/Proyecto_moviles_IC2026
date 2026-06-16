@@ -5,6 +5,7 @@ import com.example.cletaeats_mobile.data.local.SessionManager
 
 import com.example.cletaeats_mobile.data.repository.AuthRepositoryImpl
 import com.example.cletaeats_mobile.data.repository.ComboRepositoryImpl
+import com.example.cletaeats_mobile.data.repository.PedidoLocalRepositoryImpl
 import com.example.cletaeats_mobile.data.repository.PedidoRepositoryImpl
 import com.example.cletaeats_mobile.data.repository.RestauranteRepositoryImpl
 import com.example.cletaeats_mobile.data.repository.TarjetaRepositoryImpl
@@ -107,9 +108,11 @@ object AppContainer {
     private fun buildPedidoRepository() =
         when (sessionManager.getDataMode()) {
             DataMode.CLOUD -> PedidoCloudRepositoryImpl(pedidoHttpRepository)
-            else           -> pedidoHttpRepository   // LOCAL y API_REMOTA usan HTTP
-            // Nota: LOCAL podría leer de SQLite, pero los pedidos locales se sincronizan
-            // al inicio de sesión, así que el estado es reciente.
+            DataMode.LOCAL_SQLITE -> PedidoLocalRepositoryImpl(
+                CletaEatsDatabase.getInstance(appContext),
+                pedidoHttpRepository
+            )
+            else -> pedidoHttpRepository
         }
     private val tarjetaRepo by lazy {
         TarjetaRepositoryImpl(RetrofitClient.create<ITarjetaApi>(), sessionManager) }

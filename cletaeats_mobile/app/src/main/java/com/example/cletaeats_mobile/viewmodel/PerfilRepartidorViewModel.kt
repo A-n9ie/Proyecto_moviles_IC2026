@@ -2,7 +2,10 @@ package com.example.cletaeats_mobile.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cletaeats_mobile.data.local.DataMode
 import com.example.cletaeats_mobile.data.local.SessionManager
+import com.example.cletaeats_mobile.data.local.db.CletaEatsDatabase
+import com.example.cletaeats_mobile.data.local.db.PerfilLocalEntity
 import com.example.cletaeats_mobile.data.remote.IRepartidorPerfilApi
 import com.example.cletaeats_mobile.data.remote.PerfilRepartidorRequest
 import com.example.cletaeats_mobile.data.remote.TarjetaRepartidorRequest
@@ -35,6 +38,29 @@ class PerfilRepartidorViewModel(
     fun cargarPerfil() {
         _uiState.value = _uiState.value.copy(isLoading = true, errorMsg = null)
         viewModelScope.launch {
+            if (session.getDataMode() == DataMode.LOCAL_SQLITE) {
+                val db = CletaEatsDatabase.getInstance(session.getApplicationContext())
+                val perfilLocal = db.perfilLocalDao().obtener(session.getIdPerfil())
+                if (perfilLocal != null && perfilLocal.rol.equals("REPARTIDOR", true)) {
+                    _uiState.value = PerfilRepartidorUiState(
+                        nombre    = perfilLocal.nombre,
+                        telefono  = perfilLocal.telefono,
+                        direccion = perfilLocal.direccion,
+                        correo    = perfilLocal.correo,
+                        cedula    = perfilLocal.cedula,
+                        tarjeta   = perfilLocal.tarjeta,
+                        rating    = perfilLocal.rating,
+                        isLoading = false
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMsg = "No hay perfil local disponible. Iniciá sesión en línea primero."
+                    )
+                }
+                return@launch
+            }
+
             try {
                 val resp = api.obtenerPerfil("Bearer ${session.getToken()}")
                 if (resp.isSuccessful && resp.body() != null) {
@@ -74,6 +100,25 @@ class PerfilRepartidorViewModel(
                         nombre    = nombre,
                         idPerfil  = session.getIdPerfil()
                     )
+
+                    val db = CletaEatsDatabase.getInstance(session.getApplicationContext())
+                    val existing = db.perfilLocalDao().obtener(session.getIdPerfil())
+                    db.perfilLocalDao().guardar(
+                        PerfilLocalEntity(
+                            idPerfil = session.getIdPerfil(),
+                            rol = "REPARTIDOR",
+                            nombre = nombre,
+                            telefono = telefono,
+                            direccion = direccion,
+                            cedula = existing?.cedula ?: _uiState.value.cedula,
+                            imagenUrl = existing?.imagenUrl ?: "",
+                            correo = existing?.correo ?: _uiState.value.correo,
+                            tarjeta = existing?.tarjeta ?: _uiState.value.tarjeta,
+                            rating = existing?.rating ?: _uiState.value.rating,
+                            amonestaciones = existing?.amonestaciones ?: 0
+                        )
+                    )
+
                     _uiState.value = _uiState.value.copy(
                         isLoading = false, guardadoOk = true,
                         nombre = nombre, telefono = telefono, direccion = direccion

@@ -127,7 +127,11 @@ class SyncManager(private val context: Context, private val session: SessionMana
             // 3. Pedidos del usuario actual
             try {
                 val pedidoApi = RetrofitClient.create<IPedidoApi>()
-                val respPedidos = pedidoApi.obtenerPedidosCliente("Bearer $token")
+                val respPedidos = if (rol.equals("REPARTIDOR", true)) {
+                    pedidoApi.obtenerPedidosRepartidor("Bearer $token")
+                } else {
+                    pedidoApi.obtenerPedidosCliente("Bearer $token")
+                }
                 if (respPedidos.isSuccessful) {
                     val pedidoEntities = respPedidos.body()!!.map { p ->
                         PedidoEntity(
@@ -148,6 +152,30 @@ class SyncManager(private val context: Context, private val session: SessionMana
                     daoPedido.limpiarTodos()
                     daoPedido.insertarTodos(pedidoEntities)
                     android.util.Log.d("SYNC", "Pedidos guardados en SQLite: ${pedidoEntities.size}")
+                }
+
+                if (rol.equals("REPARTIDOR", true)) {
+                    val respHistorial = pedidoApi.obtenerHistorialRepartidor("Bearer $token")
+                    if (respHistorial.isSuccessful) {
+                        val historialEntities = respHistorial.body()!!.map { p ->
+                            PedidoEntity(
+                                id = p.id,
+                                estado = p.estado,
+                                estadoTexto = p.estadoTexto,
+                                restauranteNombre = p.restauranteNombre,
+                                tipoComida = p.tipoComida,
+                                clienteNombre = p.clienteNombre,
+                                distanciaKm = p.distanciaKm,
+                                fechaCreacion = p.fechaCreacion,
+                                fechaEntrega = p.fechaEntrega ?: "",
+                                itemsCount = p.itemsCount,
+                                restauranteLatitud = p.restauranteLatitud ?: 0.0,
+                                restauranteLongitud = p.restauranteLongitud ?: 0.0
+                            )
+                        }
+                        daoPedido.insertarTodos(historialEntities)
+                        android.util.Log.d("SYNC", "Historial de repartidor guardado en SQLite: ${historialEntities.size}")
+                    }
                 }
             } catch (e: Exception) {
                 android.util.Log.w("SYNC", "No se pudieron sincronizar pedidos: ${e.message}")
