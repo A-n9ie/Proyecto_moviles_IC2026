@@ -230,16 +230,16 @@ def actualizar_imagen_perfil(body: ImagenPerfilBody, sesion: dict = Depends(get_
 
 @router.post("/upload-imagen")
 def upload_imagen_cliente(file: UploadFile = File(...), sesion: dict = Depends(get_current_user)):
-    # Mismo código que admin/upload-imagen
-    import uuid, os
-    from fastapi import UploadFile, File
-    ext = file.filename.rsplit(".", 1)[-1] if "." in file.filename else "jpg"
-    nombre = f"{uuid.uuid4().hex}.{ext}"
-    ruta = os.path.join("uploads", nombre)
-    os.makedirs("uploads", exist_ok=True)
-    with open(ruta, "wb") as f:
-        f.write(file.file.read())
-    return {"url": f"/uploads/{nombre}"}
+    import cloudinary
+    import cloudinary.uploader
+    import os
+    cloudinary.config(
+        cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+        api_key=os.getenv("CLOUDINARY_API_KEY"),
+        api_secret=os.getenv("CLOUDINARY_API_SECRET")
+    )
+    result = cloudinary.uploader.upload(file.file)
+    return {"url": result["secure_url"]}
 
 @router.post("/pedidos/{id_pedido}/rating")
 def calificar_repartidor(id_pedido: int, body: RatingBody, sesion: dict = Depends(get_current_user)):

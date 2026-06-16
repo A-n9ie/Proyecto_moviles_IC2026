@@ -16,6 +16,8 @@ from data.repositories.bitacora_repository import BitacoraRepository
 from sqlalchemy.exc import IntegrityError
 from fastapi import File, UploadFile
 import uuid, os, shutil
+import cloudinary
+import cloudinary.uploader
 
 
 router = APIRouter()
@@ -241,13 +243,13 @@ def listar_pedidos(_=Depends(require_admin), repos=Depends(get_repos)):
 # ── Upload de imagen ──────────────────────────────────────────────────
 @router.post("/upload-imagen")
 async def upload_imagen(file: UploadFile = File(...), _=Depends(require_admin)):
-    os.makedirs("uploads", exist_ok=True)
-    extension = file.filename.split(".")[-1]
-    nombre = f"{uuid.uuid4()}.{extension}"
-    ruta = f"uploads/{nombre}"
-    with open(ruta, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    return {"url": f"/uploads/{nombre}"}
+    cloudinary.config(
+        cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+        api_key=os.getenv("CLOUDINARY_API_KEY"),
+        api_secret=os.getenv("CLOUDINARY_API_SECRET")
+    )
+    result = cloudinary.uploader.upload(file.file)
+    return {"url": result["secure_url"]}
 
 # Amonestaciones a repartidores ─────────────────────────────────────────
 @router.post("/repartidores/{id}/amonestacion")
