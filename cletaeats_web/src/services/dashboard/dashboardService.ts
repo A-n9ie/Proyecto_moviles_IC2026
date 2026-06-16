@@ -24,7 +24,7 @@ export const dashboardService = {
                 id:          p.id,
                 cliente:     p.cliente_nombre ?? '—',
                 restaurante: p.restaurante_nombre ?? '—',
-                total:       0,   // el endpoint /admin/pedidos no devuelve total aún
+                total:       p.total ?? 0,
                 estado:      p.estado_texto ?? String(p.estado),
             })),
             repartidores: repartidores.map(r => ({

@@ -206,7 +206,10 @@ class PedidoRepository:
                     t_rest.c.NOMBRE.label("RESTAURANTE_NOMBRE"),
                     func.coalesce(
                         func.sum(t_detalle.c.CANTIDAD), 0
-                    ).label("ITEMS_COUNT")
+                    ).label("ITEMS_COUNT"),
+                    func.coalesce(
+                        func.sum(t_detalle.c.CANTIDAD * t_detalle.c.PRECIO_UNITARIO), 0
+                    ).label("SUBTOTAL")
                 )
                 .join(t_cliente, t_pedido.c.CLIENTE_ID     == t_cliente.c.ID)
                 .join(t_rest,    t_pedido.c.RESTAURANTE_ID == t_rest.c.ID)
@@ -222,6 +225,8 @@ class PedidoRepository:
             result = []
             for r in rows:
                 d = to_lower_dict(r)
+                subtotal = d.get("subtotal", 0)
+                d["total"] = subtotal
                 d["estado_texto"] = _ESTADO_TEXTO.get(d["estado"], "DESCONOCIDO")
                 result.append(d)
             return result
