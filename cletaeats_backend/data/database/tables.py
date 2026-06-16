@@ -12,8 +12,8 @@ usuario = Table("USUARIO", metadata,
     Column("ROL",            Text,    nullable=False),
     Column("ESTADO",         Integer, nullable=False, default=1),
     Column("FECHA_REGISTRO", Text,    nullable=False, server_default=func.now()),
-    CheckConstraint("ROL IN ('CLIENTE','REPARTIDOR','ADMIN','RESTAURANTE')", name="ck_usuario_rol"),
-    CheckConstraint("ESTADO IN (0,1)", name="ck_usuario_estado"),
+    CheckConstraint('"ROL" IN (\'CLIENTE\',\'REPARTIDOR\',\'ADMIN\',\'RESTAURANTE\')', name="ck_usuario_rol"),
+    CheckConstraint('"ESTADO" IN (0,1)', name="ck_usuario_estado"),
 )
 
 cliente = Table("CLIENTE", metadata,
@@ -42,8 +42,8 @@ repartidor = Table("REPARTIDOR", metadata,
     Column("COSTO_KM_FERIADO",      Float,   nullable=False, default=1500),
     Column("AMONESTACIONES",        Integer, nullable=False, default=0),
     Column("RATING", Float, nullable=False, default=0.0),
-    CheckConstraint("DISPONIBLE IN (0,1)",                     name="ck_repartidor_disponible"),
-    CheckConstraint("AMONESTACIONES >= 0 AND AMONESTACIONES <= 4", name="ck_repartidor_amones"),
+    CheckConstraint('"DISPONIBLE" IN (0,1)', name="ck_repartidor_disponible"),
+    CheckConstraint('"AMONESTACIONES" >= 0 AND "AMONESTACIONES" <= 4', name="ck_repartidor_amones"),
     
 )
 
@@ -56,7 +56,7 @@ restaurante = Table("RESTAURANTE", metadata,
     Column("IMAGEN_URL",      Text),
     Column("LATITUD",         Float),
     Column("LONGITUD",        Float),
-    CheckConstraint("ESTADO IN (0,1)", name="ck_restaurante_estado"),
+    CheckConstraint('"ESTADO" IN (0,1)', name="ck_restaurante_estado"),
 )
 
 categoria = Table("CATEGORIA", metadata,
@@ -76,7 +76,7 @@ producto = Table("PRODUCTO", metadata,
     Column("NOMBRE",         Text,    nullable=False),
     Column("DESCRIPCION",    Text),
     Column("ESTADO",         Integer, nullable=False, default=1),
-    CheckConstraint("ESTADO IN (0,1)", name="ck_producto_estado"),
+    CheckConstraint('"ESTADO" IN (0,1)', name="ck_producto_estado"),
 )
 
 combo = Table("COMBO", metadata,
@@ -88,8 +88,8 @@ combo = Table("COMBO", metadata,
     Column("PRECIO",         Float,   nullable=False),
     Column("IMAGEN_URL",     Text),
     Column("ESTADO",         Integer, nullable=False, default=1),
-    CheckConstraint("NUMERO_COMBO >= 1", name="ck_combo_numero"),
-    CheckConstraint("ESTADO IN (0,1)",               name="ck_combo_estado"),
+    CheckConstraint('"NUMERO_COMBO" >= 1', name="ck_combo_numero"),
+    CheckConstraint('"ESTADO" IN (0,1)', name="ck_combo_estado"),
 )
 
 combo_producto = Table("COMBO_PRODUCTO", metadata,
@@ -106,7 +106,7 @@ tarjeta_cliente = Table("TARJETA_CLIENTE", metadata,
     Column("FECHA_VENCIMIENTO",  Text),       # MM/YY
     Column("CVV",                Text),       # 3-4 dígitos (solo en tránsito, no persistir en prod)
     Column("ES_PRINCIPAL",       Integer, nullable=False, default=0),
-    CheckConstraint("ES_PRINCIPAL IN (0,1)", name="ck_tarjeta_principal"),
+    CheckConstraint('"ES_PRINCIPAL" IN (0,1)', name="ck_tarjeta_principal"),
 )
 
 pedido = Table("PEDIDO", metadata,
@@ -120,7 +120,7 @@ pedido = Table("PEDIDO", metadata,
     Column("DISTANCIA_KM",   Float,   nullable=False, default=0),
     Column("CALIFICADO",     Integer, nullable=False, default=0),
     Column("RATING_DADO", Integer, nullable=False, default=0),
-    CheckConstraint("ESTADO IN (0,1,2,3,4)", name="ck_pedido_estado"),
+    CheckConstraint('"ESTADO" IN (0,1,2,3,4)', name="ck_pedido_estado"),
 )
 
 detalle_pedido = Table("DETALLE_PEDIDO", metadata,
@@ -130,7 +130,7 @@ detalle_pedido = Table("DETALLE_PEDIDO", metadata,
     Column("CANTIDAD",        Integer, nullable=False, default=1),
     Column("PRECIO_UNITARIO", Float,   nullable=False),
     Column("CONFIGURACION",   Text),
-    CheckConstraint("CANTIDAD > 0", name="ck_detalle_cantidad"),
+    CheckConstraint('"CANTIDAD" > 0', name="ck_detalle_cantidad"),
 )
 
 queja = Table("QUEJA", metadata,
@@ -142,7 +142,7 @@ queja = Table("QUEJA", metadata,
     Column("DESCRIPCION",   Text),
     Column("FECHA",         Text,    nullable=False, server_default=func.now()),
     Column("ESTADO",        Integer, nullable=False, default=0),  # 0=PENDIENTE, 1=AMONESTADA, 2=MENOR
-    CheckConstraint("ESTADO IN (0,1,2)", name="ck_queja_estado"),
+    CheckConstraint('"ESTADO" IN (0,1,2)', name="ck_queja_estado"),
 )
 
 bitacora = Table("BITACORA", metadata,
