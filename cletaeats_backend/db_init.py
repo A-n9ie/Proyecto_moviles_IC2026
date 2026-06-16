@@ -10,12 +10,17 @@ from data.database.tables import (
 )
 from services.hash_service import hash_password
 
-print(f"Inicializando BD en: {DB_PATH}")
-os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+import os as _os
+DATABASE_URL = _os.environ.get("DATABASE_URL")
 
-if os.path.exists(DB_PATH):
-    os.remove(DB_PATH)
-    print("BD anterior eliminada.")
+if DATABASE_URL:
+    print("Inicializando BD en PostgreSQL...")
+else:
+    print(f"Inicializando BD en: {DB_PATH}")
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    if os.path.exists(DB_PATH):
+        os.remove(DB_PATH)
+        print("BD anterior eliminada.")
 
 metadata.create_all(engine)
 
@@ -245,7 +250,6 @@ CATEGORIA_POR_RESTAURANTE = {
 }
 
 with engine.begin() as conn:
-    conn.execute(text("PRAGMA foreign_keys = ON"))
 
     # ── Categorías ────────────────────────────────────────────────
     cat_ids = {}
