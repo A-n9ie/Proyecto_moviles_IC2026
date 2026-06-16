@@ -51,6 +51,17 @@ class ProductoRepository:
             )
             return result.rowcount > 0
 
+    def eliminar(self, id_producto: int) -> bool:
+        with engine.connect() as conn:
+            if conn.execute(select(t_cp.c.COMBO_ID).where(t_cp.c.PRODUCTO_ID == id_producto).limit(1)).first():
+                raise ValueError("No se puede eliminar el producto porque está enlazado a un combo")
+
+        with engine.begin() as conn:
+            result = conn.execute(
+                delete(t_prod).where(t_prod.c.ID == id_producto)
+            )
+            return result.rowcount > 0
+
     def asignar_a_combo(self, combo_id: int, producto_ids: list) -> None:
         with engine.begin() as conn:
             conn.execute(delete(t_cp).where(t_cp.c.COMBO_ID == combo_id))

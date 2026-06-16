@@ -1,10 +1,11 @@
 # data/repositories/restaurante_repository.py
 from typing import List, Optional
-from sqlalchemy import select, insert, update
+from sqlalchemy import select, insert, update, delete
 from data.database.db_connection import engine
 from data.database.tables import (
     restaurante as t_rest, categoria as t_cat,
-    restaurante_categoria as t_rc
+    restaurante_categoria as t_rc, producto as t_prod,
+    combo as t_combo
 )
 from core.entities.restaurante import Restaurante
 from data.utils.mapper_utils import to_lower_dict
@@ -91,7 +92,12 @@ class RestauranteRepository:
             )
             return result.rowcount > 0
 
-
+    def eliminar(self, id_rest: int) -> bool:
+        with engine.begin() as conn:
+            result = conn.execute(
+                delete(t_rest).where(t_rest.c.ID == id_rest)
+            )
+            return result.rowcount > 0
 
     @staticmethod
     def _map(row) -> Restaurante:

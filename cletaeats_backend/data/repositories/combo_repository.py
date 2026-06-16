@@ -4,7 +4,8 @@ from sqlalchemy import select, insert, update, delete
 from data.database.db_connection import engine
 from data.database.tables import (
     combo as t_combo, restaurante as t_rest,
-    combo_producto as t_cp, producto as t_prod
+    combo_producto as t_cp, producto as t_prod,
+    detalle_pedido as t_dp
 )
 from core.entities.combo import Combo
 from data.utils.mapper_utils import to_lower_dict
@@ -93,6 +94,17 @@ class ComboRepository:
                 for pid in data["producto_ids"]:
                     conn.execute(insert(t_cp).values(COMBO_ID=id_combo, PRODUCTO_ID=pid))
         return True
+
+    def eliminar(self, id_combo: int) -> bool:
+        with engine.connect() as conn:
+            if conn.execute(select(t_dp.c.ID).where(t_dp.c.COMBO_ID == id_combo).limit(1)).first():
+                raise ValueError("No se puede eliminar el combo porque está enlazado a pedidos")
+
+        with engine.begin() as conn:
+            result = conn.execute(
+                delete(t_combo).where(t_combo.c.ID == id_combo)
+            )
+            return result.rowcount > 0
 
     @staticmethod
     def _map(row) -> Combo:

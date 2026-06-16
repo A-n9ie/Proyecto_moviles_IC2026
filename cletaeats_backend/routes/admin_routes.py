@@ -13,6 +13,7 @@ from data.repositories.pedido_repository import PedidoRepository
 from data.repositories.usuario_repository import UsuarioRepository
 from data.repositories.queja_repository import QuejaRepository
 from data.repositories.bitacora_repository import BitacoraRepository
+from sqlalchemy.exc import IntegrityError
 from fastapi import File, UploadFile
 import uuid, os, shutil
 
@@ -90,6 +91,16 @@ def actualizar_cliente(id: int, body: ClienteEstadoBody, _=Depends(require_admin
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     return {"mensaje": "Estado actualizado"}
 
+@router.delete("/clientes/{id}")
+def eliminar_cliente(id: int, _=Depends(require_admin), repos=Depends(get_repos)):
+    try:
+        ok = repos["cliente"].eliminar(id)
+    except IntegrityError:
+        raise HTTPException(status_code=400, detail="No se puede eliminar el cliente porque está enlazado a otros registros")
+    if not ok:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    return {"mensaje": "Cliente eliminado"}
+
 # ── Repartidores ──────────────────────────────────────────────────────
 @router.get("/repartidores")
 def listar_repartidores(_=Depends(require_admin), repos=Depends(get_repos)):
@@ -102,6 +113,16 @@ def actualizar_repartidor(id: int, body: RepartidorBody, _=Depends(require_admin
     if not ok:
         raise HTTPException(status_code=404, detail="Repartidor no encontrado")
     return {"mensaje": "Repartidor actualizado"}
+
+@router.delete("/repartidores/{id}")
+def eliminar_repartidor(id: int, _=Depends(require_admin), repos=Depends(get_repos)):
+    try:
+        ok = repos["repartidor"].eliminar(id)
+    except IntegrityError:
+        raise HTTPException(status_code=400, detail="No se puede eliminar el repartidor porque está enlazado a otros registros")
+    if not ok:
+        raise HTTPException(status_code=404, detail="Repartidor no encontrado")
+    return {"mensaje": "Repartidor eliminado"}
 
 # ── Restaurantes ──────────────────────────────────────────────────────
 @router.get("/restaurantes")
@@ -125,6 +146,16 @@ def actualizar_restaurante(id: int, body: RestauranteBody, _=Depends(require_adm
     if cat_ids is not None:
         repos["categoria"].asignar_a_restaurante(id, cat_ids)
     return {"mensaje": "Restaurante actualizado"}
+
+@router.delete("/restaurantes/{id}")
+def eliminar_restaurante(id: int, _=Depends(require_admin), repos=Depends(get_repos)):
+    try:
+        ok = repos["restaurante"].eliminar(id)
+    except IntegrityError:
+        raise HTTPException(status_code=400, detail="No se puede eliminar el restaurante porque está enlazado a otros registros")
+    if not ok:
+        raise HTTPException(status_code=404, detail="Restaurante no encontrado")
+    return {"mensaje": "Restaurante eliminado"}
 
 # ── Categorías ────────────────────────────────────────────────────────
 @router.get("/categorias")
@@ -163,6 +194,16 @@ def actualizar_producto(id: int, body: ProductoBody, _=Depends(require_admin), r
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     return {"mensaje": "Producto actualizado"}
 
+@router.delete("/productos/{id}")
+def eliminar_producto(id: int, _=Depends(require_admin), repos=Depends(get_repos)):
+    try:
+        ok = repos["producto"].eliminar(id)
+    except IntegrityError:
+        raise HTTPException(status_code=400, detail="No se puede eliminar el producto porque está enlazado a otros registros")
+    if not ok:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    return {"mensaje": "Producto eliminado"}
+
 # ── Combos ────────────────────────────────────────────────────────────
 @router.get("/combos")
 def listar_combos(_=Depends(require_admin), repos=Depends(get_repos)):
@@ -181,6 +222,16 @@ def actualizar_combo(id: int, body: ComboBody, _=Depends(require_admin), repos=D
     if not ok:
         raise HTTPException(status_code=404, detail="Combo no encontrado")
     return {"mensaje": "Combo actualizado"}
+
+@router.delete("/combos/{id}")
+def eliminar_combo(id: int, _=Depends(require_admin), repos=Depends(get_repos)):
+    try:
+        ok = repos["combo"].eliminar(id)
+    except IntegrityError:
+        raise HTTPException(status_code=400, detail="No se puede eliminar el combo porque está enlazado a otros registros")
+    if not ok:
+        raise HTTPException(status_code=404, detail="Combo no encontrado")
+    return {"mensaje": "Combo eliminado"}
 
 # ── Pedidos ───────────────────────────────────────────────────────────
 @router.get("/pedidos")

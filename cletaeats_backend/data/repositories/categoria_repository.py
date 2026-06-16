@@ -19,6 +19,10 @@ class CategoriaRepository:
             return result.inserted_primary_key[0]
 
     def eliminar(self, id_cat: int) -> bool:
+        with engine.connect() as conn:
+            if conn.execute(select(t_rc.c.RESTAURANTE_ID).where(t_rc.c.CATEGORIA_ID == id_cat).limit(1)).first():
+                raise ValueError("No se puede eliminar la categoría porque está enlazada a restaurantes")
+
         with engine.begin() as conn:
             result = conn.execute(
                 delete(t_cat).where(t_cat.c.ID == id_cat)

@@ -1,8 +1,8 @@
 # data/repositories/repartidor_repository.py
 from typing import Optional
-from sqlalchemy import select, insert, update
+from sqlalchemy import select, insert, update, delete
 from data.database.db_connection import engine
-from data.database.tables import repartidor as t_rep, usuario as t_usuario
+from data.database.tables import repartidor as t_rep, usuario as t_usuario, pedido as t_pedido, queja as t_queja
 from core.entities.repartidor import Repartidor
 from data.utils.mapper_utils import to_lower_dict
 
@@ -30,11 +30,11 @@ class RepartidorRepository:
             return self._map(row) if row else None
         
     def obtener_por_id(self, repartidor_id: int) -> Optional[Repartidor]:
-     with engine.connect() as conn:
-        row = conn.execute(
-            select(t_rep).where(t_rep.c.ID == repartidor_id)
-        ).mappings().first()
-        return self._map(row) if row else None
+        with engine.connect() as conn:
+            row = conn.execute(
+                select(t_rep).where(t_rep.c.ID == repartidor_id)
+            ).mappings().first()
+            return self._map(row) if row else None
 
     def existe_cedula(self, cedula: str) -> bool:
         with engine.connect() as conn:
@@ -43,15 +43,15 @@ class RepartidorRepository:
             ).first() is not None
 
     def obtener_primero_disponible(self) -> Optional[Repartidor]:
-            with engine.connect() as conn:
-                row = conn.execute(
-                    select(t_rep)
-                    .where(t_rep.c.DISPONIBLE == 1)      # ← antes ESTADO (esta es la columna que fue renombrada)
-                    .where(t_rep.c.AMONESTACIONES < 4)
-                    .order_by(t_rep.c.ID)
-                    .limit(1)
-                ).mappings().first()
-                return self._map(row) if row else None
+        with engine.connect() as conn:
+            row = conn.execute(
+                select(t_rep)
+                .where(t_rep.c.DISPONIBLE == 1)      # ← antes ESTADO (esta es la columna que fue renombrada)
+                .where(t_rep.c.AMONESTACIONES < 4)
+                .order_by(t_rep.c.ID)
+                .limit(1)
+            ).mappings().first()
+            return self._map(row) if row else None
 
     def listar_todos(self) -> list:
         with engine.connect() as conn:
@@ -75,58 +75,72 @@ class RepartidorRepository:
             return [to_lower_dict(r) for r in rows]
 
     def actualizar_campos(self, id_rep: int, data: dict) -> bool:
-            """
-            Actualiza campos del REPARTIDOR.
-            Claves válidas: nombre, disponible, amonestaciones, rating.
+        """
+        Actualiza campos del REPARTIDOR.
+        Claves válidas: nombre, disponible, amonestaciones, rating.
 
-            Nota de diseño: aquí NO se toca USUARIO.ESTADO (activo/suspendido).
-            La disponibilidad del repartidor (DISPONIBLE: 1=libre, 0=ocupado) es
-            un concepto operativo distinto del estado administrativo de la cuenta.
-            La única excepción es la suspensión automática por 4 amonestaciones,
-            que sí es una consecuencia administrativa.
-            """
-            allowed = {
-                "nombre":         t_rep.c.NOMBRE,
-                "disponible":     t_rep.c.DISPONIBLE,
-                "amonestaciones": t_rep.c.AMONESTACIONES,
-                "rating":         t_rep.c.RATING,
-            }
-            values = {allowed[k].key: v for k, v in data.items() if k in allowed}
-            if not values:
-                return False
-            with engine.begin() as conn:
-                result = conn.execute(
-                    update(t_rep).where(t_rep.c.ID == id_rep).values(**values)
-                )
-                # Suspender la cuenta automáticamente si acumula 4 amonestaciones
-                if "amonestaciones" in data and data["amonestaciones"] >= 4:
-                    row = conn.execute(
-                        select(t_rep.c.USUARIO_ID).where(t_rep.c.ID == id_rep)
-                    ).first()
-                    if row:
-                        conn.execute(
-                            update(t_usuario).where(t_usuario.c.ID == row[0]).values(ESTADO=0)
-                        )
-                return result.rowcount > 0
+        Nota de diseño: aquí NO se toca USUARIO.ESTADO (activo/suspendido).
+        La disponibilidad del repartidor (DISPONIBLE: 1=libre, 0=ocupado) es
+        un concepto operativo distinto del estado administrativo de la cuenta.
+        La única excepción es la suspensión automática por 4 amonestaciones,
+        que sí es una consecuencia administrativa.
+        """
+        allowed = {
+            "nombre":         t_rep.c.NOMBRE,
+            "disponible":     t_rep.c.DISPONIBLE,
+            "amonestaciones": t_rep.c.AMONESTACIONES,
+            "rating":         t_rep.c.RATING,
+        }
+        values = {allowed[k].key: v for k, v in data.items() if k in allowed}
+        if not values:
+            return False
+        with engine.begin() as conn:
+            result = conn.execute(
+                update(t_rep).where(t_rep.c.ID == id_rep).values(**values)
+            )
+            # Suspender la cuenta automáticamente si acumula 4 amonestaciones
+            if "amonestaciones" in data and data["amonestaciones"] >= 4:
+                row = conn.execute(
+                    select(t_rep.c.USUARIO_ID).where(t_rep.c.ID == id_rep)
+                ).first()
+                if row:
+                    conn.execute(
+                        update(t_usuario).where(t_usuario.c.ID == row[0]).values(ESTADO=0)
+                    )
+            return result.rowcount > 0
 
     def actualizar_disponibilidad(self, id_rep: int, disponible: int) -> bool:
-            """
-            Marca al repartidor como libre (1) u ocupado (0).
-            Concepto operativo: cambia con cada pedido asignado/entregado.
-            """
-            with engine.begin() as conn:
-                result = conn.execute(
-                    update(t_rep).where(t_rep.c.ID == id_rep)
-                                 .values(DISPONIBLE=disponible)
-                )
-                return result.rowcount > 0
+        """
+        Marca al repartidor como libre (1) u ocupado (0).
+        Concepto operativo: cambia con cada pedido asignado/entregado.
+        """
+        with engine.begin() as conn:
+            result = conn.execute(
+                update(t_rep).where(t_rep.c.ID == id_rep)
+                             .values(DISPONIBLE=disponible)
+            )
+            return result.rowcount > 0
+
     def actualizar_estado(self, id_repartidor: int, disponible: int) -> bool:
-            """
-            Compatibilidad con la interfaz IRepartidorRepository y las rutas que
-            ya la llaman. Internamente es un alias de actualizar_disponibilidad,
-            porque el "estado" operativo del repartidor ES su disponibilidad.
-            """
-            return self.actualizar_disponibilidad(id_repartidor, disponible)
+        """
+        Compatibilidad con la interfaz IRepartidorRepository y las rutas que
+        ya la llaman. Internamente es un alias de actualizar_disponibilidad,
+        porque el "estado" operativo del repartidor ES su disponibilidad.
+        """
+        return self.actualizar_disponibilidad(id_repartidor, disponible)
+
+    def eliminar(self, id_repartidor: int) -> bool:
+        with engine.connect() as conn:
+            if conn.execute(select(t_pedido.c.ID).where(t_pedido.c.REPARTIDOR_ID == id_repartidor).limit(1)).first():
+                raise ValueError("No se puede eliminar el repartidor porque tiene pedidos asociados")
+            if conn.execute(select(t_queja.c.ID).where(t_queja.c.REPARTIDOR_ID == id_repartidor).limit(1)).first():
+                raise ValueError("No se puede eliminar el repartidor porque tiene quejas asociadas")
+
+        with engine.begin() as conn:
+            result = conn.execute(
+                delete(t_rep).where(t_rep.c.ID == id_repartidor)
+            )
+            return result.rowcount > 0
 
     @staticmethod
     def _map(row) -> Repartidor:

@@ -1,8 +1,8 @@
 # data/repositories/cliente_repository.py
 from typing import Optional
-from sqlalchemy import select, insert, update
+from sqlalchemy import select, insert, update, delete
 from data.database.db_connection import engine
-from data.database.tables import cliente as t_cliente, usuario as t_usuario
+from data.database.tables import cliente as t_cliente, usuario as t_usuario, pedido as t_pedido, tarjeta_cliente as t_tarjeta
 from core.entities.cliente import Cliente
 from data.utils.mapper_utils import to_lower_dict
 
@@ -71,6 +71,19 @@ class ClienteRepository:
         with engine.begin() as conn:
             result = conn.execute(
                 update(t_cliente).where(t_cliente.c.ID == cliente_id).values(IMAGEN_URL=url)
+            )
+            return result.rowcount > 0
+
+    def eliminar(self, cliente_id: int) -> bool:
+        with engine.connect() as conn:
+            if conn.execute(select(t_pedido.c.ID).where(t_pedido.c.CLIENTE_ID == cliente_id).limit(1)).first():
+                raise ValueError("No se puede eliminar el cliente porque tiene pedidos asociados")
+            if conn.execute(select(t_tarjeta.c.ID).where(t_tarjeta.c.CLIENTE_ID == cliente_id).limit(1)).first():
+                raise ValueError("No se puede eliminar el cliente porque tiene tarjetas asociadas")
+
+        with engine.begin() as conn:
+            result = conn.execute(
+                delete(t_cliente).where(t_cliente.c.ID == cliente_id)
             )
             return result.rowcount > 0
 
