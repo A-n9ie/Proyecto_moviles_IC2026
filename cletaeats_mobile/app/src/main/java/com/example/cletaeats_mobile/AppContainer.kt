@@ -101,7 +101,12 @@ object AppContainer {
         PedidoRepositoryImpl(RetrofitClient.create<IPedidoApi>(), sessionManager)
     }
     private val tarjetaRepo by lazy {
-        TarjetaRepositoryImpl(RetrofitClient.create<ITarjetaApi>(), sessionManager) }
+        TarjetaRepositoryImpl(
+            RetrofitClient.create<ITarjetaApi>(),
+            sessionManager,
+            CletaEatsDatabase.getInstance(appContext)
+        )
+    }
     private val authRepository by lazy {
         AuthRepositoryImpl(RetrofitClient.create<IAuthApi>(), RetrofitClient.create<ITarjetaApi>(), sessionManager, syncManager)
     }

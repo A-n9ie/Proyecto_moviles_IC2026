@@ -8,14 +8,16 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [RestauranteEntity::class, ComboEntity::class, PedidoEntity::class],
-    version  = 2,
+    entities = [RestauranteEntity::class, ComboEntity::class, PedidoEntity::class, TarjetaEntity::class],
+    version  = 3,
     exportSchema = false
 )
 abstract class CletaEatsDatabase : RoomDatabase() {
     abstract fun restauranteDao(): RestauranteDao
     abstract fun comboDao(): ComboDao
     abstract fun pedidoDao(): PedidoDao
+    abstract fun tarjetaDao(): TarjetaDao
+
     companion object {
         @Volatile private var INSTANCE: CletaEatsDatabase? = null
 
@@ -52,6 +54,21 @@ abstract class CletaEatsDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS tarjetas (
+                        id INTEGER PRIMARY KEY NOT NULL,
+                        numero TEXT NOT NULL DEFAULT '',
+                        alias TEXT NOT NULL DEFAULT '',
+                        fechaVencimiento TEXT NOT NULL DEFAULT '',
+                        cvv TEXT NOT NULL DEFAULT '',
+                        esPrincipal INTEGER NOT NULL DEFAULT 0
+                    )
+                """.trimIndent())
+            }
+        }
+
         fun getInstance(context: Context): CletaEatsDatabase {
             return INSTANCE ?: synchronized(this) {
                 Room.databaseBuilder(
@@ -59,7 +76,7 @@ abstract class CletaEatsDatabase : RoomDatabase() {
                     CletaEatsDatabase::class.java,
                     "cletaeats.db"
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build().also { INSTANCE = it }
             }
         }
