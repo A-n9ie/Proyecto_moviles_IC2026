@@ -249,11 +249,11 @@ async def upload_imagen(file: UploadFile = File(...), _=Depends(require_admin)):
         api_secret=os.getenv("CLOUDINARY_API_SECRET")
     )
     result = cloudinary.uploader.upload(file.file)
-url = result["secure_url"]
-# Asegurar que siempre empiece con https://
-if not url.startswith("https://"):
-    url = "https://" + url.lstrip("/")
-return {"url": url}
+    url = result["secure_url"]
+    # Asegurar que siempre empiece con https://
+    if not url.startswith("https://"):
+        url = "https://" + url.lstrip("/")
+    return {"url": url}
 
 # Amonestaciones a repartidores ─────────────────────────────────────────
 @router.post("/repartidores/{id}/amonestacion")
