@@ -30,7 +30,7 @@ const ImageUpload = ({ value, onChange }: Props) => {
                 body: formData,
             })
             const data = await response.json()
-            onChange(`${API_BASE}${data.url}`)
+            onChange(data.url)
         } catch {
             setError('Error al subir imagen')
         } finally {
