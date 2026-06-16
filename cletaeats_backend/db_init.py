@@ -24,11 +24,12 @@ else:
 metadata.create_all(engine)
 
 # Verificar si ya hay datos (evitar duplicados en redeploys)
-with engine.connect() as _conn:
-    _count = _conn.execute(text('SELECT COUNT(*) FROM "CATEGORIA"')).scalar()
-    if _count and _count > 0:
-        print("BD ya tiene datos, omitiendo seed.")
-        exit(0)
+if DATABASE_URL:
+    with engine.connect() as _conn:
+        _count = _conn.execute(text('SELECT COUNT(*) FROM "CATEGORIA"')).scalar()
+        if _count and _count > 0:
+            print("BD ya tiene datos, omitiendo seed.")
+            exit(0)
 # ── Restaurantes reales en Costa Rica ───────────────────────────────
 # Todos dentro de la provincia de Heredia y zonas cercanas
 # (cedula, nombre, direccion, imagen_url, latitud, longitud)
