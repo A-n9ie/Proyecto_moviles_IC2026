@@ -73,11 +73,10 @@ object AppContainer {
             return _carritoViewModel!!
         }
 
-    val tarjetaViewModel: TarjetaViewModel by lazy { TarjetaViewModel(tarjetaRepo) }
+    val syncManager: SyncManager by lazy { SyncManager(appContext, sessionManager) }
     val repartidorPerfilApi: IRepartidorPerfilApi by lazy {
         retrofit.create(IRepartidorPerfilApi::class.java)
     }
-    val syncManager: SyncManager by lazy { SyncManager(appContext, sessionManager) }
     // Helper de notificaciones (singleton: un solo canal para toda la app)
     private val notificationHelper by lazy { NotificationHelper(appContext) }
     // ── Repositorios (lazy) ──────────────────────────────────────
@@ -119,7 +118,9 @@ object AppContainer {
     private val authRepository by lazy {
         AuthRepositoryImpl(RetrofitClient.create<IAuthApi>(), RetrofitClient.create<ITarjetaApi>(), sessionManager, syncManager)
     }
-    private val _perfilViewModel by lazy { PerfilViewModel(perfilRepo, sessionManager) }
+    private var _perfilViewModel: PerfilViewModel? = null
+    private var _pedidosClienteViewModel: PedidosClienteViewModel? = null
+    private var _tarjetaViewModel: TarjetaViewModel? = null
 
     fun init(context: Context) {
         appContext = context.applicationContext
@@ -128,17 +129,25 @@ object AppContainer {
     fun getSessionManager() = sessionManager
     // ── ViewModels factories (nueva instancia cada vez) ──────────
     fun authViewModel()            = AuthViewModel(authRepository)
-    fun tarjetaViewModel()         = TarjetaViewModel(tarjetaRepo)
+    fun tarjetaViewModel(): TarjetaViewModel {
+        if (_tarjetaViewModel == null) {
+            _tarjetaViewModel = TarjetaViewModel(tarjetaRepo)
+        }
+        return _tarjetaViewModel!!
+    }
     fun restauranteViewModel() = RestauranteViewModel(
         buildRestauranteRepository(),
         sessionManager.getDataMode()
     )
 
-    val pedidosClienteViewModel: PedidosClienteViewModel by lazy {
-        PedidosClienteViewModel(
-            buildPedidoRepository(),
-            PedidoNotificador(notificationHelper, rol = "CLIENTE")
-        )
+    fun pedidosClienteViewModel(): PedidosClienteViewModel {
+        if (_pedidosClienteViewModel == null) {
+            _pedidosClienteViewModel = PedidosClienteViewModel(
+                buildPedidoRepository(),
+                PedidoNotificador(notificationHelper, rol = "CLIENTE")
+            )
+        }
+        return _pedidosClienteViewModel!!
     }
 
     fun pedidosRepartidorViewModel() = PedidosRepartidorViewModel(
@@ -147,7 +156,12 @@ object AppContainer {
     )
 
     fun historialRepartidorViewModel() = HistorialRepartidorViewModel(buildPedidoRepository())
-    fun perfilViewModel() = _perfilViewModel
+    fun perfilViewModel(): PerfilViewModel {
+        if (_perfilViewModel == null) {
+            _perfilViewModel = PerfilViewModel(perfilRepo, sessionManager)
+        }
+        return _perfilViewModel!!
+    }
 
     // Factory del ViewModel
     fun perfilRepartidorViewModel() = PerfilRepartidorViewModel(
@@ -156,7 +170,10 @@ object AppContainer {
     )
     fun logout() {
         sessionManager.clearSession()
-        // Resetear carritoViewModel para la próxima sesión
+        // Resetear singletons para la próxima sesión
         _carritoViewModel = null
+        _perfilViewModel = null
+        _pedidosClienteViewModel = null
+        _tarjetaViewModel = null
     }
 }

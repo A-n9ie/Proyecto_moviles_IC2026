@@ -503,7 +503,11 @@ private fun AvatarHeader(
             ) {
                 if (imagenUrl.isNotBlank()) {
                     AsyncImage(
-                        model              = imagenUrl,
+                        model = coil.request.ImageRequest.Builder(LocalContext.current)
+                            .data(imagenUrl)
+                            .diskCachePolicy(coil.request.CachePolicy.DISABLED)
+                            .memoryCachePolicy(coil.request.CachePolicy.DISABLED)
+                            .build(),
                         contentDescription = "Foto de perfil",
                         modifier           = Modifier.fillMaxSize(),
                         contentScale       = ContentScale.Crop

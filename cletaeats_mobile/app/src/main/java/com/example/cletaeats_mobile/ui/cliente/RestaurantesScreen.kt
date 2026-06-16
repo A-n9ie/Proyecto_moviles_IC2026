@@ -27,6 +27,8 @@ import com.example.cletaeats_mobile.domain.model.Categoria
 import com.example.cletaeats_mobile.viewmodel.RestauranteViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil.Coil
 import coil.compose.AsyncImage
 import com.example.cletaeats_mobile.ui.utils.resolveImageUrl
 
@@ -49,6 +51,7 @@ fun RestaurantesScreen(
     val authVM   = remember { AppContainer.authViewModel() }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope       = rememberCoroutineScope()
+    val context     = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.cargarRestaurantes()
@@ -89,7 +92,10 @@ fun RestaurantesScreen(
                 onCerrarSesion = {
                     scope.launch {
                         drawerState.close()
+                        Coil.imageLoader(context).memoryCache?.clear()
+                        Coil.imageLoader(context).diskCache?.clear()
                         authVM.logout()
+                        AppContainer.logout() // RESETEAR ViewModels en el AppContainer
                         onLogout()
                     }
                 }
@@ -328,7 +334,11 @@ private fun DrawerContent(
                 ) {
                     if (imagenUrl.isNotBlank()) {
                         AsyncImage(
-                            model = imagenUrl,
+                            model = coil.request.ImageRequest.Builder(LocalContext.current)
+                                .data(imagenUrl)
+                                .diskCachePolicy(coil.request.CachePolicy.DISABLED)
+                                .memoryCachePolicy(coil.request.CachePolicy.DISABLED)
+                                .build(),
                             contentDescription = "Avatar",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop

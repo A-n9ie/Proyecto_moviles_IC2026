@@ -124,7 +124,7 @@ fun AppNavigation(
         composable(AppRoutes.CARRITO) {
             CarritoScreen(
                 carritoViewModel = AppContainer.carritoViewModel,
-                tarjetaViewModel = AppContainer.tarjetaViewModel,
+                tarjetaViewModel = AppContainer.tarjetaViewModel(),
                 onPedidoCreado = {
                     navController.navigate(AppRoutes.FACTURA) {
                         popUpTo(AppRoutes.RESTAURANTES)
@@ -147,7 +147,7 @@ fun AppNavigation(
         }
 
         composable(AppRoutes.MIS_PEDIDOS) { backStackEntry ->
-            val viewModel = AppContainer.pedidosClienteViewModel
+            val viewModel = AppContainer.pedidosClienteViewModel()
             MisPedidosScreen(
                 viewModel  = viewModel,
                 onVolver   = { navController.popBackStack() },
@@ -271,7 +271,7 @@ fun AppNavigation(
             val perfilVM  = remember(backStackEntry) { AppContainer.perfilViewModel() }
             PerfilScreen(
                 perfilViewModel  = perfilVM,
-                tarjetaViewModel = AppContainer.tarjetaViewModel,
+                tarjetaViewModel = AppContainer.tarjetaViewModel(),
                 onVolver         = { navController.popBackStack() }
             )
         }
