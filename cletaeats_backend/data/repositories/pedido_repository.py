@@ -1,6 +1,6 @@
 # data/repositories/pedido_repository.py
 from typing import Optional
-from sqlalchemy import select, insert, update, func
+from sqlalchemy import select, insert, update, func, cast, DateTime
 from data.database.db_connection import engine
 from data.database.tables import (
     pedido as t_pedido, detalle_pedido as t_detalle,
@@ -359,10 +359,10 @@ class PedidoRepository:
         with engine.connect() as conn:
             row = conn.execute(
                 select(
-                    func.strftime("%H", t_pedido.c.FECHA_CREACION).label("HORA"),
+                    func.to_char(cast(t_pedido.c.FECHA_CREACION, DateTime), 'HH24').label("HORA"),
                     func.count(t_pedido.c.ID).label("TOTAL")
                 )
-                .group_by(func.strftime("%H", t_pedido.c.FECHA_CREACION))
+                .group_by(func.to_char(cast(t_pedido.c.FECHA_CREACION, DateTime), 'HH24'))
                 .order_by(func.count(t_pedido.c.ID).desc())
                 .limit(1)
             ).mappings().first()
