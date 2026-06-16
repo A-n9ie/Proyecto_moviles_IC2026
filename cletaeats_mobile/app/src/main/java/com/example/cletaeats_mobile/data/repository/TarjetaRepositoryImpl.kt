@@ -1,6 +1,8 @@
 package com.example.cletaeats_mobile.data.repository
 
+import com.example.cletaeats_mobile.data.local.DataMode
 import com.example.cletaeats_mobile.data.local.SessionManager
+import com.example.cletaeats_mobile.data.local.db.CletaEatsDatabase
 import com.example.cletaeats_mobile.data.remote.AgregarTarjetaRequest
 import com.example.cletaeats_mobile.data.remote.ITarjetaApi
 import com.example.cletaeats_mobile.domain.Result
@@ -16,6 +18,15 @@ class TarjetaRepositoryImpl(
 
     override suspend fun listarTarjetas(): Result<List<Tarjeta>> =
         withContext(Dispatchers.IO) {
+            if (session.getDataMode() == DataMode.LOCAL_SQLITE) {
+                val db = CletaEatsDatabase.getInstance(session.getApplicationContext())
+                val locales = db.tarjetaLocalDao().obtenerPorCliente(session.getIdPerfil())
+                return@withContext Result.Success(locales.map { t ->
+                    Tarjeta(id = t.id, clienteId = t.clienteId, numero = t.numero,
+                        alias = t.alias, fechaVencimiento = t.fechaVencimiento,
+                        cvv = t.cvv, esPrincipal = t.esPrincipal)
+                })
+            }
             try {
                 val resp = api.listarTarjetas("Bearer ${session.getToken()}")
                 if (resp.isSuccessful) {

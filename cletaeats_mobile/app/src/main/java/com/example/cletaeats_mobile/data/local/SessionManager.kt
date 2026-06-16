@@ -3,13 +3,11 @@ package com.example.cletaeats_mobile.data.local
 import android.content.Context
 
 class SessionManager(context: Context) {
-
-    // SharedPrefs de sesión activa (se borra en logout)
+    private val appCtx = context.applicationContext
     private val prefs = context.getSharedPreferences("cletaeats_session", Context.MODE_PRIVATE)
-
-    // SharedPrefs de credenciales offline (NUNCA se borra en logout)
     private val offlinePrefs = context.getSharedPreferences("cletaeats_offline", Context.MODE_PRIVATE)
 
+    fun getApplicationContext(): Context = appCtx
     fun saveSession(token: String, idUsuario: Int, email: String, rol: String, nombre: String, idPerfil: Int) {
         prefs.edit()
             .putString("token",      token)

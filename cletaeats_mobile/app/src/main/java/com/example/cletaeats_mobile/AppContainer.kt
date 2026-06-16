@@ -41,6 +41,7 @@ import com.example.cletaeats_mobile.data.notifications.NotificationHelper
 import com.example.cletaeats_mobile.data.notifications.PedidoNotificador
 import com.example.cletaeats_mobile.data.remote.IRepartidorPerfilApi
 import com.example.cletaeats_mobile.data.remote.RetrofitClient.retrofit
+import com.example.cletaeats_mobile.data.repository.PedidoCloudRepositoryImpl
 
 import com.example.cletaeats_mobile.viewmodel.HistorialRepartidorViewModel
 import com.example.cletaeats_mobile.viewmodel.PerfilRepartidorViewModel
@@ -67,14 +68,15 @@ object AppContainer {
     }
     val carritoViewModel: CarritoViewModel
         get() {
-            if (_carritoViewModel == null) _carritoViewModel = CarritoViewModel(pedidoRepository)
+            if (_carritoViewModel == null) _carritoViewModel = CarritoViewModel(buildPedidoRepository())
             return _carritoViewModel!!
         }
+
     val tarjetaViewModel: TarjetaViewModel by lazy { TarjetaViewModel(tarjetaRepo) }
     val repartidorPerfilApi: IRepartidorPerfilApi by lazy {
         retrofit.create(IRepartidorPerfilApi::class.java)
     }
-    val syncManager: SyncManager by lazy { SyncManager(appContext) }
+    val syncManager: SyncManager by lazy { SyncManager(appContext, sessionManager) }
     // Helper de notificaciones (singleton: un solo canal para toda la app)
     private val notificationHelper by lazy { NotificationHelper(appContext) }
     // ── Repositorios (lazy) ──────────────────────────────────────
@@ -97,9 +99,18 @@ object AppContainer {
             DataMode.CLOUD        -> ComboCloudRepositoryImpl()
         }
     fun comboViewModel() = ComboViewModel(buildComboRepository())
-    private val pedidoRepository by lazy {
+    private val pedidoHttpRepository by lazy {
         PedidoRepositoryImpl(RetrofitClient.create<IPedidoApi>(), sessionManager)
     }
+
+    // Factory que retorna el repo correcto según el modo activo
+    private fun buildPedidoRepository() =
+        when (sessionManager.getDataMode()) {
+            DataMode.CLOUD -> PedidoCloudRepositoryImpl(pedidoHttpRepository)
+            else           -> pedidoHttpRepository   // LOCAL y API_REMOTA usan HTTP
+            // Nota: LOCAL podría leer de SQLite, pero los pedidos locales se sincronizan
+            // al inicio de sesión, así que el estado es reciente.
+        }
     private val tarjetaRepo by lazy {
         TarjetaRepositoryImpl(RetrofitClient.create<ITarjetaApi>(), sessionManager) }
     private val authRepository by lazy {
@@ -122,17 +133,17 @@ object AppContainer {
 
     val pedidosClienteViewModel: PedidosClienteViewModel by lazy {
         PedidosClienteViewModel(
-            pedidoRepository,
+            buildPedidoRepository(),
             PedidoNotificador(notificationHelper, rol = "CLIENTE")
         )
     }
+
     fun pedidosRepartidorViewModel() = PedidosRepartidorViewModel(
-        pedidoRepository,
+        buildPedidoRepository(),
         PedidoNotificador(notificationHelper, rol = "REPARTIDOR")
     )
 
-    fun historialRepartidorViewModel() = HistorialRepartidorViewModel(pedidoRepository)
-
+    fun historialRepartidorViewModel() = HistorialRepartidorViewModel(buildPedidoRepository())
     fun perfilViewModel() = _perfilViewModel
 
     // Factory del ViewModel

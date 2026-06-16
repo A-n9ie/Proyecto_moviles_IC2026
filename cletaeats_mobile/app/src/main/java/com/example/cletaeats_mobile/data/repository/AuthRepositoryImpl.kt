@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 import com.example.cletaeats_mobile.data.local.DataMode
+import com.example.cletaeats_mobile.data.remote.FirebaseAuthHelper
 import com.example.cletaeats_mobile.data.sync.SyncManager
 
 class AuthRepositoryImpl(
@@ -27,37 +28,75 @@ class AuthRepositoryImpl(
     override suspend fun login(email: String, password: String, modo: DataMode): Result<Usuario> =
         withContext(Dispatchers.IO) {
 
-            // ── MODO LOCAL: autenticar con sesión previa guardada ─────
+            // ── MODO LOCAL: autenticar con SQLite ───────────────────
             if (modo == DataMode.LOCAL_SQLITE) {
-                val savedEmail = session.getOfflineEmail()   // ← cambiar getEmail() por getOfflineEmail()
-                val savedToken = session.getOfflineToken()   // ← cambiar getToken() por getOfflineToken()
-                return@withContext if (savedToken.isNotEmpty() && savedEmail == email) {
+                // 1. Buscar en SQLite el usuario que inició sesión antes
+                val db = com.example.cletaeats_mobile.data.local.db.CletaEatsDatabase
+                    .getInstance(session.getApplicationContext())   // ← ver Paso 9 para agregar esto a SessionManager
+                val localUser = db.usuarioLocalDao().buscarPorEmail(email)
+
+                return@withContext if (localUser != null) {
                     session.saveDataMode(modo)
-                    // Restaurar la sesión activa desde las credenciales offline
                     session.saveSession(
-                        savedToken,
-                        session.getOfflineIdUsuario(),
-                        savedEmail,
-                        session.getOfflineRol(),
-                        session.getOfflineNombre(),
-                        session.getOfflineIdPerfil()
+                        localUser.token, localUser.idUsuario, localUser.email,
+                        localUser.rol, localUser.nombre, localUser.idPerfil
                     )
                     Result.Success(
                         Usuario(
-                            idUsuario       = session.getOfflineIdUsuario(),
-                            email    = savedEmail,
-                            rol      = session.getOfflineRol(),
-                            nombre   = session.getOfflineNombre(),
-                            idPerfil = session.getOfflineIdPerfil(),
-                            token    = savedToken
+                            idUsuario = localUser.idUsuario,
+                            email     = localUser.email,
+                            rol       = localUser.rol,
+                            nombre    = localUser.nombre,
+                            idPerfil  = localUser.idPerfil,
+                            token     = localUser.token
                         )
                     )
                 } else {
-                    Result.Error("No hay sesión guardada para este correo. Iniciá sesión en línea primero.")
+                    // Fallback: intentar con offlinePrefs (compatibilidad hacia atrás)
+                    val savedEmail = session.getOfflineEmail()
+                    val savedToken = session.getOfflineToken()
+                    if (savedToken.isNotEmpty() && savedEmail == email) {
+                        session.saveDataMode(modo)
+                        session.saveSession(
+                            savedToken, session.getOfflineIdUsuario(), savedEmail,
+                            session.getOfflineRol(), session.getOfflineNombre(), session.getOfflineIdPerfil()
+                        )
+                        Result.Success(
+                            Usuario(
+                                idUsuario = session.getOfflineIdUsuario(), email = savedEmail,
+                                rol       = session.getOfflineRol(), nombre = session.getOfflineNombre(),
+                                idPerfil  = session.getOfflineIdPerfil(), token = savedToken
+                            )
+                        )
+                    } else {
+                        Result.Error("No hay sesión guardada para este correo. Iniciá sesión en línea primero.")
+                    }
                 }
             }
 
-            // ── MODOS REMOTO / CLOUD: llamada HTTP normal ─────────────
+            // ── MODO CLOUD: primero autenticar con Firebase Auth ────
+            if (modo == DataMode.CLOUD) {
+                // 1. Autenticar con Firebase Auth (email/password)
+                val firebaseResult = FirebaseAuthHelper.signIn(email, password)
+                if (firebaseResult.isFailure) {
+                    val msg = firebaseResult.exceptionOrNull()?.message ?: "Error de autenticación Cloud"
+                    // Mapear errores comunes de Firebase a mensajes legibles
+                    val friendlyMsg = when {
+                        msg.contains("INVALID_LOGIN_CREDENTIALS") ||
+                                msg.contains("invalid-credential")        -> "Correo o contraseña incorrectos"
+                        msg.contains("user-not-found")            -> "No existe cuenta con este correo en Cloud"
+                        msg.contains("wrong-password")            -> "Contraseña incorrecta"
+                        msg.contains("too-many-requests")         -> "Demasiados intentos. Intentá más tarde"
+                        msg.contains("network")                   -> "Sin conexión a internet"
+                        else -> "Error de autenticación: $msg"
+                    }
+                    return@withContext Result.Error(friendlyMsg)
+                }
+                // Firebase Auth OK — ahora también validar con el backend para obtener el JWT y el rol
+                // (Firebase no conoce los roles ni genera el JWT de CletaEats)
+            }
+
+            // ── MODOS API_REMOTA y CLOUD: llamada HTTP al backend ───
             try {
                 val resp = api.login(LoginRequest(email, password))
                 when (resp.code()) {
@@ -67,16 +106,20 @@ class AuthRepositoryImpl(
                         session.saveSession(body.token, body.idUsuario, body.email,
                             body.rol, body.nombre, body.idPerfil)
 
-                        // Sync según el modo seleccionado
                         when (modo) {
                             DataMode.API_REMOTA -> {
-                                // Guardar en SQLite para uso offline posterior
-                                sync?.sincronizarDesdeApi(body.token)
+                                // Guardar usuario en SQLite para uso offline posterior
+                                sync?.guardarUsuarioLocal(body.idUsuario, body.email,
+                                    body.nombre, body.rol, body.idPerfil, body.token)
+                                sync?.sincronizarDesdeApi(body.token, body.rol)
                             }
                             DataMode.CLOUD -> {
-                                // 1. Bajar del API a SQLite
-                                sync?.sincronizarDesdeApi(body.token)
-                                // 2. Subir de SQLite a Firestore
+                                // 1. Guardar usuario en SQLite
+                                sync?.guardarUsuarioLocal(body.idUsuario, body.email,
+                                    body.nombre, body.rol, body.idPerfil, body.token)
+                                // 2. Bajar datos del API a SQLite
+                                sync?.sincronizarDesdeApi(body.token, body.rol)
+                                // 3. Subir de SQLite a Firestore
                                 sync?.sincronizarHaciaCloud()
                             }
                             else -> {}
@@ -118,19 +161,35 @@ class AuthRepositoryImpl(
                         val body = resp.body()!!
                         session.saveSession(body.token, body.idUsuario, body.email,
                             body.rol, body.nombre, body.idPerfil)
+
+                        // Guardar usuario en SQLite local siempre
+                        sync?.guardarUsuarioLocal(body.idUsuario, body.email,
+                            body.nombre, body.rol, body.idPerfil, body.token)
+
+                        // Si el modo actual es CLOUD, crear también en Firebase Auth
+                        if (session.getDataMode() == DataMode.CLOUD) {
+                            val fbResult = FirebaseAuthHelper.createUser(email, password)
+                            if (fbResult.isFailure) {
+                                // No es fatal: el usuario ya quedó en el backend.
+                                // Solo loguear el warning.
+                                android.util.Log.w("AUTH",
+                                    "Registro en Firebase falló: ${fbResult.exceptionOrNull()?.message}")
+                            }
+                        }
+
                         Result.Success(Usuario(body.idUsuario, body.email, body.rol,
                             body.nombre, body.idPerfil, body.token))
+                    }
+                    400 -> {
+                        val errorMsg = resp.errorBody()?.string()
+                        Result.Error(errorMsg ?: "Datos inválidos")
+                    }
+                    else -> Result.Error("No se pudo registrar (${resp.code()})")
                 }
-                400 -> {
-                    val errorMsg = resp.errorBody()?.string()
-                    Result.Error(errorMsg ?: "Datos inválidos")
-                }
-                else -> Result.Error("No se pudo registrar (${resp.code()})")
+            } catch (e: Exception) {
+                Result.Error("Sin conexión al servidor")
             }
-        } catch (e: Exception) {
-            Result.Error("Sin conexión al servidor")
         }
-    }
 
     override suspend fun registroRepartidor(
         email: String, password: String, confirmarPassword: String,
@@ -146,10 +205,45 @@ class AuthRepositoryImpl(
             when (resp.code()) {
                 201 -> {
                     val body = resp.body()!!
-                    session.saveSession(body.token, body.idUsuario, body.email,
-                                        body.rol, body.nombre, body.idPerfil)
-                    Result.Success(Usuario(body.idUsuario, body.email, body.rol,
-                                           body.nombre, body.idPerfil, body.token))
+
+                    session.saveSession(
+                        body.token,
+                        body.idUsuario,
+                        body.email,
+                        body.rol,
+                        body.nombre,
+                        body.idPerfil
+                    )
+
+                    sync?.guardarUsuarioLocal(
+                        body.idUsuario,
+                        body.email,
+                        body.nombre,
+                        body.rol,
+                        body.idPerfil,
+                        body.token
+                    )
+
+                    if (session.getDataMode() == DataMode.CLOUD) {
+                        FirebaseAuthHelper.createUser(email, password)
+                            .onFailure {
+                                android.util.Log.w(
+                                    "AUTH",
+                                    "Firebase repartidor registro: ${it.message}"
+                                )
+                            }
+                    }
+
+                    Result.Success(
+                        Usuario(
+                            body.idUsuario,
+                            body.email,
+                            body.rol,
+                            body.nombre,
+                            body.idPerfil,
+                            body.token
+                        )
+                    )
                 }
                 400 -> Result.Error("Datos inválidos. Revisá los campos.")
                 else -> Result.Error("No se pudo registrar (${resp.code()})")
@@ -163,9 +257,11 @@ class AuthRepositoryImpl(
         return try {
             api.logout("Bearer ${session.getToken()}")
             session.clearSession()
+            FirebaseAuthHelper.signOut()
             Result.Success(Unit)
         } catch (_: Exception) {
             session.clearSession()
+            FirebaseAuthHelper.signOut()
             Result.Success(Unit)
         }
     }

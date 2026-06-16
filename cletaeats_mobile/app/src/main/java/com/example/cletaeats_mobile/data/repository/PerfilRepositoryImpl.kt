@@ -1,6 +1,8 @@
 package com.example.cletaeats_mobile.data.repository
 
+import com.example.cletaeats_mobile.data.local.DataMode
 import com.example.cletaeats_mobile.data.local.SessionManager
+import com.example.cletaeats_mobile.data.local.db.CletaEatsDatabase
 import com.example.cletaeats_mobile.data.remote.ActualizarPerfilRequest
 import com.example.cletaeats_mobile.data.remote.IPerfilApi
 import com.example.cletaeats_mobile.data.remote.ImagenPerfilRequest
@@ -20,6 +22,22 @@ class PerfilRepositoryImpl(
 
     override suspend fun obtenerPerfil(): Result<PerfilData> =
         withContext(Dispatchers.IO) {
+            if (session.getDataMode() == DataMode.LOCAL_SQLITE) {
+                val db = CletaEatsDatabase.getInstance(session.getApplicationContext())
+                val local = db.perfilLocalDao().obtener(session.getIdPerfil())
+                return@withContext if (local != null) {
+                    Result.Success(PerfilData(
+                        nombre    = local.nombre,
+                        telefono  = local.telefono,
+                        direccion = local.direccion,
+                        cedula    = local.cedula,
+                        imagenUrl = local.imagenUrl
+                    ))
+                } else {
+                    Result.Error("No hay perfil guardado sin conexión. Iniciá sesión en línea primero.")
+                }
+            }
+// Si no es LOCAL, cae al try existente (HTTP)
             try {
                 val resp = api.obtenerPerfil("Bearer ${session.getToken()}")
                 if (resp.isSuccessful && resp.body() != null) {

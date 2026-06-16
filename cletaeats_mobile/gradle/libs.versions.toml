@@ -63,6 +63,7 @@ androidx-room-ktx      = { group = "androidx.room",          name = "room-ktx", 
 androidx-room-compiler = { group = "androidx.room",          name = "room-compiler",           version.ref = "room"       }
 firebase-bom           = { group = "com.google.firebase",    name = "firebase-bom",            version.ref = "firebaseBom" }
 firebase-firestore     = { group = "com.google.firebase",    name = "firebase-firestore-ktx"                              }
+firebase-auth          = { group = "com.google.firebase", name = "firebase-auth-ktx"      }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
